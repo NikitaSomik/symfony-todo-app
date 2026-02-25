@@ -1,0 +1,9 @@
+nelmio_api_doc:
+    documentation:
+        info:
+            title: Todo API
+            description: Todo application REST API
+            version: 1.0.0
+    areas:
+        path_patterns:
+            - ^/api/v1
