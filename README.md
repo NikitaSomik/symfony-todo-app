@@ -1,5 +1,10 @@
 # symfony-todo-app
 
+![CI](https://github.com/NikitaSomik/symfony-todo-app/actions/workflows/ci.yml/badge.svg)
+![PHP](https://img.shields.io/badge/PHP-8.4-777BB4?logo=php&logoColor=white)
+![Symfony](https://img.shields.io/badge/Symfony-8.0-000000?logo=symfony&logoColor=white)
+![PHPStan](https://img.shields.io/badge/PHPStan-level%206-brightgreen)
+
 Symfony 8 + Docker
 
 ## Services
@@ -35,4 +40,5 @@ make run-cs              # check code style
 make fix-cs              # fix code style
 make run-phpstan         # static analysis
 make run-tests           # run tests
+make coverage            # generate coverage report (var/coverage/index.html)
 ```
