@@ -30,6 +30,10 @@ run-cs:
 run-tests:
 	$(EXEC) vendor/bin/phpunit
 
+coverage:
+	$(EXEC) env XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-html var/coverage
+	@echo "Coverage report: var/coverage/index.html"
+
 fix-cs:
 	$(EXEC) vendor/bin/php-cs-fixer fix
 
