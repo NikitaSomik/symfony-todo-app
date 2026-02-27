@@ -6,7 +6,6 @@ namespace App\Task\Factory;
 
 use App\Task\Entity\Task;
 use App\Task\Enum\TaskStatus;
-use Override;
 use Zenstruck\Foundry\Persistence\PersistentObjectFactory;
 
 /**
@@ -23,7 +22,7 @@ final class TaskFactory extends PersistentObjectFactory
     {
     }
 
-    #[Override]
+    #[\Override]
     public static function class(): string
     {
         return Task::class;
