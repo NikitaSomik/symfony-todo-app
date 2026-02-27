@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Factory;
+namespace App\Task\Factory;
 
-use App\Entity\Task;
-use App\Enum\TaskStatus;
+use App\Task\Entity\Task;
+use App\Task\Enum\TaskStatus;
 use Zenstruck\Foundry\Persistence\PersistentObjectFactory;
 
 /**

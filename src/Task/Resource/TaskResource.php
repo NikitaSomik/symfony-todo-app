@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Resource\Api;
+namespace App\Task\Resource;
 
-use App\Entity\Task;
-use App\Enum\TaskStatus;
+use App\Task\Entity\Task;
+use App\Task\Enum\TaskStatus;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 

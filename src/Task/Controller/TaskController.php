@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace App\Controller\Api;
+namespace App\Task\Controller;
 
-use App\DTO\CreateTaskDTO;
-use App\DTO\UpdateTaskDTO;
-use App\Entity\Task;
-use App\Enum\TaskStatus;
-use App\Repository\TaskRepository;
-use App\Resource\Api\TaskResource;
-use App\Service\Task\CreateTask;
+use App\Task\DTO\CreateTaskDTO;
+use App\Task\DTO\UpdateTaskDTO;
+use App\Task\Entity\Task;
+use App\Task\Enum\TaskStatus;
+use App\Task\Repository\TaskRepository;
+use App\Task\Resource\TaskResource;
+use App\Task\Service\CreateTask;
 use Doctrine\ORM\EntityManagerInterface;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
