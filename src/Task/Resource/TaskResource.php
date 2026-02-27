@@ -38,8 +38,6 @@ final class TaskResource
 
     /**
      * @param Task[] $tasks
-     *
-     * @return list<array{id: ?int, title: string, description: ?string, status: string, created_at: string, updated_at: string}>
      */
     public static function fromCollection(array $tasks): array
     {
