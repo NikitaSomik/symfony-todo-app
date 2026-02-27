@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Entity;
+namespace App\Task\Entity;
 
-use App\Enum\TaskStatus;
-use App\Repository\TaskRepository;
+use App\Task\Enum\TaskStatus;
+use App\Task\Repository\TaskRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -14,12 +14,12 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\HasLifecycleCallbacks]
 class Task
 {
-    public const FIELD_ID = 'id';
-    public const FIELD_TITLE = 'title';
-    public const FIELD_DESCRIPTION = 'description';
-    public const FIELD_STATUS = 'status';
-    public const FIELD_CREATED_AT = 'createdAt';
-    public const FIELD_UPDATED_AT = 'updatedAt';
+    public const string FIELD_ID = 'id';
+    public const string FIELD_TITLE = 'title';
+    public const string FIELD_DESCRIPTION = 'description';
+    public const string FIELD_STATUS = 'status';
+    public const string FIELD_CREATED_AT = 'createdAt';
+    public const string FIELD_UPDATED_AT = 'updatedAt';
 
     #[ORM\Id]
     #[ORM\GeneratedValue]

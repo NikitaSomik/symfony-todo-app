@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Service\Task;
+namespace App\Task\Service;
 
-use App\DTO\CreateTaskDTO;
-use App\Entity\Task;
-use App\Enum\TaskStatus;
+use App\Task\DTO\CreateTaskDTO;
+use App\Task\Entity\Task;
+use App\Task\Enum\TaskStatus;
 use Doctrine\ORM\EntityManagerInterface;
 
 final class CreateTask

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Api;
 
-use App\Enum\TaskStatus;
-use App\Factory\TaskFactory;
+use App\Task\Enum\TaskStatus;
+use App\Task\Factory\TaskFactory;
 use App\Tests\ApiTestCase;
 use PHPUnit\Framework\Attributes\Test;
 

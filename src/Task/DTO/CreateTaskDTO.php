@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\DTO;
+namespace App\Task\DTO;
 
-use App\Enum\TaskStatus;
+use App\Task\Enum\TaskStatus;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -13,7 +13,7 @@ use Symfony\Component\Validator\Constraints as Assert;
     required: ['title'],
     properties: [
         new OA\Property(property: 'title', type: 'string', example: 'Buy milk'),
-        new OA\Property(property: 'description', type: 'string', nullable: true, example: '2 liters'),
+        new OA\Property(property: 'description', type: 'string', example: '2 liters', nullable: true),
         new OA\Property(property: 'status', ref: new Model(type: TaskStatus::class), description: 'Task status'),
     ]
 )]
