@@ -40,3 +40,7 @@ fix-cs:
 check-code: run-cs run-phpstan run-tests
 
 fix-and-check-code: fix-cs run-phpstan run-tests
+
+generate-openapi:
+	$(EXEC) php bin/console nelmio:apidoc:dump --format=json > docs/openapi.json
+	@echo "OpenAPI spec: docs/openapi.json"
