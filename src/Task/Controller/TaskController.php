@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Task\Controller;
 
+use App\Auth\Entity\User;
 use App\Task\DTO\CreateTaskDTO;
 use App\Task\DTO\UpdateTaskDTO;
 use App\Task\Entity\Task;
 use App\Task\Enum\TaskStatus;
 use App\Task\Repository\TaskRepository;
 use App\Task\Resource\TaskResource;
+use App\Task\Security\TaskVoter;
 use App\Task\Service\CreateTask;
 use Doctrine\ORM\EntityManagerInterface;
 use Nelmio\ApiDocBundle\Attribute\Model;
@@ -19,6 +21,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/api/v1/tasks', name: 'api_task_')]
 #[OA\Tag(name: 'Tasks')]
@@ -40,7 +43,9 @@ final class TaskController extends AbstractController
     )]
     public function getAll(): JsonResponse
     {
-        $tasks = $this->taskRepository->findBy(criteria: [], orderBy: [Task::FIELD_CREATED_AT => 'DESC']);
+        /** @var User $user */
+        $user = $this->getUser();
+        $tasks = $this->taskRepository->findBy(criteria: ['user' => $user], orderBy: [Task::FIELD_CREATED_AT => 'DESC']);
 
         return $this->json(data: TaskResource::fromCollection($tasks), status: Response::HTTP_OK);
     }
@@ -52,7 +57,9 @@ final class TaskController extends AbstractController
     #[OA\Response(response: 422, description: 'Validation error')]
     public function create(#[MapRequestPayload] CreateTaskDTO $dto): JsonResponse
     {
-        $task = $this->createTask->handle($dto);
+        /** @var User $user */
+        $user = $this->getUser();
+        $task = $this->createTask->handle($dto, $user);
 
         return $this->json(data: TaskResource::fromEntity($task), status: Response::HTTP_CREATED);
     }
@@ -62,6 +69,8 @@ final class TaskController extends AbstractController
     #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
     #[OA\Response(response: 200, description: 'Task details', content: new OA\JsonContent(ref: new Model(type: TaskResource::class)))]
     #[OA\Response(response: 404, description: 'Task not found')]
+    #[OA\Response(response: 403, description: 'Access denied')]
+    #[IsGranted(TaskVoter::ACCESS, 'task')]
     public function get(Task $task): JsonResponse
     {
         return $this->json(data: TaskResource::fromEntity($task), status: Response::HTTP_OK);
@@ -73,7 +82,9 @@ final class TaskController extends AbstractController
     #[OA\RequestBody(required: true, content: new OA\JsonContent(ref: new Model(type: UpdateTaskDTO::class)))]
     #[OA\Response(response: 200, description: 'Task updated', content: new OA\JsonContent(ref: new Model(type: TaskResource::class)))]
     #[OA\Response(response: 404, description: 'Task not found')]
+    #[OA\Response(response: 403, description: 'Access denied')]
     #[OA\Response(response: 422, description: 'Validation error')]
+    #[IsGranted(TaskVoter::ACCESS, 'task')]
     public function update(#[MapRequestPayload] UpdateTaskDTO $dto, Task $task): JsonResponse
     {
         $task->setTitle($dto->title);
@@ -90,6 +101,8 @@ final class TaskController extends AbstractController
     #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
     #[OA\Response(response: 204, description: 'Task deleted')]
     #[OA\Response(response: 404, description: 'Task not found')]
+    #[OA\Response(response: 403, description: 'Access denied')]
+    #[IsGranted(TaskVoter::ACCESS, 'task')]
     public function delete(Task $task): JsonResponse
     {
         $this->em->remove($task);
