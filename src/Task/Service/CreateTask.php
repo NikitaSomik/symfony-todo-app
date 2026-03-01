@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Task\Service;
 
+use App\Auth\Entity\User;
 use App\Task\DTO\CreateTaskDTO;
 use App\Task\Entity\Task;
 use App\Task\Enum\TaskStatus;
@@ -16,11 +17,13 @@ final class CreateTask
     ) {
     }
 
-    public function handle(CreateTaskDTO $dto): Task
+    public function handle(CreateTaskDTO $dto, User $user): Task
     {
-        $task = new Task($dto->title);
+        $task = new Task();
+        $task->setTitle($dto->title);
         $task->setDescription($dto->description);
         $task->setStatus(TaskStatus::from($dto->status));
+        $task->setUser($user);
 
         $this->em->persist($task);
         $this->em->flush();

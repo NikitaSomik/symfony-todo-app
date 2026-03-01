@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Task\Factory;
 
+use App\Auth\Factory\UserFactory;
 use App\Task\Entity\Task;
 use App\Task\Enum\TaskStatus;
 use Zenstruck\Foundry\Persistence\PersistentObjectFactory;
@@ -40,6 +41,7 @@ final class TaskFactory extends PersistentObjectFactory
             'title' => self::faker()->sentence(3),
             'description' => self::faker()->optional()->sentence(),
             'status' => TaskStatus::TODO,
+            'user' => UserFactory::new(),
         ];
     }
 
