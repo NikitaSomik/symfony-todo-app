@@ -6,6 +6,117 @@
         "version": "1.0.0"
     },
     "paths": {
+        "/api/v1/auth/register": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Register a new user",
+                "operationId": "post_api_auth_register",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RegisterDTO"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "User registered",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserResource"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/login": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Login and receive JWT token",
+                "operationId": "post_api_auth_login",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "example": "user@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "example": "secret123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "JWT token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "token": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials"
+                    }
+                }
+            }
+        },
+        "/api/v1/profile": {
+            "get": {
+                "tags": [
+                    "Profile"
+                ],
+                "summary": "Get current authenticated user",
+                "operationId": "get_api_profile_me",
+                "responses": {
+                    "200": {
+                        "description": "Current user",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserResource"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                }
+            }
+        },
         "/api/v1/tasks": {
             "get": {
                 "tags": [
@@ -93,6 +204,9 @@
                     },
                     "404": {
                         "description": "Task not found"
+                    },
+                    "403": {
+                        "description": "Access denied"
                     }
                 }
             },
@@ -137,6 +251,9 @@
                     "404": {
                         "description": "Task not found"
                     },
+                    "403": {
+                        "description": "Access denied"
+                    },
                     "422": {
                         "description": "Validation error"
                     }
@@ -165,6 +282,9 @@
                     },
                     "404": {
                         "description": "Task not found"
+                    },
+                    "403": {
+                        "description": "Access denied"
                     }
                 }
             }
@@ -172,6 +292,27 @@
     },
     "components": {
         "schemas": {
+            "RegisterDTO": {
+                "required": [
+                    "email",
+                    "password"
+                ],
+                "properties": {
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "maxLength": 180,
+                        "example": "user@example.com"
+                    },
+                    "password": {
+                        "type": "string",
+                        "maxLength": 100,
+                        "minLength": 8,
+                        "example": "secret123"
+                    }
+                },
+                "type": "object"
+            },
             "TaskStatus": {
                 "type": "string",
                 "enum": [
@@ -225,6 +366,28 @@
                 },
                 "type": "object"
             },
+            "UserResource": {
+                "required": [
+                    "id",
+                    "email",
+                    "created_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "email": {
+                        "type": "string",
+                        "example": "user@example.com"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
             "TaskResource": {
                 "required": [
                     "id",
@@ -264,6 +427,12 @@
         }
     },
     "tags": [
+        {
+            "name": "Auth"
+        },
+        {
+            "name": "Profile"
+        },
         {
             "name": "Tasks"
         }
