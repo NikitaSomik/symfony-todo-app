@@ -74,17 +74,17 @@ final class AuthControllerTest extends ApiTestCase
     }
 
     #[Test]
-    public function loginWhenValidCredentialsShouldReturn200WithToken(): void
+    public function loginWhenValidCredentialsShouldReturn200WithCookie(): void
     {
         UserFactory::createOne(['email' => 'user@example.com', 'password' => 'secret123']);
 
-        $response = $this->post($this->route('api_auth_login'), [
+        $this->post($this->route('api_auth_login'), [
             'email' => 'user@example.com',
             'password' => 'secret123',
         ]);
 
         self::assertResponseIsSuccessful();
-        self::assertArrayHasKey('token', $this->json($response));
+        self::assertBrowserHasCookie('jwt_token');
     }
 
     #[Test]

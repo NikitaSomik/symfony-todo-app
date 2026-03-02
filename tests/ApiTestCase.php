@@ -8,6 +8,7 @@ use App\Auth\Entity\User;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\BrowserKit\Cookie;
 use Symfony\Component\HttpFoundation\Response;
 use Zenstruck\Foundry\Attribute\ResetDatabase;
 
@@ -15,18 +16,17 @@ use Zenstruck\Foundry\Attribute\ResetDatabase;
 abstract class ApiTestCase extends WebTestCase
 {
     private KernelBrowser $client;
-    private ?string $token = null;
 
     protected function setUp(): void
     {
         $this->client = static::createClient();
-        $this->token = null;
     }
 
     protected function actingAs(User $user): static
     {
         $jwtManager = static::getContainer()->get(JWTTokenManagerInterface::class);
-        $this->token = $jwtManager->create($user);
+        $token = $jwtManager->create($user);
+        $this->client->getCookieJar()->set(new Cookie('jwt_token', $token));
 
         return $this;
     }
@@ -73,16 +73,10 @@ abstract class ApiTestCase extends WebTestCase
 
     private function request(string $method, string $uri, array $body = []): Response
     {
-        $server = ['CONTENT_TYPE' => 'application/json'];
-
-        if (null !== $this->token) {
-            $server['HTTP_AUTHORIZATION'] = 'Bearer '.$this->token;
-        }
-
         $this->client->request(
             $method,
             $uri,
-            server: $server,
+            server: ['CONTENT_TYPE' => 'application/json'],
             content: [] !== $body ? json_encode($body) : null,
         );
 
