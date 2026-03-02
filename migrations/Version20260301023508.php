@@ -14,7 +14,7 @@ final class Version20260301023508 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return '';
+        return 'Add user_id foreign key to tasks table';
     }
 
     public function up(Schema $schema): void

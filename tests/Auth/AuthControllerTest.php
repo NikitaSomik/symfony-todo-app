@@ -60,26 +60,27 @@ final class AuthControllerTest extends ApiTestCase
     }
 
     #[Test]
-    public function registerWhenEmailAlreadyExistsShouldReturn422(): void
+    public function registerWhenEmailAlreadyExistsShouldReturn409(): void
     {
         UserFactory::createOne(['email' => 'user@example.com']);
 
-        $this->post($this->route('api_auth_register'), [
+        $response = $this->post($this->route('api_auth_register'), [
             'email' => 'user@example.com',
             'password' => 'secret123',
         ]);
 
-        self::assertResponseStatusCodeSame(422);
+        self::assertResponseStatusCodeSame(409);
+        self::assertArrayHasKey('message', $this->json($response));
     }
 
     #[Test]
     public function loginWhenValidCredentialsShouldReturn200WithToken(): void
     {
-        UserFactory::createOne(['email' => 'user@example.com']);
+        UserFactory::createOne(['email' => 'user@example.com', 'password' => 'secret123']);
 
         $response = $this->post($this->route('api_auth_login'), [
             'email' => 'user@example.com',
-            'password' => 'password',
+            'password' => 'secret123',
         ]);
 
         self::assertResponseIsSuccessful();

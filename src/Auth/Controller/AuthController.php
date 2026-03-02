@@ -14,7 +14,6 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
-use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/api/v1/auth', name: 'api_auth_')]
@@ -31,12 +30,13 @@ final class AuthController extends AbstractController
     #[OA\RequestBody(required: true, content: new OA\JsonContent(ref: new Model(type: RegisterDTO::class)))]
     #[OA\Response(response: 201, description: 'User registered', content: new OA\JsonContent(ref: new Model(type: UserResource::class)))]
     #[OA\Response(response: 422, description: 'Validation error')]
+    #[OA\Response(response: 409, description: 'Email already taken')]
     public function register(#[MapRequestPayload] RegisterDTO $dto): JsonResponse
     {
         try {
             $user = $this->registerUser->handle($dto);
-        } catch (EmailAlreadyTakenException $e) {
-            throw new UnprocessableEntityHttpException($e->getMessage());
+        } catch (EmailAlreadyTakenException $exception) {
+            return $this->json(['message' => $exception->getMessage()], Response::HTTP_CONFLICT);
         }
 
         return $this->json(data: UserResource::fromEntity($user), status: Response::HTTP_CREATED);

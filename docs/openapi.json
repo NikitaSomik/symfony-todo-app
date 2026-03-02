@@ -36,6 +36,9 @@
                     },
                     "422": {
                         "description": "Validation error"
+                    },
+                    "409": {
+                        "description": "Email already taken"
                     }
                 }
             }
