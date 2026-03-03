@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Api;
+namespace App\Tests\Task;
 
+use App\Auth\Entity\User;
+use App\Auth\Factory\UserFactory;
 use App\Task\Enum\TaskStatus;
 use App\Task\Factory\TaskFactory;
 use App\Tests\ApiTestCase;
@@ -11,6 +13,15 @@ use PHPUnit\Framework\Attributes\Test;
 
 final class TaskControllerTest extends ApiTestCase
 {
+    private User $user;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->user = UserFactory::createOne();
+        $this->actingAs($this->user);
+    }
+
     #[Test]
     public function getAllWhenNoTasksShouldReturnEmptyArray(): void
     {
@@ -23,12 +34,25 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function getAllWhenTasksExistShouldReturnAll(): void
     {
-        TaskFactory::createMany(3);
+        TaskFactory::createMany(3, ['user' => $this->user]);
 
         $response = $this->get($this->route('api_task_get_all'));
 
         self::assertResponseIsSuccessful();
         self::assertCount(3, $this->json($response));
+    }
+
+    #[Test]
+    public function getAllShouldNotReturnOtherUsersTask(): void
+    {
+        $otherUser = UserFactory::createOne();
+        TaskFactory::createOne(['user' => $otherUser]);
+        TaskFactory::createMany(2, ['user' => $this->user]);
+
+        $response = $this->get($this->route('api_task_get_all'));
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(2, $this->json($response));
     }
 
     #[Test]
@@ -88,7 +112,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function getWhenTaskExistsShouldReturnTask(): void
     {
-        $task = TaskFactory::createOne(['title' => 'Buy milk']);
+        $task = TaskFactory::createOne(['title' => 'Buy milk', 'user' => $this->user]);
 
         $response = $this->get($this->route('api_task_get', ['id' => $task->getId()]));
 
@@ -114,9 +138,20 @@ final class TaskControllerTest extends ApiTestCase
     }
 
     #[Test]
+    public function getWhenTaskBelongsToAnotherUserShouldReturn403(): void
+    {
+        $otherUser = UserFactory::createOne();
+        $task = TaskFactory::createOne(['user' => $otherUser]);
+
+        $this->get($this->route('api_task_get', ['id' => $task->getId()]));
+
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    #[Test]
     public function updateWhenValidDataShouldReturnUpdatedTask(): void
     {
-        $task = TaskFactory::createOne();
+        $task = TaskFactory::createOne(['user' => $this->user]);
 
         $response = $this->put($this->route('api_task_update', ['id' => $task->getId()]), [
             'title' => 'Updated title',
@@ -134,7 +169,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function updateWhenTitleIsEmptyShouldReturn422(): void
     {
-        $task = TaskFactory::createOne();
+        $task = TaskFactory::createOne(['user' => $this->user]);
 
         $this->put($this->route('api_task_update', ['id' => $task->getId()]), ['title' => '']);
 
@@ -150,9 +185,20 @@ final class TaskControllerTest extends ApiTestCase
     }
 
     #[Test]
+    public function updateWhenTaskBelongsToAnotherUserShouldReturn403(): void
+    {
+        $otherUser = UserFactory::createOne();
+        $task = TaskFactory::createOne(['user' => $otherUser]);
+
+        $this->put($this->route('api_task_update', ['id' => $task->getId()]), ['title' => 'Hacked']);
+
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    #[Test]
     public function deleteWhenTaskExistsShouldReturn204(): void
     {
-        $task = TaskFactory::createOne();
+        $task = TaskFactory::createOne(['user' => $this->user]);
 
         $this->delete($this->route('api_task_delete', ['id' => $task->getId()]));
 
@@ -162,7 +208,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function deleteWhenTaskDeletedShouldReturn404OnGet(): void
     {
-        $task = TaskFactory::createOne();
+        $task = TaskFactory::createOne(['user' => $this->user]);
         $id = $task->getId();
 
         $this->delete($this->route('api_task_delete', ['id' => $id]));
@@ -177,5 +223,16 @@ final class TaskControllerTest extends ApiTestCase
         $this->delete($this->route('api_task_delete', ['id' => 99999]));
 
         self::assertResponseStatusCodeSame(404);
+    }
+
+    #[Test]
+    public function deleteWhenTaskBelongsToAnotherUserShouldReturn403(): void
+    {
+        $otherUser = UserFactory::createOne();
+        $task = TaskFactory::createOne(['user' => $otherUser]);
+
+        $this->delete($this->route('api_task_delete', ['id' => $task->getId()]));
+
+        self::assertResponseStatusCodeSame(403);
     }
 }

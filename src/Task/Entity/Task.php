@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Task\Entity;
 
+use App\Auth\Entity\User;
 use App\Task\Enum\TaskStatus;
 use App\Task\Repository\TaskRepository;
 use Doctrine\DBAL\Types\Types;
@@ -11,6 +12,7 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: TaskRepository::class)]
 #[ORM\Table(name: 'tasks')]
+#[ORM\Index(name: 'idx_tasks_user_id', columns: ['user_id'])]
 #[ORM\HasLifecycleCallbacks]
 class Task
 {
@@ -35,15 +37,18 @@ class Task
     #[ORM\Column(length: 20, enumType: TaskStatus::class)]
     private TaskStatus $status = TaskStatus::TODO;
 
-    #[ORM\Column]
+    #[ORM\Column(type: Types::DATETIMETZ_IMMUTABLE)]
     private \DateTimeImmutable $createdAt;
 
-    #[ORM\Column]
+    #[ORM\Column(type: Types::DATETIMETZ_IMMUTABLE)]
     private \DateTimeImmutable $updatedAt;
 
-    public function __construct(string $title)
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(nullable: false)]
+    private User $user;
+
+    public function __construct()
     {
-        $this->title = $title;
         $this->createdAt = new \DateTimeImmutable();
         $this->updatedAt = new \DateTimeImmutable();
     }
@@ -103,5 +108,17 @@ class Task
     public function getUpdatedAt(): \DateTimeImmutable
     {
         return $this->updatedAt;
+    }
+
+    public function getUser(): User
+    {
+        return $this->user;
+    }
+
+    public function setUser(User $user): static
+    {
+        $this->user = $user;
+
+        return $this;
     }
 }

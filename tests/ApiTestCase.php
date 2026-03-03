@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tests;
 
+use App\Auth\Entity\User;
+use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\BrowserKit\Cookie;
 use Symfony\Component\HttpFoundation\Response;
 use Zenstruck\Foundry\Attribute\ResetDatabase;
 
@@ -17,6 +20,15 @@ abstract class ApiTestCase extends WebTestCase
     protected function setUp(): void
     {
         $this->client = static::createClient();
+    }
+
+    protected function actingAs(User $user): static
+    {
+        $jwtManager = static::getContainer()->get(JWTTokenManagerInterface::class);
+        $token = $jwtManager->create($user);
+        $this->client->getCookieJar()->set(new Cookie('jwt_token', $token));
+
+        return $this;
     }
 
     protected function get(string $uri): Response
