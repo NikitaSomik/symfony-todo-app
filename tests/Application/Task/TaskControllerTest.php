@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Task;
+namespace App\Tests\Application\Task;
 
+use App\Auth\DataFixtures\UserFactory;
 use App\Auth\Entity\User;
-use App\Auth\Factory\UserFactory;
+use App\Task\DataFixtures\TaskFactory;
 use App\Task\Enum\TaskStatus;
-use App\Task\Factory\TaskFactory;
 use App\Tests\ApiTestCase;
 use PHPUnit\Framework\Attributes\Test;
 
