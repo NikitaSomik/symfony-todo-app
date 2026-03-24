@@ -28,7 +28,7 @@ final class TaskStory extends Story
                 ->setMaxResults(self::BATCH_SIZE)
                 ->getResult();
 
-            if (0 === count($users)) {
+            if (empty($users)) {
                 break;
             }
 
