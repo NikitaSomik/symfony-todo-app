@@ -11,8 +11,8 @@ RUN apk add --no-cache --virtual .build-deps $PHPIZE_DEPS linux-headers shadow \
         libpq-dev postgresql-dev \
         zip unzip libzip-dev \
         icu-dev \
-    && pecl install xdebug \
-    && docker-php-ext-enable xdebug \
+    && pecl install xdebug redis \
+    && docker-php-ext-enable xdebug redis \
     && docker-php-ext-configure intl \
     && docker-php-ext-install pdo_pgsql zip intl \
     && usermod -u $UID www-data \

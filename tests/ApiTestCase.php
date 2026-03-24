@@ -26,7 +26,14 @@ abstract class ApiTestCase extends WebTestCase
     {
         $jwtManager = static::getContainer()->get(JWTTokenManagerInterface::class);
         $token = $jwtManager->create($user);
-        $this->client->getCookieJar()->set(new Cookie('jwt_token', $token));
+        $this->client->getCookieJar()->set(new Cookie('access_token', $token));
+
+        return $this;
+    }
+
+    protected function setCookie(string $name, string $value): static
+    {
+        $this->client->getCookieJar()->set(new Cookie($name, $value));
 
         return $this;
     }

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Auth;
+namespace App\Tests\Application\Auth;
 
-use App\Auth\Factory\UserFactory;
+use App\Auth\DataFixtures\UserFactory;
 use App\Tests\ApiTestCase;
 use PHPUnit\Framework\Attributes\Test;
 

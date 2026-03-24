@@ -4,6 +4,48 @@ nelmio_api_doc:
             title: Todo API
             description: Todo application REST API
             version: 1.0.0
+        components:
+            securitySchemes:
+                cookieAuth:
+                    type: apiKey
+                    in: cookie
+                    name: access_token
+                    description: JWT access token stored in an HttpOnly cookie. Obtained via POST /api/v1/auth/login.
+            responses:
+                UnauthorizedError:
+                    description: Unauthorized — valid access_token cookie required
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    message:
+                                        type: string
+                                        example: Unauthorized.
+                ValidationError:
+                    description: Validation error
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    type:
+                                        type: string
+                                        example: https://symfony.com/errors/validation
+                                    title:
+                                        type: string
+                                        example: Validation Failed
+                                    violations:
+                                        type: array
+                                        items:
+                                            type: object
+                                            properties:
+                                                propertyPath:
+                                                    type: string
+                                                message:
+                                                    type: string
+        security:
+            - cookieAuth: []
     areas:
         path_patterns:
             - ^/api/v1
