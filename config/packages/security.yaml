@@ -24,6 +24,8 @@ security:
                 success_handler: lexik_jwt_authentication.handler.authentication_success
                 failure_handler: lexik_jwt_authentication.handler.authentication_failure
             jwt: ~
+            logout:
+                path: api_auth_logout
 
     access_control:
         - { path: ^/api/v1/auth, roles: PUBLIC_ACCESS }

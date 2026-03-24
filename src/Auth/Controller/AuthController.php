@@ -6,12 +6,16 @@ namespace App\Auth\Controller;
 
 use App\Auth\DTO\RegisterDTO;
 use App\Auth\Exception\EmailAlreadyTakenException;
+use App\Auth\Exception\InvalidRefreshTokenException;
+use App\Auth\Factory\JwtCookieFactory;
 use App\Auth\Resource\UserResource;
+use App\Auth\Service\RefreshAccessToken;
 use App\Auth\Service\RegisterUser;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
@@ -22,14 +26,16 @@ final class AuthController extends AbstractController
 {
     public function __construct(
         private readonly RegisterUser $registerUser,
+        private readonly RefreshAccessToken $refreshAccessToken,
+        private readonly JwtCookieFactory $cookieFactory,
     ) {
     }
 
     #[Route('/register', name: 'register', methods: ['POST'])]
-    #[OA\Post(summary: 'Register a new user')]
+    #[OA\Post(summary: 'Register a new user', security: [])]
     #[OA\RequestBody(required: true, content: new OA\JsonContent(ref: new Model(type: RegisterDTO::class)))]
     #[OA\Response(response: 201, description: 'User registered', content: new OA\JsonContent(ref: new Model(type: UserResource::class)))]
-    #[OA\Response(response: 422, description: 'Validation error')]
+    #[OA\Response(ref: '#/components/responses/ValidationError', response: 422)]
     #[OA\Response(response: 409, description: 'Email already taken')]
     public function register(#[MapRequestPayload] RegisterDTO $dto): JsonResponse
     {
@@ -42,8 +48,61 @@ final class AuthController extends AbstractController
         return $this->json(data: UserResource::fromEntity($user), status: Response::HTTP_CREATED);
     }
 
+    #[Route('/refresh', name: 'refresh', methods: ['POST'])]
+    #[OA\Post(summary: 'Refresh JWT token using refresh token cookie', security: [])]
+    #[OA\Parameter(
+        name: 'refresh_token',
+        description: 'Refresh token cookie (set automatically by login/refresh)',
+        in: 'cookie',
+        required: true,
+        schema: new OA\Schema(type: 'string'),
+    )]
+    #[OA\Response(
+        response: 204,
+        description: 'Tokens refreshed — new access_token and refresh_token cookies set',
+        headers: [
+            new OA\Header(header: 'Set-Cookie', description: 'Updated access_token and refresh_token HttpOnly cookies', schema: new OA\Schema(type: 'string')),
+        ],
+    )]
+    #[OA\Response(response: 401, description: 'Invalid or expired refresh token')]
+    public function refresh(Request $request): Response
+    {
+        $refreshTokenValue = $request->cookies->get('refresh_token');
+
+        if (null === $refreshTokenValue || strlen($refreshTokenValue) < 3 || strlen($refreshTokenValue) > 255) {
+            return $this->unauthorizedResponse();
+        }
+
+        try {
+            ['jwt' => $jwt, 'refreshToken' => $newRefreshToken] = $this->refreshAccessToken->handle($refreshTokenValue);
+        } catch (InvalidRefreshTokenException) {
+            return $this->unauthorizedResponse();
+        }
+
+        $response = new Response(status: Response::HTTP_NO_CONTENT);
+        $response->headers->setCookie($this->cookieFactory->createJwtCookie($jwt));
+        $response->headers->setCookie($this->cookieFactory->createRefreshCookie($newRefreshToken));
+
+        return $response;
+    }
+
+    #[Route('/logout', name: 'logout', methods: ['POST'])]
+    #[OA\Post(summary: 'Logout — revoke refresh tokens and clear cookies')]
+    #[OA\Response(
+        response: 204,
+        description: 'Logged out — all refresh tokens revoked, cookies cleared',
+        headers: [
+            new OA\Header(header: 'Clear-Site-Data', description: 'Instructs browser to clear cookies', schema: new OA\Schema(type: 'string', example: '"cookies"')),
+        ],
+    )]
+    #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
+    public function logout(): never
+    {
+        throw new \LogicException('Intercepted by the security firewall.');
+    }
+
     #[Route('/login', name: 'login', methods: ['POST'])]
-    #[OA\Post(summary: 'Login and receive JWT token')]
+    #[OA\Post(summary: 'Login — sets access_token and refresh_token cookies', security: [])]
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
@@ -56,14 +115,19 @@ final class AuthController extends AbstractController
     )]
     #[OA\Response(
         response: 200,
-        description: 'JWT token',
-        content: new OA\JsonContent(
-            properties: [new OA\Property(property: 'token', type: 'string')]
-        )
+        description: 'Authenticated — access_token and refresh_token cookies set',
+        headers: [
+            new OA\Header(header: 'Set-Cookie', description: 'access_token and refresh_token HttpOnly cookies', schema: new OA\Schema(type: 'string')),
+        ],
     )]
-    #[OA\Response(response: 401, description: 'Invalid credentials')]
+    #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
     public function login(): never
     {
         throw new \LogicException('Intercepted by the JWT firewall.');
+    }
+
+    private function unauthorizedResponse(): JsonResponse
+    {
+        return $this->json(['message' => 'Unauthorized.'], Response::HTTP_UNAUTHORIZED);
     }
 }

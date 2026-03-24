@@ -4,16 +4,18 @@ lexik_jwt_authentication:
     pass_phrase: ~
     encoder:
         signature_algorithm: HS256
-    token_ttl: 3600
+    token_ttl: '%app.jwt_ttl%'
+    blocklist_token:
+        enabled: true
+        cache: cache.app
     token_extractors:
         authorization_header:
             enabled: false
         cookie:
             enabled: true
-            name: jwt_token
+            name: access_token
     set_cookies:
-        jwt_token:
-            lifetime: 3600
+        access_token:
             samesite: strict
             path: /
             domain: ~
@@ -23,5 +25,5 @@ lexik_jwt_authentication:
 when@prod:
     lexik_jwt_authentication:
         set_cookies:
-            jwt_token:
+            access_token:
                 secure: true
