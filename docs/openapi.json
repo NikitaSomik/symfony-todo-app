@@ -35,10 +35,74 @@
                         }
                     },
                     "422": {
-                        "description": "Validation error"
+                        "$ref": "#/components/responses/ValidationError"
                     },
                     "409": {
                         "description": "Email already taken"
+                    }
+                },
+                "security": []
+            }
+        },
+        "/api/v1/auth/refresh": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Refresh JWT token using refresh token cookie",
+                "operationId": "post_api_auth_refresh",
+                "parameters": [
+                    {
+                        "name": "refresh_token",
+                        "in": "cookie",
+                        "description": "Refresh token cookie (set automatically by login/refresh)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Tokens refreshed \u2014 new access_token and refresh_token cookies set",
+                        "headers": {
+                            "Set-Cookie": {
+                                "description": "Updated access_token and refresh_token HttpOnly cookies",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid or expired refresh token"
+                    }
+                },
+                "security": []
+            }
+        },
+        "/api/v1/auth/logout": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Logout \u2014 revoke refresh tokens and clear cookies",
+                "operationId": "post_api_auth_logout",
+                "responses": {
+                    "204": {
+                        "description": "Logged out \u2014 all refresh tokens revoked, cookies cleared",
+                        "headers": {
+                            "Clear-Site-Data": {
+                                "description": "Instructs browser to clear cookies",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "\"cookies\""
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
                     }
                 }
             }
@@ -48,7 +112,7 @@
                 "tags": [
                     "Auth"
                 ],
-                "summary": "Login and receive JWT token",
+                "summary": "Login \u2014 sets access_token and refresh_token cookies",
                 "operationId": "post_api_auth_login",
                 "requestBody": {
                     "required": true,
@@ -76,24 +140,21 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "JWT token",
-                        "content": {
-                            "application/json": {
+                        "description": "Authenticated \u2014 access_token and refresh_token cookies set",
+                        "headers": {
+                            "Set-Cookie": {
+                                "description": "access_token and refresh_token HttpOnly cookies",
                                 "schema": {
-                                    "properties": {
-                                        "token": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "type": "object"
+                                    "type": "string"
                                 }
                             }
                         }
                     },
                     "401": {
-                        "description": "Invalid credentials"
+                        "$ref": "#/components/responses/UnauthorizedError"
                     }
-                }
+                },
+                "security": []
             }
         },
         "/api/v1/profile": {
@@ -115,7 +176,7 @@
                         }
                     },
                     "401": {
-                        "description": "Unauthorized"
+                        "$ref": "#/components/responses/UnauthorizedError"
                     }
                 }
             }
@@ -140,6 +201,9 @@
                                 }
                             }
                         }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
                     }
                 }
             },
@@ -171,7 +235,10 @@
                         }
                     },
                     "422": {
-                        "description": "Validation error"
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
                     }
                 }
             }
@@ -210,6 +277,9 @@
                     },
                     "403": {
                         "description": "Access denied"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
                     }
                 }
             },
@@ -258,7 +328,10 @@
                         "description": "Access denied"
                     },
                     "422": {
-                        "description": "Validation error"
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
                     }
                 }
             },
@@ -288,6 +361,9 @@
                     },
                     "403": {
                         "description": "Access denied"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
                     }
                 }
             }
@@ -427,8 +503,73 @@
                 },
                 "type": "object"
             }
+        },
+        "responses": {
+            "UnauthorizedError": {
+                "description": "Unauthorized \u2014 valid access_token cookie required",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "example": "Unauthorized."
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "ValidationError": {
+                "description": "Validation error",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "properties": {
+                                "type": {
+                                    "type": "string",
+                                    "example": "https://symfony.com/errors/validation"
+                                },
+                                "title": {
+                                    "type": "string",
+                                    "example": "Validation Failed"
+                                },
+                                "violations": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "propertyPath": {
+                                                "type": "string"
+                                            },
+                                            "message": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "securitySchemes": {
+            "cookieAuth": {
+                "type": "apiKey",
+                "description": "JWT access token stored in an HttpOnly cookie. Obtained via POST /api/v1/auth/login.",
+                "name": "access_token",
+                "in": "cookie"
+            }
         }
     },
+    "security": [
+        {
+            "cookieAuth": []
+        }
+    ],
     "tags": [
         {
             "name": "Auth"
