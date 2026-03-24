@@ -10,17 +10,16 @@ use Doctrine\ORM\EntityManagerInterface;
 
 final class IssueRefreshToken
 {
-    private const int TTL_DAYS = 30;
-
     public function __construct(
         private readonly EntityManagerInterface $em,
+        private readonly int $refreshTokenTtl,
     ) {
     }
 
     public function handle(User $user): RefreshToken
     {
         $token = bin2hex(random_bytes(32));
-        $expiresAt = new \DateTimeImmutable(sprintf('+%d days', self::TTL_DAYS));
+        $expiresAt = new \DateTimeImmutable(sprintf('+%d days', $this->refreshTokenTtl));
 
         $refreshToken = new RefreshToken($token, $user, $expiresAt);
 
