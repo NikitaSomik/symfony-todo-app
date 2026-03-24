@@ -98,6 +98,9 @@ final class AuthController extends AbstractController
     #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
     public function logout(): never
     {
+        // This method is never executed — the security firewall intercepts the request.
+        // The route exists for Symfony routing (security.yaml logout path) and OpenAPI docs.
+        // Actual logic is in LogoutListener.
         throw new \LogicException('Intercepted by the security firewall.');
     }
 
@@ -123,6 +126,9 @@ final class AuthController extends AbstractController
     #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
     public function login(): never
     {
+        // This method is never executed — json_login authenticator intercepts the request.
+        // The route exists for Symfony routing (security.yaml json_login check_path) and OpenAPI docs.
+        // On success, AuthenticationSuccessListener issues refresh token and sets cookies.
         throw new \LogicException('Intercepted by the JWT firewall.');
     }
 
