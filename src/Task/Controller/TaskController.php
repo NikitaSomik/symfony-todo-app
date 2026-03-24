@@ -41,6 +41,7 @@ final class TaskController extends AbstractController
         description: 'List of tasks',
         content: new OA\JsonContent(type: 'array', items: new OA\Items(ref: new Model(type: TaskResource::class)))
     )]
+    #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
     public function getAll(): JsonResponse
     {
         /** @var User $user */
@@ -54,7 +55,8 @@ final class TaskController extends AbstractController
     #[OA\Post(summary: 'Create a task')]
     #[OA\RequestBody(required: true, content: new OA\JsonContent(ref: new Model(type: CreateTaskDTO::class)))]
     #[OA\Response(response: 201, description: 'Task created', content: new OA\JsonContent(ref: new Model(type: TaskResource::class)))]
-    #[OA\Response(response: 422, description: 'Validation error')]
+    #[OA\Response(ref: '#/components/responses/ValidationError', response: 422)]
+    #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
     public function create(#[MapRequestPayload] CreateTaskDTO $dto): JsonResponse
     {
         /** @var User $user */
@@ -70,6 +72,7 @@ final class TaskController extends AbstractController
     #[OA\Response(response: 200, description: 'Task details', content: new OA\JsonContent(ref: new Model(type: TaskResource::class)))]
     #[OA\Response(response: 404, description: 'Task not found')]
     #[OA\Response(response: 403, description: 'Access denied')]
+    #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
     #[IsGranted(TaskVoter::ACCESS, 'task')]
     public function get(Task $task): JsonResponse
     {
@@ -83,7 +86,8 @@ final class TaskController extends AbstractController
     #[OA\Response(response: 200, description: 'Task updated', content: new OA\JsonContent(ref: new Model(type: TaskResource::class)))]
     #[OA\Response(response: 404, description: 'Task not found')]
     #[OA\Response(response: 403, description: 'Access denied')]
-    #[OA\Response(response: 422, description: 'Validation error')]
+    #[OA\Response(ref: '#/components/responses/ValidationError', response: 422)]
+    #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
     #[IsGranted(TaskVoter::ACCESS, 'task')]
     public function update(#[MapRequestPayload] UpdateTaskDTO $dto, Task $task): JsonResponse
     {
@@ -102,12 +106,13 @@ final class TaskController extends AbstractController
     #[OA\Response(response: 204, description: 'Task deleted')]
     #[OA\Response(response: 404, description: 'Task not found')]
     #[OA\Response(response: 403, description: 'Access denied')]
+    #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
     #[IsGranted(TaskVoter::ACCESS, 'task')]
-    public function delete(Task $task): JsonResponse
+    public function delete(Task $task): Response
     {
         $this->em->remove($task);
         $this->em->flush();
 
-        return $this->json(data: null, status: Response::HTTP_NO_CONTENT);
+        return new Response(status: Response::HTTP_NO_CONTENT);
     }
 }
