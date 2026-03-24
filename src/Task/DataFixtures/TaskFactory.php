@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Task\Factory;
+namespace App\Task\DataFixtures;
 
-use App\Auth\Factory\UserFactory;
+use App\Auth\DataFixtures\UserFactory;
 use App\Task\Entity\Task;
 use App\Task\Enum\TaskStatus;
 use Zenstruck\Foundry\Persistence\PersistentObjectFactory;
@@ -14,27 +14,11 @@ use Zenstruck\Foundry\Persistence\PersistentObjectFactory;
  */
 final class TaskFactory extends PersistentObjectFactory
 {
-    /**
-     * @see https://symfony.com/bundles/ZenstruckFoundryBundle/current/index.html#factories-as-services
-     *
-     * @todo inject services if required
-     */
-    public function __construct()
-    {
-    }
-
-    #[\Override]
     public static function class(): string
     {
         return Task::class;
     }
 
-    /**
-     * @see https://symfony.com/bundles/ZenstruckFoundryBundle/current/index.html#model-factories
-     *
-     * @todo add your default values here
-     */
-    #[\Override]
     protected function defaults(): array|callable
     {
         return [

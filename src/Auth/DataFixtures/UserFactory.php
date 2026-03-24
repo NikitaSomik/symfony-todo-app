@@ -2,10 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Auth\Factory;
+namespace App\Auth\DataFixtures;
 
 use App\Auth\Entity\User;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Zenstruck\Foundry\Persistence\PersistentObjectFactory;
 
 /**
@@ -13,11 +12,6 @@ use Zenstruck\Foundry\Persistence\PersistentObjectFactory;
  */
 final class UserFactory extends PersistentObjectFactory
 {
-    public function __construct(
-        private readonly UserPasswordHasherInterface $passwordHasher,
-    ) {
-    }
-
     public static function class(): string
     {
         return User::class;
@@ -27,16 +21,12 @@ final class UserFactory extends PersistentObjectFactory
     {
         return [
             'email' => self::faker()->unique()->email(),
-            'password' => 'password',
+            'password' => '$2y$12$SnS/ZkwA82FyVBfi6dCeh.6daT9DLVETSLodKeC/GCWt/.lO4sXdC', // 'password'
         ];
     }
 
     protected function initialize(): static
     {
-        return $this->afterInstantiate(function (User $user): void {
-            $user->setPassword(
-                $this->passwordHasher->hashPassword($user, $user->getPassword())
-            );
-        });
+        return $this;
     }
 }

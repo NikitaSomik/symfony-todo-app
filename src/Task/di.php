@@ -14,6 +14,7 @@ return static function (ContainerConfigurator $di): void {
 
     $services->load('App\Task\\', __DIR__)
         ->exclude([
+            __DIR__.'/DataFixtures/',
             __DIR__.'/DTO/',
             __DIR__.'/Entity/',
             __DIR__.'/Enum/',
