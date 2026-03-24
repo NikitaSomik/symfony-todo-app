@@ -100,25 +100,25 @@ Phase 5: CQRS (where justified)
 
 ---
 
-## Phase 1 — JWT Authentication
+## Phase 1 — JWT Authentication ✅
 
 > New module: `src/Auth/`
 
-- [ ] Install `lexik/jwt-authentication-bundle`
-- [ ] `User` entity — `id`, `email`, `password`, `createdAt`
-- [ ] Migration
-- [ ] Configure `security.yaml` (JWT firewall, `json_login`, password hasher)
-- [ ] Generate JWT keypair
-- [ ] `RegisterDTO` with validation
-- [ ] `AuthController` — `POST /api/v1/auth/register`
-- [ ] Login via Symfony `json_login` — `POST /api/v1/auth/login` (no controller needed)
-- [ ] `UserResource` — response transformer
-- [ ] `Auth/di.php` + `Auth/routing.php`
-- [ ] Attach `Task` to `User` (ManyToOne)
-- [ ] Filter tasks by authenticated user
-- [ ] `UserFactory` (Foundry) for tests
-- [ ] Update integration tests (Bearer token)
-- [ ] Update OpenAPI docs (Bearer token)
+- [x] Install `lexik/jwt-authentication-bundle`
+- [x] `User` entity — `id`, `email`, `password`, `createdAt`
+- [x] Migration
+- [x] Configure `security.yaml` (JWT firewall, `json_login`, password hasher)
+- [x] Generate JWT keypair
+- [x] `RegisterDTO` with validation
+- [x] `AuthController` — `POST /api/v1/auth/register`
+- [x] Login via Symfony `json_login` — `POST /api/v1/auth/login` (no controller needed)
+- [x] `UserResource` — response transformer
+- [x] `Auth/di.php` + `Auth/routing.php`
+- [x] Attach `Task` to `User` (ManyToOne)
+- [x] Filter tasks by authenticated user
+- [x] `UserFactory` (Foundry) for tests
+- [x] Update integration tests (Bearer token)
+- [x] Update OpenAPI docs (Bearer token)
 
 ---
 
