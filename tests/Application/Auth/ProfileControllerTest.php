@@ -25,14 +25,12 @@ final class ProfileControllerTest extends ApiTestCase
         $this->actingAs($user);
 
         $response = $this->get($this->route('api_profile_me'));
+        $data = $this->jsonData($response);
+        $attributes = $data['attributes'];
 
         self::assertResponseIsSuccessful();
-        $this->assertJsonContains([
-            'email' => $user->getEmail(),
-        ], $response);
-
-        $data = $this->json($response);
         self::assertArrayHasKey('id', $data);
-        self::assertArrayHasKey('created_at', $data);
+        self::assertSame($user->getEmail(), $attributes['email']);
+        self::assertArrayHasKey('created_at', $attributes);
     }
 }

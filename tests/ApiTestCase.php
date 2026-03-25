@@ -63,6 +63,18 @@ abstract class ApiTestCase extends WebTestCase
         return json_decode($response->getContent(), true) ?? [];
     }
 
+    /** Extract the "data" key from a JSON:API response. */
+    protected function jsonData(Response $response): array
+    {
+        return $this->json($response)['data'] ?? [];
+    }
+
+    /** Extract attributes from a single-resource JSON:API response. */
+    protected function jsonAttributes(Response $response): array
+    {
+        return $this->jsonData($response)['attributes'] ?? [];
+    }
+
     protected function assertJsonContains(array $expected, Response $response): void
     {
         $data = $this->json($response);
