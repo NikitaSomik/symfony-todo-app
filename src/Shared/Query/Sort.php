@@ -8,7 +8,7 @@ readonly class Sort
 {
     public function __construct(
         public string $field,
-        public string $direction,
+        public SortDirection $direction,
     ) {
     }
 }
