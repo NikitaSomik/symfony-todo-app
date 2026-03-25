@@ -7,7 +7,7 @@ namespace App\Shared\Api;
 final readonly class PaginatedCollection
 {
     /**
-     * @param ResourceItem[]                                                                $items
+     * @param ResourceItem[]                                                             $items
      * @param array{first: string, last: string, prev?: string|null, next?: string|null} $links
      */
     public function __construct(
