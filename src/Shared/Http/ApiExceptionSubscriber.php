@@ -13,7 +13,6 @@ use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\Validator\Exception\ValidationFailedException;
-use Throwable;
 
 final class ApiExceptionSubscriber implements EventSubscriberInterface
 {
@@ -48,7 +47,7 @@ final class ApiExceptionSubscriber implements EventSubscriberInterface
             foreach ($validationException->getViolations() as $violation) {
                 $errors[] = new JsonApiError(
                     (string) Response::HTTP_UNPROCESSABLE_ENTITY,
-                    $violation->getMessage(),
+                    (string) $violation->getMessage(),
                     '' !== $violation->getPropertyPath() ? $violation->getPropertyPath() : null,
                 );
             }
@@ -75,7 +74,7 @@ final class ApiExceptionSubscriber implements EventSubscriberInterface
         ));
     }
 
-    private function validationException(Throwable $throwable): ?ValidationFailedException
+    private function validationException(\Throwable $throwable): ?ValidationFailedException
     {
         if ($throwable instanceof ValidationFailedException) {
             return $throwable;

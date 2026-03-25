@@ -13,7 +13,7 @@ use Symfony\Component\Security\Http\Authorization\AccessDeniedHandlerInterface;
 
 final class ApiAccessDeniedHandler implements AccessDeniedHandlerInterface
 {
-    public function handle(Request $request, AccessDeniedException $accessDeniedException): ?Response
+    public function handle(Request $request, AccessDeniedException $accessDeniedException): Response
     {
         return JsonApiResponse::error(
             [new JsonApiError((string) Response::HTTP_FORBIDDEN, 'Forbidden.')],
