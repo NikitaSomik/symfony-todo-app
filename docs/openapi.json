@@ -29,7 +29,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/UserResource"
+                                    "$ref": "#/components/schemas/UserResponseSchema"
                                 }
                             }
                         }
@@ -139,8 +139,8 @@
                     }
                 },
                 "responses": {
-                    "200": {
-                        "description": "Authenticated \u2014 access_token and refresh_token cookies set",
+                    "204": {
+                        "description": "Authenticated \u2014 access_token and refresh_token cookies set, empty response body",
                         "headers": {
                             "Set-Cookie": {
                                 "description": "access_token and refresh_token HttpOnly cookies",
@@ -170,7 +170,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/UserResource"
+                                    "$ref": "#/components/schemas/UserResponseSchema"
                                 }
                             }
                         }
@@ -620,6 +620,17 @@
                             }
                         },
                         "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "UserResponseSchema": {
+                "required": [
+                    "data"
+                ],
+                "properties": {
+                    "data": {
+                        "$ref": "#/components/schemas/UserResource"
                     }
                 },
                 "type": "object"

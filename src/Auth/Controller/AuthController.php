@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Auth\Controller;
 
+use App\Auth\Api\Documentation\UserResponseSchema;
 use App\Auth\DTO\RegisterDTO;
 use App\Auth\Exception\InvalidRefreshTokenException;
 use App\Auth\Factory\JwtCookieFactory;
@@ -35,7 +36,7 @@ final class AuthController extends AbstractController
     #[Route('/register', name: 'register', methods: ['POST'])]
     #[OA\Post(summary: 'Register a new user', security: [])]
     #[OA\RequestBody(required: true, content: new OA\JsonContent(ref: new Model(type: RegisterDTO::class)))]
-    #[OA\Response(response: 201, description: 'User registered', content: new OA\JsonContent(ref: new Model(type: UserResource::class)))]
+    #[OA\Response(response: 201, description: 'User registered', content: new OA\JsonContent(ref: new Model(type: UserResponseSchema::class)))]
     #[OA\Response(ref: '#/components/responses/ValidationError', response: 422)]
     #[OA\Response(response: 409, description: 'Email already taken')]
     public function register(#[MapRequestPayload] RegisterDTO $dto): JsonResponse
@@ -114,8 +115,8 @@ final class AuthController extends AbstractController
         )
     )]
     #[OA\Response(
-        response: 200,
-        description: 'Authenticated — access_token and refresh_token cookies set',
+        response: 204,
+        description: 'Authenticated — access_token and refresh_token cookies set, empty response body',
         headers: [
             new OA\Header(header: 'Set-Cookie', description: 'access_token and refresh_token HttpOnly cookies', schema: new OA\Schema(type: 'string')),
         ],
