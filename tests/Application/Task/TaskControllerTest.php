@@ -26,9 +26,17 @@ final class TaskControllerTest extends ApiTestCase
     public function getAllWhenNoTasksShouldReturnEmptyArray(): void
     {
         $response = $this->get($this->route('api_task_get_all'));
+        $json = $this->json($response);
 
         self::assertResponseIsSuccessful();
-        self::assertSame([], $this->json($response));
+        self::assertSame([], $json['data']);
+        self::assertSame(1, $json['meta']['page']['current']);
+        self::assertSame(20, $json['meta']['page']['size']);
+        self::assertSame(0, $json['meta']['page']['total']);
+        self::assertSame(1, $json['meta']['page']['last']);
+        self::assertArrayNotHasKey('self', $json['links']);
+        self::assertNull($json['links']['prev']);
+        self::assertNull($json['links']['next']);
     }
 
     #[Test]
@@ -37,9 +45,10 @@ final class TaskControllerTest extends ApiTestCase
         TaskFactory::createMany(3, ['user' => $this->user]);
 
         $response = $this->get($this->route('api_task_get_all'));
+        $data = $this->jsonData($response);
 
         self::assertResponseIsSuccessful();
-        self::assertCount(3, $this->json($response));
+        self::assertCount(3, $data);
     }
 
     #[Test]
@@ -50,9 +59,73 @@ final class TaskControllerTest extends ApiTestCase
         TaskFactory::createMany(2, ['user' => $this->user]);
 
         $response = $this->get($this->route('api_task_get_all'));
+        $data = $this->jsonData($response);
 
         self::assertResponseIsSuccessful();
-        self::assertCount(2, $this->json($response));
+        self::assertCount(2, $data);
+    }
+
+    #[Test]
+    public function getAllShouldReturnPaginationLinks(): void
+    {
+        TaskFactory::createMany(25, ['user' => $this->user]);
+
+        $response = $this->get('/api/v1/tasks?page[number]=2&page[size]=10');
+        $json = $this->json($response);
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(10, $json['data']);
+        self::assertSame(2, $json['meta']['page']['current']);
+        self::assertSame(10, $json['meta']['page']['size']);
+        self::assertSame(25, $json['meta']['page']['total']);
+        self::assertSame(3, $json['meta']['page']['last']);
+        self::assertArrayNotHasKey('self', $json['links']);
+        self::assertSame('/api/v1/tasks?page[number]=1&page[size]=10', $json['links']['first']);
+        self::assertSame('/api/v1/tasks?page[number]=3&page[size]=10', $json['links']['last']);
+        self::assertSame('/api/v1/tasks?page[number]=1&page[size]=10', $json['links']['prev']);
+        self::assertSame('/api/v1/tasks?page[number]=3&page[size]=10', $json['links']['next']);
+    }
+
+    #[Test]
+    public function getAllShouldFilterByStatus(): void
+    {
+        TaskFactory::createOne(['user' => $this->user, 'status' => TaskStatus::TODO]);
+        TaskFactory::createOne(['user' => $this->user, 'status' => TaskStatus::COMPLETED]);
+
+        $response = $this->get('/api/v1/tasks?filter[status]=completed');
+        $data = $this->jsonData($response);
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $data);
+        self::assertSame('completed', $data[0]['attributes']['status']);
+    }
+
+    #[Test]
+    public function getAllShouldSortByTitleAscending(): void
+    {
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Zulu']);
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Alpha']);
+
+        $response = $this->get('/api/v1/tasks?sort=title&direction=asc');
+        $data = $this->jsonData($response);
+
+        self::assertResponseIsSuccessful();
+        self::assertSame('Alpha', $data[0]['attributes']['title']);
+        self::assertSame('Zulu', $data[1]['attributes']['title']);
+    }
+
+    #[Test]
+    public function getAllShouldSearchByTitleAndDescription(): void
+    {
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Buy milk', 'description' => null]);
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Workout', 'description' => 'Drink milk after gym']);
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Read book', 'description' => 'Evening routine']);
+
+        $response = $this->get('/api/v1/tasks?search=milk');
+        $data = $this->jsonData($response);
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(2, $data);
     }
 
     #[Test]
@@ -67,14 +140,16 @@ final class TaskControllerTest extends ApiTestCase
     public function createWhenValidDataShouldReturnTask(): void
     {
         $response = $this->post($this->route('api_task_create'), ['title' => 'Buy milk']);
-        $data = $this->json($response);
+        $data = $this->jsonData($response);
+        $attributes = $data['attributes'];
 
-        self::assertSame('Buy milk', $data['title']);
-        self::assertSame(TaskStatus::TODO->value, $data['status']);
-        self::assertNull($data['description']);
+        self::assertSame('tasks', $data['type']);
+        self::assertSame('Buy milk', $attributes['title']);
+        self::assertSame(TaskStatus::TODO->value, $attributes['status']);
+        self::assertNull($attributes['description']);
         self::assertArrayHasKey('id', $data);
-        self::assertArrayHasKey('created_at', $data);
-        self::assertArrayHasKey('updated_at', $data);
+        self::assertArrayHasKey('created_at', $attributes);
+        self::assertArrayHasKey('updated_at', $attributes);
     }
 
     #[Test]
@@ -86,11 +161,11 @@ final class TaskControllerTest extends ApiTestCase
             'status' => 'in_progress',
         ]);
 
-        $this->assertJsonContains([
+        self::assertSame([
             'title' => 'Buy milk',
             'description' => '2 liters',
             'status' => 'in_progress',
-        ], $response);
+        ], array_intersect_key($this->jsonAttributes($response), array_flip(['title', 'description', 'status'])));
     }
 
     #[Test]
@@ -110,23 +185,37 @@ final class TaskControllerTest extends ApiTestCase
     }
 
     #[Test]
+    public function createWhenDescriptionIsTooShortShouldReturn422(): void
+    {
+        $this->post($this->route('api_task_create'), ['title' => 'Test', 'description' => 'ab']);
+
+        self::assertResponseStatusCodeSame(422);
+    }
+
+    #[Test]
+    public function createWhenDescriptionIsTooLongShouldReturn422(): void
+    {
+        $this->post($this->route('api_task_create'), ['title' => 'Test', 'description' => str_repeat('a', 2001)]);
+
+        self::assertResponseStatusCodeSame(422);
+    }
+
+    #[Test]
     public function getWhenTaskExistsShouldReturnTask(): void
     {
         $task = TaskFactory::createOne(['title' => 'Buy milk', 'user' => $this->user]);
 
         $response = $this->get($this->route('api_task_get', ['id' => $task->getId()]));
+        $data = $this->jsonData($response);
+        $attributes = $data['attributes'];
 
         self::assertResponseIsSuccessful();
-        $this->assertJsonContains([
-            'id' => $task->getId(),
-            'title' => 'Buy milk',
-        ], $response);
-
-        $data = $this->json($response);
-        self::assertArrayHasKey('description', $data);
-        self::assertArrayHasKey('status', $data);
-        self::assertArrayHasKey('created_at', $data);
-        self::assertArrayHasKey('updated_at', $data);
+        self::assertSame((string) $task->getId(), $data['id']);
+        self::assertSame('Buy milk', $attributes['title']);
+        self::assertArrayHasKey('description', $attributes);
+        self::assertArrayHasKey('status', $attributes);
+        self::assertArrayHasKey('created_at', $attributes);
+        self::assertArrayHasKey('updated_at', $attributes);
     }
 
     #[Test]
@@ -157,13 +246,13 @@ final class TaskControllerTest extends ApiTestCase
             'title' => 'Updated title',
             'status' => 'completed',
         ]);
+        $data = $this->jsonData($response);
+        $attributes = $data['attributes'];
 
         self::assertResponseIsSuccessful();
-        $this->assertJsonContains([
-            'id' => $task->getId(),
-            'title' => 'Updated title',
-            'status' => 'completed',
-        ], $response);
+        self::assertSame((string) $task->getId(), $data['id']);
+        self::assertSame('Updated title', $attributes['title']);
+        self::assertSame('completed', $attributes['status']);
     }
 
     #[Test]
@@ -172,6 +261,29 @@ final class TaskControllerTest extends ApiTestCase
         $task = TaskFactory::createOne(['user' => $this->user]);
 
         $this->put($this->route('api_task_update', ['id' => $task->getId()]), ['title' => '']);
+
+        self::assertResponseStatusCodeSame(422);
+    }
+
+    #[Test]
+    public function updateWhenDescriptionIsTooShortShouldReturn422(): void
+    {
+        $task = TaskFactory::createOne(['user' => $this->user]);
+
+        $this->put($this->route('api_task_update', ['id' => $task->getId()]), ['title' => 'Test', 'description' => 'ab']);
+
+        self::assertResponseStatusCodeSame(422);
+    }
+
+    #[Test]
+    public function updateWhenDescriptionIsTooLongShouldReturn422(): void
+    {
+        $task = TaskFactory::createOne(['user' => $this->user]);
+
+        $this->put($this->route('api_task_update', ['id' => $task->getId()]), [
+            'title' => 'Test',
+            'description' => str_repeat('a', 2001),
+        ]);
 
         self::assertResponseStatusCodeSame(422);
     }

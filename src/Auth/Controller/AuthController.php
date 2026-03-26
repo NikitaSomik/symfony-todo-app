@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace App\Auth\Controller;
 
+use App\Auth\Api\Documentation\UserResponseSchema;
 use App\Auth\DTO\RegisterDTO;
-use App\Auth\Exception\EmailAlreadyTakenException;
 use App\Auth\Exception\InvalidRefreshTokenException;
 use App\Auth\Factory\JwtCookieFactory;
 use App\Auth\Resource\UserResource;
 use App\Auth\Service\RefreshAccessToken;
 use App\Auth\Service\RegisterUser;
+use App\Shared\Api\JsonApiError;
+use App\Shared\Api\JsonApiResponse;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -20,7 +22,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
 
-#[Route('/api/v1/auth', name: 'api_auth_')]
+#[Route('/api/v1/auth', name: 'api_auth_', format: 'json')]
 #[OA\Tag(name: 'Auth')]
 final class AuthController extends AbstractController
 {
@@ -34,18 +36,14 @@ final class AuthController extends AbstractController
     #[Route('/register', name: 'register', methods: ['POST'])]
     #[OA\Post(summary: 'Register a new user', security: [])]
     #[OA\RequestBody(required: true, content: new OA\JsonContent(ref: new Model(type: RegisterDTO::class)))]
-    #[OA\Response(response: 201, description: 'User registered', content: new OA\JsonContent(ref: new Model(type: UserResource::class)))]
+    #[OA\Response(response: 201, description: 'User registered', content: new OA\JsonContent(ref: new Model(type: UserResponseSchema::class)))]
     #[OA\Response(ref: '#/components/responses/ValidationError', response: 422)]
     #[OA\Response(response: 409, description: 'Email already taken')]
     public function register(#[MapRequestPayload] RegisterDTO $dto): JsonResponse
     {
-        try {
-            $user = $this->registerUser->handle($dto);
-        } catch (EmailAlreadyTakenException $exception) {
-            return $this->json(['message' => $exception->getMessage()], Response::HTTP_CONFLICT);
-        }
+        $user = $this->registerUser->handle($dto);
 
-        return $this->json(data: UserResource::fromEntity($user), status: Response::HTTP_CREATED);
+        return JsonApiResponse::one(UserResource::toItem($user), Response::HTTP_CREATED);
     }
 
     #[Route('/refresh', name: 'refresh', methods: ['POST'])]
@@ -79,7 +77,7 @@ final class AuthController extends AbstractController
             return $this->unauthorizedResponse();
         }
 
-        $response = new Response(status: Response::HTTP_NO_CONTENT);
+        $response = JsonApiResponse::noContent();
         $response->headers->setCookie($this->cookieFactory->createJwtCookie($jwt));
         $response->headers->setCookie($this->cookieFactory->createRefreshCookie($newRefreshToken));
 
@@ -117,8 +115,8 @@ final class AuthController extends AbstractController
         )
     )]
     #[OA\Response(
-        response: 200,
-        description: 'Authenticated — access_token and refresh_token cookies set',
+        response: 204,
+        description: 'Authenticated — access_token and refresh_token cookies set, empty response body',
         headers: [
             new OA\Header(header: 'Set-Cookie', description: 'access_token and refresh_token HttpOnly cookies', schema: new OA\Schema(type: 'string')),
         ],
@@ -132,8 +130,11 @@ final class AuthController extends AbstractController
         throw new \LogicException('Intercepted by the JWT firewall.');
     }
 
-    private function unauthorizedResponse(): JsonResponse
+    private function unauthorizedResponse(): Response
     {
-        return $this->json(['message' => 'Unauthorized.'], Response::HTTP_UNAUTHORIZED);
+        return JsonApiResponse::error(
+            [new JsonApiError((string) Response::HTTP_UNAUTHORIZED, 'Unauthorized.')],
+            Response::HTTP_UNAUTHORIZED,
+        );
     }
 }

@@ -7,9 +7,8 @@ namespace App\Auth\EventListener;
 use App\Auth\Entity\User;
 use App\Auth\Factory\JwtCookieFactory;
 use App\Auth\Repository\RefreshTokenRepository;
+use App\Shared\Api\JsonApiResponse;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Http\Event\LogoutEvent;
 
 #[AsEventListener(event: LogoutEvent::class)]
@@ -29,7 +28,7 @@ final class LogoutListener
             $this->refreshTokenRepository->deleteAllForUser($user);
         }
 
-        $response = new JsonResponse(null, Response::HTTP_NO_CONTENT);
+        $response = JsonApiResponse::noContent();
         $response->headers->setCookie($this->cookieFactory->clearJwtCookie());
         $response->headers->setCookie($this->cookieFactory->clearRefreshCookie());
         $response->headers->set('Clear-Site-Data', '"cookies"');

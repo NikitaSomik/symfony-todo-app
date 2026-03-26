@@ -32,12 +32,13 @@ final class AuthControllerTest extends ApiTestCase
             'password' => 'secret123',
         ]);
 
-        $data = $this->json($response);
+        $data = $this->jsonData($response);
+        $attributes = $data['attributes'];
 
         self::assertArrayHasKey('id', $data);
-        self::assertSame('user@example.com', $data['email']);
-        self::assertArrayHasKey('created_at', $data);
-        self::assertArrayNotHasKey('password', $data);
+        self::assertSame('user@example.com', $attributes['email']);
+        self::assertArrayHasKey('created_at', $attributes);
+        self::assertArrayNotHasKey('password', $attributes);
     }
 
     #[Test]
@@ -73,7 +74,8 @@ final class AuthControllerTest extends ApiTestCase
         ]);
 
         self::assertResponseStatusCodeSame(409);
-        self::assertArrayHasKey('message', $this->json($response));
+        self::assertSame('409', $this->json($response)['errors'][0]['status']);
+        self::assertSame('Email is already taken.', $this->json($response)['errors'][0]['message']);
     }
 
     #[Test]
@@ -163,6 +165,18 @@ final class AuthControllerTest extends ApiTestCase
     }
 
     #[Test]
+    public function refreshWhenValidTokenShouldReturnEmptyBody(): void
+    {
+        $refreshToken = RefreshTokenFactory::createOne();
+
+        $this->setCookie('refresh_token', $refreshToken->getToken());
+        $response = $this->post($this->route('api_auth_refresh'));
+
+        self::assertResponseStatusCodeSame(204);
+        self::assertSame('', $response->getContent());
+    }
+
+    #[Test]
     public function refreshShouldRotateToken(): void
     {
         $refreshToken = RefreshTokenFactory::createOne();
@@ -181,7 +195,8 @@ final class AuthControllerTest extends ApiTestCase
         $response = $this->post($this->route('api_auth_refresh'));
 
         self::assertResponseStatusCodeSame(401);
-        $this->assertJsonContains(['message' => 'Unauthorized.'], $response);
+        self::assertSame('401', $this->json($response)['errors'][0]['status']);
+        self::assertSame('Unauthorized.', $this->json($response)['errors'][0]['message']);
     }
 
     #[Test]
@@ -193,7 +208,8 @@ final class AuthControllerTest extends ApiTestCase
         $response = $this->post($this->route('api_auth_refresh'));
 
         self::assertResponseStatusCodeSame(401);
-        $this->assertJsonContains(['message' => 'Unauthorized.'], $response);
+        self::assertSame('401', $this->json($response)['errors'][0]['status']);
+        self::assertSame('Unauthorized.', $this->json($response)['errors'][0]['message']);
     }
 
     #[Test]
@@ -203,7 +219,8 @@ final class AuthControllerTest extends ApiTestCase
         $response = $this->post($this->route('api_auth_refresh'));
 
         self::assertResponseStatusCodeSame(401);
-        $this->assertJsonContains(['message' => 'Unauthorized.'], $response);
+        self::assertSame('401', $this->json($response)['errors'][0]['status']);
+        self::assertSame('Unauthorized.', $this->json($response)['errors'][0]['message']);
     }
 
     #[Test]
@@ -213,7 +230,8 @@ final class AuthControllerTest extends ApiTestCase
         $response = $this->post($this->route('api_auth_refresh'));
 
         self::assertResponseStatusCodeSame(401);
-        $this->assertJsonContains(['message' => 'Unauthorized.'], $response);
+        self::assertSame('401', $this->json($response)['errors'][0]['status']);
+        self::assertSame('Unauthorized.', $this->json($response)['errors'][0]['message']);
     }
 
     #[Test]
@@ -223,7 +241,8 @@ final class AuthControllerTest extends ApiTestCase
         $response = $this->post($this->route('api_auth_refresh'));
 
         self::assertResponseStatusCodeSame(401);
-        $this->assertJsonContains(['message' => 'Unauthorized.'], $response);
+        self::assertSame('401', $this->json($response)['errors'][0]['status']);
+        self::assertSame('Unauthorized.', $this->json($response)['errors'][0]['message']);
     }
 
     // --- Logout ---
@@ -294,5 +313,17 @@ final class AuthControllerTest extends ApiTestCase
         $this->post($this->route('api_auth_logout'));
 
         self::assertResponseHeaderSame('Clear-Site-Data', '"cookies"');
+    }
+
+    #[Test]
+    public function logoutShouldReturnEmptyBody(): void
+    {
+        $user = UserFactory::createOne();
+
+        $this->actingAs($user);
+        $response = $this->post($this->route('api_auth_logout'));
+
+        self::assertResponseStatusCodeSame(204);
+        self::assertSame('', $response->getContent());
     }
 }

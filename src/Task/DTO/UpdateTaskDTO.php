@@ -13,7 +13,14 @@ use Symfony\Component\Validator\Constraints as Assert;
     required: ['title'],
     properties: [
         new OA\Property(property: 'title', type: 'string', example: 'Buy milk'),
-        new OA\Property(property: 'description', type: 'string', example: '2 liters', nullable: true),
+        new OA\Property(
+            property: 'description',
+            type: 'string',
+            example: '2 liters',
+            nullable: true,
+            minLength: 3,
+            maxLength: 2000,
+        ),
         new OA\Property(property: 'status', ref: new Model(type: TaskStatus::class), description: 'Task status'),
     ]
 )]
@@ -24,6 +31,7 @@ readonly class UpdateTaskDTO
         #[Assert\Length(max: 255)]
         public string $title,
 
+        #[Assert\Length(min: 3, max: 2000)]
         public ?string $description = null,
 
         #[Assert\Choice(callback: [TaskStatus::class, 'values'])]
