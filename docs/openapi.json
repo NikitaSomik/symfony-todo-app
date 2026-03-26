@@ -562,6 +562,8 @@
                     "description": {
                         "type": "string",
                         "default": null,
+                        "maxLength": 2000,
+                        "minLength": 3,
                         "example": "2 liters",
                         "nullable": true
                     },
@@ -584,6 +586,8 @@
                     "description": {
                         "type": "string",
                         "default": null,
+                        "maxLength": 2000,
+                        "minLength": 3,
                         "example": "2 liters",
                         "nullable": true
                     },

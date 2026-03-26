@@ -185,6 +185,22 @@ final class TaskControllerTest extends ApiTestCase
     }
 
     #[Test]
+    public function createWhenDescriptionIsTooShortShouldReturn422(): void
+    {
+        $this->post($this->route('api_task_create'), ['title' => 'Test', 'description' => 'ab']);
+
+        self::assertResponseStatusCodeSame(422);
+    }
+
+    #[Test]
+    public function createWhenDescriptionIsTooLongShouldReturn422(): void
+    {
+        $this->post($this->route('api_task_create'), ['title' => 'Test', 'description' => str_repeat('a', 2001)]);
+
+        self::assertResponseStatusCodeSame(422);
+    }
+
+    #[Test]
     public function getWhenTaskExistsShouldReturnTask(): void
     {
         $task = TaskFactory::createOne(['title' => 'Buy milk', 'user' => $this->user]);
@@ -245,6 +261,29 @@ final class TaskControllerTest extends ApiTestCase
         $task = TaskFactory::createOne(['user' => $this->user]);
 
         $this->put($this->route('api_task_update', ['id' => $task->getId()]), ['title' => '']);
+
+        self::assertResponseStatusCodeSame(422);
+    }
+
+    #[Test]
+    public function updateWhenDescriptionIsTooShortShouldReturn422(): void
+    {
+        $task = TaskFactory::createOne(['user' => $this->user]);
+
+        $this->put($this->route('api_task_update', ['id' => $task->getId()]), ['title' => 'Test', 'description' => 'ab']);
+
+        self::assertResponseStatusCodeSame(422);
+    }
+
+    #[Test]
+    public function updateWhenDescriptionIsTooLongShouldReturn422(): void
+    {
+        $task = TaskFactory::createOne(['user' => $this->user]);
+
+        $this->put($this->route('api_task_update', ['id' => $task->getId()]), [
+            'title' => 'Test',
+            'description' => str_repeat('a', 2001),
+        ]);
 
         self::assertResponseStatusCodeSame(422);
     }
