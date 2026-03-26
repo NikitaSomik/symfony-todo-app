@@ -165,6 +165,18 @@ final class AuthControllerTest extends ApiTestCase
     }
 
     #[Test]
+    public function refreshWhenValidTokenShouldReturnEmptyBody(): void
+    {
+        $refreshToken = RefreshTokenFactory::createOne();
+
+        $this->setCookie('refresh_token', $refreshToken->getToken());
+        $response = $this->post($this->route('api_auth_refresh'));
+
+        self::assertResponseStatusCodeSame(204);
+        self::assertSame('', $response->getContent());
+    }
+
+    #[Test]
     public function refreshShouldRotateToken(): void
     {
         $refreshToken = RefreshTokenFactory::createOne();
@@ -301,5 +313,17 @@ final class AuthControllerTest extends ApiTestCase
         $this->post($this->route('api_auth_logout'));
 
         self::assertResponseHeaderSame('Clear-Site-Data', '"cookies"');
+    }
+
+    #[Test]
+    public function logoutShouldReturnEmptyBody(): void
+    {
+        $user = UserFactory::createOne();
+
+        $this->actingAs($user);
+        $response = $this->post($this->route('api_auth_logout'));
+
+        self::assertResponseStatusCodeSame(204);
+        self::assertSame('', $response->getContent());
     }
 }

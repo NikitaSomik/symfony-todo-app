@@ -133,6 +133,6 @@ final class TaskController extends AbstractController
         $this->em->remove($task);
         $this->em->flush();
 
-        return JsonApiResponse::empty();
+        return JsonApiResponse::noContent();
     }
 }

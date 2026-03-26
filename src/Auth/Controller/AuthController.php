@@ -77,7 +77,7 @@ final class AuthController extends AbstractController
             return $this->unauthorizedResponse();
         }
 
-        $response = new Response(status: Response::HTTP_NO_CONTENT);
+        $response = JsonApiResponse::noContent();
         $response->headers->setCookie($this->cookieFactory->createJwtCookie($jwt));
         $response->headers->setCookie($this->cookieFactory->createRefreshCookie($newRefreshToken));
 
@@ -130,7 +130,7 @@ final class AuthController extends AbstractController
         throw new \LogicException('Intercepted by the JWT firewall.');
     }
 
-    private function unauthorizedResponse(): JsonResponse
+    private function unauthorizedResponse(): Response
     {
         return JsonApiResponse::error(
             [new JsonApiError((string) Response::HTTP_UNAUTHORIZED, 'Unauthorized.')],
