@@ -19,7 +19,8 @@ use App\Task\Repository\TaskRepository;
 use App\Task\Resource\TaskResource;
 use App\Task\Security\TaskVoter;
 use App\Task\Service\CreateTask;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Task\Service\DeleteTask;
+use App\Task\Service\UpdateTask;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -36,9 +37,10 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 final class TaskController extends AbstractController
 {
     public function __construct(
-        private readonly EntityManagerInterface $em,
         private readonly TaskRepository $taskRepository,
         private readonly CreateTask $createTask,
+        private readonly UpdateTask $updateTask,
+        private readonly DeleteTask $deleteTask,
         private readonly PaginationLinksBuilder $paginationLinksBuilder,
     ) {
     }
@@ -111,11 +113,7 @@ final class TaskController extends AbstractController
     #[IsGranted(TaskVoter::ACCESS, 'task')]
     public function update(#[MapRequestPayload] UpdateTaskDTO $dto, Task $task): JsonResponse
     {
-        $task->setTitle($dto->title);
-        $task->setDescription($dto->description);
-        $task->setStatus(TaskStatus::from($dto->status));
-
-        $this->em->flush();
+        $task = $this->updateTask->handle($task, $dto);
 
         return JsonApiResponse::one(TaskResource::toItem($task));
     }
@@ -130,8 +128,7 @@ final class TaskController extends AbstractController
     #[IsGranted(TaskVoter::ACCESS, 'task')]
     public function delete(Task $task): Response
     {
-        $this->em->remove($task);
-        $this->em->flush();
+        $this->deleteTask->handle($task);
 
         return JsonApiResponse::noContent();
     }
