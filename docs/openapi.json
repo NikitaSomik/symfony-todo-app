@@ -264,6 +264,7 @@
                     {
                         "name": "search",
                         "in": "query",
+                        "description": "Full-text search across task title and description. When provided, results are ranked by relevance.",
                         "required": false,
                         "schema": {
                             "type": "string",

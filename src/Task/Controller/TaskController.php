@@ -49,7 +49,7 @@ final class TaskController extends AbstractController
     #[OA\Parameter(name: 'filter', in: 'query', schema: new OA\Schema(properties: [new OA\Property(property: 'status', ref: new Model(type: TaskStatus::class), nullable: true)], type: 'object'), style: 'deepObject', explode: true, )]
     #[OA\Parameter(name: 'sort', in: 'query', schema: new OA\Schema(type: 'string', default: 'created_at', enum: ['created_at', 'title', 'status']))]
     #[OA\Parameter(name: 'direction', in: 'query', schema: new OA\Schema(type: 'string', default: 'desc', enum: ['asc', 'desc']))]
-    #[OA\Parameter(name: 'search', in: 'query', schema: new OA\Schema(type: 'string', maxLength: 100, example: 'milk', nullable: true))]
+    #[OA\Parameter(name: 'search', description: 'Full-text search across task title and description. When provided, results are ranked by relevance.', in: 'query', schema: new OA\Schema(type: 'string', maxLength: 100, example: 'milk', nullable: true), )]
     #[OA\Response(response: 200, description: 'Paginated list of tasks', content: new OA\JsonContent(ref: new Model(type: TaskCollectionResponseSchema::class)))]
     #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
     public function getAll(#[MapQueryString] TaskListQueryDTO $query, Request $request): JsonResponse
