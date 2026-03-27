@@ -129,6 +129,103 @@ final class TaskControllerTest extends ApiTestCase
     }
 
     #[Test]
+    public function getAllShouldSupportMultiWordSearch(): void
+    {
+        TaskFactory::createOne([
+            'user' => $this->user,
+            'title' => 'Review PostgreSQL full-text search',
+            'description' => 'Prepare implementation notes',
+        ]);
+        TaskFactory::createOne([
+            'user' => $this->user,
+            'title' => 'Review PostgreSQL indexes',
+            'description' => 'Compare search options later',
+        ]);
+
+        $response = $this->get('/api/v1/tasks?search=postgresql search');
+        $data = $this->jsonData($response);
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(2, $data);
+        self::assertSame('Review PostgreSQL full-text search', $data[0]['attributes']['title']);
+    }
+
+    #[Test]
+    public function getAllShouldRankTitleMatchesHigherThanDescriptionMatches(): void
+    {
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Milk plan', 'description' => 'Weekly groceries']);
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Workout', 'description' => 'Drink milk after gym']);
+
+        $response = $this->get('/api/v1/tasks?search=milk');
+        $data = $this->jsonData($response);
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(2, $data);
+        self::assertSame('Milk plan', $data[0]['attributes']['title']);
+        self::assertSame('Workout', $data[1]['attributes']['title']);
+    }
+
+    #[Test]
+    public function getAllShouldHandleNullableDescriptionInSearchResults(): void
+    {
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Buy milk', 'description' => null]);
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Buy bread', 'description' => null]);
+
+        $response = $this->get('/api/v1/tasks?search=milk');
+        $data = $this->jsonData($response);
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $data);
+        self::assertSame('Buy milk', $data[0]['attributes']['title']);
+        self::assertNull($data[0]['attributes']['description']);
+    }
+
+    #[Test]
+    public function getAllShouldCombineFullTextSearchWithStatusFilter(): void
+    {
+        TaskFactory::createOne([
+            'user' => $this->user,
+            'title' => 'Buy milk',
+            'status' => TaskStatus::COMPLETED,
+        ]);
+        TaskFactory::createOne([
+            'user' => $this->user,
+            'title' => 'Buy milk tomorrow',
+            'status' => TaskStatus::TODO,
+        ]);
+
+        $response = $this->get('/api/v1/tasks?search=milk&filter[status]=completed');
+        $data = $this->jsonData($response);
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $data);
+        self::assertSame('Buy milk', $data[0]['attributes']['title']);
+        self::assertSame('completed', $data[0]['attributes']['status']);
+    }
+
+    #[Test]
+    public function getAllShouldPaginateSearchResults(): void
+    {
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Milk plan A']);
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Milk plan B']);
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Milk plan C']);
+
+        $response = $this->get('/api/v1/tasks?search=milk&page[number]=2&page[size]=2');
+        $json = $this->json($response);
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $json['data']);
+        self::assertSame(2, $json['meta']['page']['current']);
+        self::assertSame(2, $json['meta']['page']['size']);
+        self::assertSame(3, $json['meta']['page']['total']);
+        self::assertSame(2, $json['meta']['page']['last']);
+        self::assertSame('/api/v1/tasks?search=milk&page[number]=1&page[size]=2', $json['links']['first']);
+        self::assertSame('/api/v1/tasks?search=milk&page[number]=2&page[size]=2', $json['links']['last']);
+        self::assertSame('/api/v1/tasks?search=milk&page[number]=1&page[size]=2', $json['links']['prev']);
+        self::assertNull($json['links']['next']);
+    }
+
+    #[Test]
     public function createWhenValidDataShouldReturn201(): void
     {
         $this->post($this->route('api_task_create'), ['title' => 'Buy milk']);

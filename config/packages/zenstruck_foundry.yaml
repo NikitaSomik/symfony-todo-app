@@ -14,4 +14,22 @@ when@dev: &dev
             autowire: true
             autoconfigure: true
 
-when@test: *dev
+when@test:
+    zenstruck_foundry:
+        orm:
+            reset:
+                mode: migrate
+
+        persistence:
+            flush_once: true
+
+    services:
+        App\Auth\DataFixtures\:
+            resource: '%kernel.project_dir%/src/Auth/DataFixtures/'
+            autowire: true
+            autoconfigure: true
+
+        App\Task\DataFixtures\:
+            resource: '%kernel.project_dir%/src/Task/DataFixtures/'
+            autowire: true
+            autoconfigure: true
