@@ -25,6 +25,7 @@ final class TaskFactory extends PersistentObjectFactory
             'title' => self::faker()->sentence(3),
             'description' => self::faker()->optional()->sentence(),
             'status' => TaskStatus::TODO,
+            'dueDate' => null,
             'user' => UserFactory::new(),
         ];
     }

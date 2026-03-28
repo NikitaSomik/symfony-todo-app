@@ -229,6 +229,18 @@
                                         }
                                     ],
                                     "nullable": true
+                                },
+                                "due_from": {
+                                    "type": "string",
+                                    "format": "date",
+                                    "example": "2026-04-01",
+                                    "nullable": true
+                                },
+                                "due_to": {
+                                    "type": "string",
+                                    "format": "date",
+                                    "example": "2026-04-30",
+                                    "nullable": true
                                 }
                             },
                             "type": "object"
@@ -243,8 +255,8 @@
                             "default": "created_at",
                             "enum": [
                                 "created_at",
-                                "title",
-                                "status"
+                                "status",
+                                "due_date"
                             ]
                         }
                     },
@@ -503,6 +515,16 @@
                             "cancelled"
                         ],
                         "nullable": true
+                    },
+                    "due_from": {
+                        "type": "string",
+                        "default": null,
+                        "nullable": true
+                    },
+                    "due_to": {
+                        "type": "string",
+                        "default": null,
+                        "nullable": true
                     }
                 },
                 "type": "object"
@@ -517,8 +539,8 @@
                         "default": "created_at",
                         "enum": [
                             "created_at",
-                            "title",
-                            "status"
+                            "status",
+                            "due_date"
                         ]
                     },
                     "direction": {
@@ -570,6 +592,13 @@
                     },
                     "status": {
                         "$ref": "#/components/schemas/TaskStatus"
+                    },
+                    "due_date": {
+                        "type": "string",
+                        "format": "date",
+                        "default": null,
+                        "example": "2026-04-01",
+                        "nullable": true
                     }
                 },
                 "type": "object"
@@ -594,6 +623,13 @@
                     },
                     "status": {
                         "$ref": "#/components/schemas/TaskStatus"
+                    },
+                    "due_date": {
+                        "type": "string",
+                        "format": "date",
+                        "default": null,
+                        "example": "2026-04-01",
+                        "nullable": true
                     }
                 },
                 "type": "object"
@@ -695,6 +731,11 @@
                             },
                             "status": {
                                 "$ref": "#/components/schemas/TaskStatus"
+                            },
+                            "due_date": {
+                                "type": "string",
+                                "format": "date",
+                                "nullable": true
                             },
                             "created_at": {
                                 "type": "string",

@@ -8,19 +8,22 @@ use App\Shared\Http\PageQueryDTO;
 use App\Shared\Query\SearchQuery;
 use App\Shared\Query\Sort;
 use App\Shared\Query\SortDirection;
+use App\Task\Enum\TaskSortField;
 use Symfony\Component\Validator\Constraints as Assert;
 
 readonly class TaskListQueryDTO
 {
     public function __construct(
+        #[Assert\Valid]
         public PageQueryDTO $page = new PageQueryDTO(),
 
-        #[Assert\Choice(choices: ['created_at', 'title', 'status'])]
-        public string $sort = 'created_at',
+        #[Assert\Choice(callback: [TaskSortField::class, 'values'])]
+        public string $sort = TaskSortField::CREATED_AT->value,
 
         #[Assert\Choice(choices: ['asc', 'desc'])]
         public string $direction = 'desc',
 
+        #[Assert\Valid]
         public TaskFilterDTO $filter = new TaskFilterDTO(),
 
         #[Assert\Length(max: 100)]

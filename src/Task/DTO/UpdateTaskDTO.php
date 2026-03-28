@@ -22,6 +22,7 @@ use Symfony\Component\Validator\Constraints as Assert;
             maxLength: 2000,
         ),
         new OA\Property(property: 'status', ref: new Model(type: TaskStatus::class), description: 'Task status'),
+        new OA\Property(property: 'due_date', type: 'string', format: 'date', nullable: true, example: '2026-04-01'),
     ]
 )]
 readonly class UpdateTaskDTO
@@ -36,6 +37,29 @@ readonly class UpdateTaskDTO
 
         #[Assert\Choice(callback: [TaskStatus::class, 'values'])]
         public string $status = TaskStatus::TODO->value,
+
+        #[Assert\Date(message: 'This value is not a valid date. Use the YYYY-MM-DD format.')]
+        public ?string $due_date = null,
     ) {
+    }
+
+    public function dueDate(): ?\DateTimeImmutable
+    {
+        return self::parseDueDate($this->due_date);
+    }
+
+    private static function parseDueDate(?string $value): ?\DateTimeImmutable
+    {
+        if (null === $value) {
+            return null;
+        }
+
+        $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+
+        if (false === $date || $date->format('Y-m-d') !== $value) {
+            return null;
+        }
+
+        return $date;
     }
 }

@@ -20,6 +20,7 @@ class Task
     public const string FIELD_TITLE = 'title';
     public const string FIELD_DESCRIPTION = 'description';
     public const string FIELD_STATUS = 'status';
+    public const string FIELD_DUE_DATE = 'dueDate';
     public const string FIELD_CREATED_AT = 'createdAt';
     public const string FIELD_UPDATED_AT = 'updatedAt';
 
@@ -36,6 +37,9 @@ class Task
 
     #[ORM\Column(length: 20, enumType: TaskStatus::class)]
     private TaskStatus $status = TaskStatus::TODO;
+
+    #[ORM\Column(type: Types::DATE_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $dueDate = null;
 
     #[ORM\Column(type: Types::DATETIMETZ_IMMUTABLE)]
     private \DateTimeImmutable $createdAt;
@@ -103,6 +107,18 @@ class Task
     public function getCreatedAt(): \DateTimeImmutable
     {
         return $this->createdAt;
+    }
+
+    public function setDueDate(?\DateTimeImmutable $dueDate): static
+    {
+        $this->dueDate = $dueDate;
+
+        return $this;
+    }
+
+    public function getDueDate(): ?\DateTimeImmutable
+    {
+        return $this->dueDate;
     }
 
     public function getUpdatedAt(): \DateTimeImmutable
