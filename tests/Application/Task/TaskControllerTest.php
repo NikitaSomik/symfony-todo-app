@@ -101,17 +101,34 @@ final class TaskControllerTest extends ApiTestCase
     }
 
     #[Test]
-    public function getAllShouldSortByTitleAscending(): void
+    public function getAllShouldSortByDueDateAscendingWithNullsLast(): void
     {
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Zulu']);
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Alpha']);
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'No deadline', 'dueDate' => null]);
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Later', 'dueDate' => new \DateTimeImmutable('2026-04-02')]);
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Sooner', 'dueDate' => new \DateTimeImmutable('2026-04-01')]);
 
-        $response = $this->get('/api/v1/tasks?sort=title&direction=asc');
+        $response = $this->get('/api/v1/tasks?sort=due_date&direction=asc');
         $data = $this->jsonData($response);
 
         self::assertResponseIsSuccessful();
-        self::assertSame('Alpha', $data[0]['attributes']['title']);
-        self::assertSame('Zulu', $data[1]['attributes']['title']);
+        self::assertSame('Sooner', $data[0]['attributes']['title']);
+        self::assertSame('Later', $data[1]['attributes']['title']);
+        self::assertSame('No deadline', $data[2]['attributes']['title']);
+    }
+
+    #[Test]
+    public function getAllShouldFilterByDueDateRange(): void
+    {
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Before range', 'dueDate' => new \DateTimeImmutable('2026-03-31')]);
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Inside range', 'dueDate' => new \DateTimeImmutable('2026-04-02')]);
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'After range', 'dueDate' => new \DateTimeImmutable('2026-04-06')]);
+
+        $response = $this->get('/api/v1/tasks?filter[due_from]=2026-04-01&filter[due_to]=2026-04-05');
+        $data = $this->jsonData($response);
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $data);
+        self::assertSame('Inside range', $data[0]['attributes']['title']);
     }
 
     #[Test]
@@ -244,6 +261,7 @@ final class TaskControllerTest extends ApiTestCase
         self::assertSame('Buy milk', $attributes['title']);
         self::assertSame(TaskStatus::TODO->value, $attributes['status']);
         self::assertNull($attributes['description']);
+        self::assertNull($attributes['due_date']);
         self::assertArrayHasKey('id', $data);
         self::assertArrayHasKey('created_at', $attributes);
         self::assertArrayHasKey('updated_at', $attributes);
@@ -256,13 +274,15 @@ final class TaskControllerTest extends ApiTestCase
             'title' => 'Buy milk',
             'description' => '2 liters',
             'status' => 'in_progress',
+            'due_date' => '2026-04-01',
         ]);
 
         self::assertSame([
             'title' => 'Buy milk',
             'description' => '2 liters',
             'status' => 'in_progress',
-        ], array_intersect_key($this->jsonAttributes($response), array_flip(['title', 'description', 'status'])));
+            'due_date' => '2026-04-01',
+        ], array_intersect_key($this->jsonAttributes($response), array_flip(['title', 'description', 'status', 'due_date'])));
     }
 
     #[Test]
@@ -298,9 +318,21 @@ final class TaskControllerTest extends ApiTestCase
     }
 
     #[Test]
+    public function createWhenDueDateIsInvalidShouldReturn422(): void
+    {
+        $this->post($this->route('api_task_create'), ['title' => 'Test', 'due_date' => 'tomorrow']);
+
+        self::assertResponseStatusCodeSame(422);
+    }
+
+    #[Test]
     public function getWhenTaskExistsShouldReturnTask(): void
     {
-        $task = TaskFactory::createOne(['title' => 'Buy milk', 'user' => $this->user]);
+        $task = TaskFactory::createOne([
+            'title' => 'Buy milk',
+            'user' => $this->user,
+            'dueDate' => new \DateTimeImmutable('2026-04-01'),
+        ]);
 
         $response = $this->get($this->route('api_task_get', ['id' => $task->getId()]));
         $data = $this->jsonData($response);
@@ -311,6 +343,7 @@ final class TaskControllerTest extends ApiTestCase
         self::assertSame('Buy milk', $attributes['title']);
         self::assertArrayHasKey('description', $attributes);
         self::assertArrayHasKey('status', $attributes);
+        self::assertSame('2026-04-01', $attributes['due_date']);
         self::assertArrayHasKey('created_at', $attributes);
         self::assertArrayHasKey('updated_at', $attributes);
     }
@@ -342,6 +375,7 @@ final class TaskControllerTest extends ApiTestCase
         $response = $this->put($this->route('api_task_update', ['id' => $task->getId()]), [
             'title' => 'Updated title',
             'status' => 'completed',
+            'due_date' => '2026-04-03',
         ]);
         $data = $this->jsonData($response);
         $attributes = $data['attributes'];
@@ -350,6 +384,7 @@ final class TaskControllerTest extends ApiTestCase
         self::assertSame((string) $task->getId(), $data['id']);
         self::assertSame('Updated title', $attributes['title']);
         self::assertSame('completed', $attributes['status']);
+        self::assertSame('2026-04-03', $attributes['due_date']);
     }
 
     #[Test]
@@ -386,6 +421,49 @@ final class TaskControllerTest extends ApiTestCase
     }
 
     #[Test]
+    public function updateWhenDueDateIsInvalidShouldReturn422(): void
+    {
+        $task = TaskFactory::createOne(['user' => $this->user]);
+
+        $this->put($this->route('api_task_update', ['id' => $task->getId()]), [
+            'title' => 'Test',
+            'due_date' => 'tomorrow',
+        ]);
+
+        self::assertResponseStatusCodeSame(422);
+    }
+
+    #[Test]
+    public function getAllWhenDueFromIsInvalidShouldReturn422(): void
+    {
+        $response = $this->get('/api/v1/tasks?filter[due_from]=tomorrow');
+        $json = $this->json($response);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSame('This value is not a valid date. Use the YYYY-MM-DD format.', $json['errors'][0]['message']);
+    }
+
+    #[Test]
+    public function getAllWhenDueRangeIsInvalidShouldReturn422(): void
+    {
+        $response = $this->get('/api/v1/tasks?filter[due_from]=2026-04-05&filter[due_to]=2026-04-01');
+        $json = $this->json($response);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSame('This value should be greater than or equal to due_from.', $json['errors'][0]['message']);
+    }
+
+    #[Test]
+    public function getAllWhenDueToIsInvalidShouldReturn422(): void
+    {
+        $response = $this->get('/api/v1/tasks?filter[due_to]=tomorrow');
+        $json = $this->json($response);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSame('This value is not a valid date. Use the YYYY-MM-DD format.', $json['errors'][0]['message']);
+    }
+
+    #[Test]
     public function updateWhenTaskNotFoundShouldReturn404(): void
     {
         $this->put($this->route('api_task_update', ['id' => 99999]), ['title' => 'Test']);
@@ -418,10 +496,10 @@ final class TaskControllerTest extends ApiTestCase
     public function deleteWhenTaskDeletedShouldReturn404OnGet(): void
     {
         $task = TaskFactory::createOne(['user' => $this->user]);
-        $id = $task->getId();
+        $taskId = $task->getId();
 
-        $this->delete($this->route('api_task_delete', ['id' => $id]));
-        $this->get($this->route('api_task_get', ['id' => $id]));
+        $this->delete($this->route('api_task_delete', ['id' => $taskId]));
+        $this->get($this->route('api_task_get', ['id' => $taskId]));
 
         self::assertResponseStatusCodeSame(404);
     }

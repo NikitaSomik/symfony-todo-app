@@ -23,6 +23,7 @@ final class CreateTask
         $task->setTitle($dto->title);
         $task->setDescription($dto->description);
         $task->setStatus(TaskStatus::from($dto->status));
+        $task->setDueDate($dto->dueDate());
         $task->setUser($user);
 
         $this->em->persist($task);

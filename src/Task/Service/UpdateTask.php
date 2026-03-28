@@ -21,6 +21,7 @@ final class UpdateTask
         $task->setTitle($dto->title);
         $task->setDescription($dto->description);
         $task->setStatus(TaskStatus::from($dto->status));
+        $task->setDueDate($dto->dueDate());
 
         $this->em->flush();
 

@@ -14,6 +14,7 @@ use App\Task\DTO\CreateTaskDTO;
 use App\Task\DTO\TaskListQueryDTO;
 use App\Task\DTO\UpdateTaskDTO;
 use App\Task\Entity\Task;
+use App\Task\Enum\TaskSortField;
 use App\Task\Enum\TaskStatus;
 use App\Task\Repository\TaskRepository;
 use App\Task\Resource\TaskResource;
@@ -48,8 +49,8 @@ final class TaskController extends AbstractController
     #[Route('', name: 'get_all', methods: ['GET'])]
     #[OA\Get(summary: 'Get all tasks (paginated)')]
     #[OA\Parameter(name: 'page', in: 'query', schema: new OA\Schema(properties: [new OA\Property(property: 'number', type: 'integer', default: 1, minimum: 1, example: 1), new OA\Property(property: 'size', type: 'integer', default: 20, maximum: 100, minimum: 1, example: 20)], type: 'object'), style: 'deepObject', explode: true, )]
-    #[OA\Parameter(name: 'filter', in: 'query', schema: new OA\Schema(properties: [new OA\Property(property: 'status', ref: new Model(type: TaskStatus::class), nullable: true)], type: 'object'), style: 'deepObject', explode: true, )]
-    #[OA\Parameter(name: 'sort', in: 'query', schema: new OA\Schema(type: 'string', default: 'created_at', enum: ['created_at', 'title', 'status']))]
+    #[OA\Parameter(name: 'filter', in: 'query', schema: new OA\Schema(properties: [new OA\Property(property: 'status', ref: new Model(type: TaskStatus::class), nullable: true), new OA\Property(property: 'due_from', type: 'string', format: 'date', example: '2026-04-01', nullable: true), new OA\Property(property: 'due_to', type: 'string', format: 'date', example: '2026-04-30', nullable: true)], type: 'object'), style: 'deepObject', explode: true, )]
+    #[OA\Parameter(name: 'sort', in: 'query', schema: new OA\Schema(type: 'string', default: TaskSortField::CREATED_AT->value, enum: [TaskSortField::CREATED_AT->value, TaskSortField::STATUS->value, TaskSortField::DUE_DATE->value]))]
     #[OA\Parameter(name: 'direction', in: 'query', schema: new OA\Schema(type: 'string', default: 'desc', enum: ['asc', 'desc']))]
     #[OA\Parameter(name: 'search', description: 'Full-text search across task title and description. When provided, results are ranked by relevance.', in: 'query', schema: new OA\Schema(type: 'string', maxLength: 100, example: 'milk', nullable: true), )]
     #[OA\Response(response: 200, description: 'Paginated list of tasks', content: new OA\JsonContent(ref: new Model(type: TaskCollectionResponseSchema::class)))]

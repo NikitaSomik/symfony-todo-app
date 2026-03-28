@@ -8,6 +8,8 @@ use App\Auth\Entity\User;
 use App\Shared\Persistence\Doctrine\SpecificationApplier;
 use App\Task\DTO\TaskListQueryDTO;
 use App\Task\Entity\Task;
+use App\Task\Enum\TaskSortField;
+use App\Task\Query\Specification\TaskDueRangeSpecification;
 use App\Task\Query\Specification\TaskSortSpecification;
 use App\Task\Query\Specification\TaskStatusSpecification;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -43,6 +45,7 @@ class TaskRepository extends ServiceEntityRepository
 
         $this->specificationApplier->apply($queryBuilder, [
             new TaskStatusSpecification($query->filter->status),
+            new TaskDueRangeSpecification($query->filter->dueFrom(), $query->filter->dueTo()),
             new TaskSortSpecification($query->sort()),
         ]);
 
@@ -64,6 +67,7 @@ class TaskRepository extends ServiceEntityRepository
 
         $this->specificationApplier->apply($queryBuilder, [
             new TaskStatusSpecification($query->filter->status),
+            new TaskDueRangeSpecification($query->filter->dueFrom(), $query->filter->dueTo()),
         ]);
 
         return (int) $queryBuilder
@@ -94,7 +98,7 @@ class TaskRepository extends ServiceEntityRepository
             WHERE %s
             ORDER BY
               ts_rank_cd(t.search_vector, websearch_to_tsquery('simple', :search)) DESC,
-              t.created_at DESC,
+              %s
               t.id DESC
             LIMIT :limit OFFSET :offset
         SQL;
@@ -102,7 +106,7 @@ class TaskRepository extends ServiceEntityRepository
         $ids = $this->getEntityManager()
             ->getConnection()
             ->executeQuery(
-                sprintf($sql, implode(' AND ', $where)),
+                sprintf($sql, implode(' AND ', $where), $this->searchSecondaryOrderByClause($query)),
                 $params,
                 $types,
             )
@@ -168,7 +172,33 @@ class TaskRepository extends ServiceEntityRepository
             $types['status'] = ParameterType::STRING;
         }
 
+        $dueFrom = $query->filter->dueFrom();
+        if (null !== $dueFrom) {
+            $where[] = 't.due_date >= :due_from';
+            $params['due_from'] = $dueFrom->format('Y-m-d');
+            $types['due_from'] = ParameterType::STRING;
+        }
+
+        $dueTo = $query->filter->dueTo();
+        if (null !== $dueTo) {
+            $where[] = 't.due_date <= :due_to';
+            $params['due_to'] = $dueTo->format('Y-m-d');
+            $types['due_to'] = ParameterType::STRING;
+        }
+
         return [$where, $params, $types];
+    }
+
+    private function searchSecondaryOrderByClause(TaskListQueryDTO $query): string
+    {
+        return match ($query->sort) {
+            TaskSortField::STATUS->value => sprintf('t.status %s,', strtoupper($query->direction)),
+            TaskSortField::DUE_DATE->value => sprintf(
+                'CASE WHEN t.due_date IS NULL THEN 1 ELSE 0 END ASC, t.due_date %s,',
+                strtoupper($query->direction),
+            ),
+            default => sprintf('t.created_at %s,', strtoupper($query->direction)),
+        };
     }
 
     /**
