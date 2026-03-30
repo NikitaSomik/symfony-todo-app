@@ -20,6 +20,7 @@ class Task
     public const string FIELD_TITLE = 'title';
     public const string FIELD_DESCRIPTION = 'description';
     public const string FIELD_STATUS = 'status';
+    public const string FIELD_CANCELLATION_REASON = 'cancellationReason';
     public const string FIELD_DUE_DATE = 'dueDate';
     public const string FIELD_CREATED_AT = 'createdAt';
     public const string FIELD_UPDATED_AT = 'updatedAt';
@@ -37,6 +38,9 @@ class Task
 
     #[ORM\Column(length: 20, enumType: TaskStatus::class)]
     private TaskStatus $status = TaskStatus::TODO;
+
+    #[ORM\Column(length: 500, nullable: true)]
+    private ?string $cancellationReason = null;
 
     #[ORM\Column(type: Types::DATE_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $dueDate = null;
@@ -100,6 +104,26 @@ class Task
     public function setStatus(TaskStatus $status): static
     {
         $this->status = $status;
+
+        return $this;
+    }
+
+    public function changeStatus(TaskStatus $status, ?string $cancellationReason = null): static
+    {
+        $this->status = $status;
+        $this->cancellationReason = TaskStatus::CANCELLED === $status ? $cancellationReason : null;
+
+        return $this;
+    }
+
+    public function getCancellationReason(): ?string
+    {
+        return $this->cancellationReason;
+    }
+
+    public function setCancellationReason(?string $cancellationReason): static
+    {
+        $this->cancellationReason = $cancellationReason;
 
         return $this;
     }

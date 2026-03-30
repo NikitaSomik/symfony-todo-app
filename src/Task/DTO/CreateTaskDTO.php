@@ -8,6 +8,7 @@ use App\Task\Enum\TaskStatus;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 #[OA\Schema(
     required: ['title'],
@@ -15,6 +16,7 @@ use Symfony\Component\Validator\Constraints as Assert;
         new OA\Property(property: 'title', type: 'string', example: 'Buy milk'),
         new OA\Property(property: 'description', type: 'string', maxLength: 2000, minLength: 3, example: '2 liters', nullable: true),
         new OA\Property(property: 'status', ref: new Model(type: TaskStatus::class), description: 'Task status'),
+        new OA\Property(property: 'cancellation_reason', type: 'string', maxLength: 500, minLength: 3, example: 'Task is no longer relevant', nullable: true),
         new OA\Property(property: 'due_date', type: 'string', format: 'date', example: '2026-04-01', nullable: true),
     ]
 )]
@@ -31,9 +33,28 @@ readonly class CreateTaskDTO
         #[Assert\Choice(callback: [TaskStatus::class, 'values'])]
         public string $status = TaskStatus::TODO->value,
 
+        #[Assert\Length(min: 3, max: 500)]
+        public ?string $cancellation_reason = null,
+
         #[Assert\Date(message: 'This value is not a valid date. Use the YYYY-MM-DD format.')]
         public ?string $due_date = null,
     ) {
+    }
+
+    #[Assert\Callback]
+    public function validate(ExecutionContextInterface $context): void
+    {
+        if (TaskStatus::CANCELLED->value === $this->status && null === $this->cancellation_reason) {
+            $context->buildViolation('Cancellation reason is required when status is cancelled.')
+                ->atPath('cancellation_reason')
+                ->addViolation();
+        }
+
+        if (TaskStatus::CANCELLED->value !== $this->status && null !== $this->cancellation_reason) {
+            $context->buildViolation('Cancellation reason can only be provided when status is cancelled.')
+                ->atPath('cancellation_reason')
+                ->addViolation();
+        }
     }
 
     public function dueDate(): ?\DateTimeImmutable
