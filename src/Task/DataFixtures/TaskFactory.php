@@ -24,9 +24,9 @@ final class TaskFactory extends PersistentObjectFactory
         return [
             'title' => self::faker()->sentence(3),
             'description' => self::faker()->optional()->sentence(),
+            'dueDate' => null,
             'status' => TaskStatus::TODO,
             'cancellationReason' => null,
-            'dueDate' => null,
             'user' => UserFactory::new(),
         ];
     }
@@ -52,6 +52,20 @@ final class TaskFactory extends PersistentObjectFactory
     #[\Override]
     protected function initialize(): static
     {
-        return $this;
+        return $this->instantiateWith(function (array $attributes): Task {
+            $task = new Task();
+            $task->setTitle($attributes['title']);
+            $task->setDescription($attributes['description']);
+            $task->changeStatus($attributes['status']);
+
+            if (TaskStatus::CANCELLED === $attributes['status'] && null !== $attributes['cancellationReason']) {
+                $task->setCancellationReason($attributes['cancellationReason']);
+            }
+
+            $task->setDueDate($attributes['dueDate']);
+            $task->setUser($attributes['user']);
+
+            return $task;
+        });
     }
 }

@@ -22,7 +22,11 @@ final class CreateTask
         $task = new Task();
         $task->setTitle($dto->title);
         $task->setDescription($dto->description);
-        $task->changeStatus(TaskStatus::from($dto->status), $dto->cancellation_reason);
+        $task->changeStatus(TaskStatus::from($dto->status));
+
+        if (TaskStatus::CANCELLED === TaskStatus::from($dto->status) && null !== $dto->cancellation_reason) {
+            $task->setCancellationReason($dto->cancellation_reason);
+        }
         $task->setDueDate($dto->dueDate());
         $task->setUser($user);
 

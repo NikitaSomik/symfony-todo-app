@@ -8,6 +8,7 @@ use App\Auth\DataFixtures\UserFactory;
 use App\Auth\Entity\User;
 use App\Task\DataFixtures\TaskFactory;
 use App\Task\Enum\TaskStatus;
+use App\Task\Repository\TaskStatusChangeRepository;
 use App\Tests\ApiTestCase;
 use PHPUnit\Framework\Attributes\Test;
 
@@ -422,6 +423,50 @@ final class TaskControllerTest extends ApiTestCase
         self::assertSame('Updated title', $attributes['title']);
         self::assertSame('completed', $attributes['status']);
         self::assertSame('2026-04-03', $attributes['due_date']);
+    }
+
+    #[Test]
+    public function updateWhenStatusChangesShouldCreateStatusHistoryRow(): void
+    {
+        $task = TaskFactory::createOne(['user' => $this->user, 'status' => TaskStatus::TODO]);
+
+        $this->put($this->route('api_task_update', ['id' => $task->getId()]), [
+            'title' => $task->getTitle(),
+            'description' => $task->getDescription(),
+            'status' => TaskStatus::COMPLETED->value,
+            'due_date' => $task->getDueDate()?->format('Y-m-d'),
+        ]);
+
+        self::assertResponseIsSuccessful();
+
+        $statusChanges = static::getContainer()
+            ->get(TaskStatusChangeRepository::class)
+            ->findByTaskOrdered($task);
+
+        self::assertCount(1, $statusChanges);
+        self::assertSame(TaskStatus::TODO, $statusChanges[0]->getFromStatus());
+        self::assertSame(TaskStatus::COMPLETED, $statusChanges[0]->getToStatus());
+    }
+
+    #[Test]
+    public function updateWhenStatusDoesNotChangeShouldNotCreateStatusHistoryRow(): void
+    {
+        $task = TaskFactory::createOne(['user' => $this->user, 'status' => TaskStatus::TODO]);
+
+        $this->put($this->route('api_task_update', ['id' => $task->getId()]), [
+            'title' => 'Renamed task',
+            'description' => $task->getDescription(),
+            'status' => TaskStatus::TODO->value,
+            'due_date' => $task->getDueDate()?->format('Y-m-d'),
+        ]);
+
+        self::assertResponseIsSuccessful();
+
+        $statusChanges = static::getContainer()
+            ->get(TaskStatusChangeRepository::class)
+            ->findByTaskOrdered($task);
+
+        self::assertCount(0, $statusChanges);
     }
 
     #[Test]

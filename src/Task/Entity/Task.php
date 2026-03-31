@@ -101,19 +101,13 @@ class Task
         return $this->status;
     }
 
-    public function setStatus(TaskStatus $status): static
+    public function changeStatus(TaskStatus $status): void
     {
+        if (TaskStatus::CANCELLED !== $status) {
+            $this->cancellationReason = null;
+        }
+
         $this->status = $status;
-
-        return $this;
-    }
-
-    public function changeStatus(TaskStatus $status, ?string $cancellationReason = null): static
-    {
-        $this->status = $status;
-        $this->cancellationReason = TaskStatus::CANCELLED === $status ? $cancellationReason : null;
-
-        return $this;
     }
 
     public function getCancellationReason(): ?string
@@ -121,11 +115,13 @@ class Task
         return $this->cancellationReason;
     }
 
-    public function setCancellationReason(?string $cancellationReason): static
+    public function setCancellationReason(string $reason): void
     {
-        $this->cancellationReason = $cancellationReason;
+        if (TaskStatus::CANCELLED !== $this->status) {
+            throw new \LogicException('Cancellation reason can only be set when task is cancelled.');
+        }
 
-        return $this;
+        $this->cancellationReason = $reason;
     }
 
     public function getCreatedAt(): \DateTimeImmutable
