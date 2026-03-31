@@ -25,6 +25,7 @@ final class TaskFactory extends PersistentObjectFactory
             'title' => self::faker()->sentence(3),
             'description' => self::faker()->optional()->sentence(),
             'status' => TaskStatus::TODO,
+            'cancellationReason' => null,
             'dueDate' => null,
             'user' => UserFactory::new(),
         ];
@@ -40,9 +41,12 @@ final class TaskFactory extends PersistentObjectFactory
         return $this->with(['status' => TaskStatus::IN_PROGRESS]);
     }
 
-    public function cancelled(): static
+    public function cancelled(?string $reason = 'Task cancelled by fixture'): static
     {
-        return $this->with(['status' => TaskStatus::CANCELLED]);
+        return $this->with([
+            'status' => TaskStatus::CANCELLED,
+            'cancellationReason' => $reason,
+        ]);
     }
 
     #[\Override]

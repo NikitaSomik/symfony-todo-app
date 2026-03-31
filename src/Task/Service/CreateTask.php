@@ -22,7 +22,7 @@ final class CreateTask
         $task = new Task();
         $task->setTitle($dto->title);
         $task->setDescription($dto->description);
-        $task->setStatus(TaskStatus::from($dto->status));
+        $task->changeStatus(TaskStatus::from($dto->status), $dto->cancellation_reason);
         $task->setDueDate($dto->dueDate());
         $task->setUser($user);
 

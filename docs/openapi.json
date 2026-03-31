@@ -593,6 +593,13 @@
                     "status": {
                         "$ref": "#/components/schemas/TaskStatus"
                     },
+                    "cancellation_reason": {
+                        "type": "string",
+                        "maxLength": 500,
+                        "minLength": 3,
+                        "example": "Task is no longer relevant",
+                        "nullable": true
+                    },
                     "due_date": {
                         "type": "string",
                         "format": "date",
@@ -623,6 +630,13 @@
                     },
                     "status": {
                         "$ref": "#/components/schemas/TaskStatus"
+                    },
+                    "cancellation_reason": {
+                        "type": "string",
+                        "maxLength": 500,
+                        "minLength": 3,
+                        "example": "Task is no longer needed",
+                        "nullable": true
                     },
                     "due_date": {
                         "type": "string",
@@ -731,6 +745,11 @@
                             },
                             "status": {
                                 "$ref": "#/components/schemas/TaskStatus"
+                            },
+                            "cancellation_reason": {
+                                "type": "string",
+                                "example": "Task is no longer needed",
+                                "nullable": true
                             },
                             "due_date": {
                                 "type": "string",

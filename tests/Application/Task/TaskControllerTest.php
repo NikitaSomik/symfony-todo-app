@@ -261,6 +261,7 @@ final class TaskControllerTest extends ApiTestCase
         self::assertSame('Buy milk', $attributes['title']);
         self::assertSame(TaskStatus::TODO->value, $attributes['status']);
         self::assertNull($attributes['description']);
+        self::assertNull($attributes['cancellation_reason']);
         self::assertNull($attributes['due_date']);
         self::assertArrayHasKey('id', $data);
         self::assertArrayHasKey('created_at', $attributes);
@@ -299,6 +300,41 @@ final class TaskControllerTest extends ApiTestCase
         $this->post($this->route('api_task_create'), ['title' => 'Test', 'status' => 'invalid']);
 
         self::assertResponseStatusCodeSame(422);
+    }
+
+    #[Test]
+    public function createWhenCancelledWithoutCancellationReasonShouldReturn422(): void
+    {
+        $this->post($this->route('api_task_create'), ['title' => 'Test', 'status' => 'cancelled']);
+
+        self::assertResponseStatusCodeSame(422);
+    }
+
+    #[Test]
+    public function createWhenCancellationReasonIsProvidedForNonCancelledStatusShouldReturn422(): void
+    {
+        $this->post($this->route('api_task_create'), [
+            'title' => 'Test',
+            'status' => 'todo',
+            'cancellation_reason' => 'No longer needed',
+        ]);
+
+        self::assertResponseStatusCodeSame(422);
+    }
+
+    #[Test]
+    public function createWhenCancelledShouldReturnTaskWithCancellationReason(): void
+    {
+        $response = $this->post($this->route('api_task_create'), [
+            'title' => 'Deprecated task',
+            'status' => 'cancelled',
+            'cancellation_reason' => 'No longer needed',
+        ]);
+
+        self::assertSame([
+            'status' => 'cancelled',
+            'cancellation_reason' => 'No longer needed',
+        ], array_intersect_key($this->jsonAttributes($response), array_flip(['status', 'cancellation_reason'])));
     }
 
     #[Test]
@@ -343,6 +379,7 @@ final class TaskControllerTest extends ApiTestCase
         self::assertSame('Buy milk', $attributes['title']);
         self::assertArrayHasKey('description', $attributes);
         self::assertArrayHasKey('status', $attributes);
+        self::assertArrayHasKey('cancellation_reason', $attributes);
         self::assertSame('2026-04-01', $attributes['due_date']);
         self::assertArrayHasKey('created_at', $attributes);
         self::assertArrayHasKey('updated_at', $attributes);
@@ -431,6 +468,37 @@ final class TaskControllerTest extends ApiTestCase
         ]);
 
         self::assertResponseStatusCodeSame(422);
+    }
+
+    #[Test]
+    public function updateWhenCancelledShouldPersistCancellationReason(): void
+    {
+        $task = TaskFactory::createOne(['user' => $this->user]);
+
+        $response = $this->put($this->route('api_task_update', ['id' => $task->getId()]), [
+            'title' => 'Updated title',
+            'status' => 'cancelled',
+            'cancellation_reason' => 'Work is no longer required',
+        ]);
+
+        self::assertSame([
+            'status' => 'cancelled',
+            'cancellation_reason' => 'Work is no longer required',
+        ], array_intersect_key($this->jsonAttributes($response), array_flip(['status', 'cancellation_reason'])));
+    }
+
+    #[Test]
+    public function updateWhenMovingAwayFromCancelledShouldClearCancellationReason(): void
+    {
+        $task = TaskFactory::new()->cancelled('Outdated')->create(['user' => $this->user]);
+
+        $response = $this->put($this->route('api_task_update', ['id' => $task->getId()]), [
+            'title' => 'Updated title',
+            'status' => 'completed',
+        ]);
+
+        self::assertSame('completed', $this->jsonAttributes($response)['status']);
+        self::assertNull($this->jsonAttributes($response)['cancellation_reason']);
     }
 
     #[Test]
