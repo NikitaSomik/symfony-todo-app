@@ -22,7 +22,7 @@ final class UpdateTask
     public function handle(Task $task, UpdateTaskDTO $dto): Task
     {
         $previousStatus = $task->getStatus();
-        $nextStatus = TaskStatus::from($dto->status);
+        $nextStatus = $dto->status();
 
         $task->setTitle($dto->title);
         $task->setDescription($dto->description);
