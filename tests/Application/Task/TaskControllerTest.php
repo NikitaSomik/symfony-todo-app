@@ -7,9 +7,11 @@ namespace App\Tests\Application\Task;
 use App\Auth\DataFixtures\UserFactory;
 use App\Auth\Entity\User;
 use App\Task\DataFixtures\TaskFactory;
+use App\Task\Entity\Task;
+use App\Task\Entity\TaskStatusChange;
 use App\Task\Enum\TaskStatus;
-use App\Task\Repository\TaskStatusChangeRepository;
 use App\Tests\ApiTestCase;
+use Doctrine\Persistence\ManagerRegistry;
 use PHPUnit\Framework\Attributes\Test;
 
 final class TaskControllerTest extends ApiTestCase
@@ -21,6 +23,20 @@ final class TaskControllerTest extends ApiTestCase
         parent::setUp();
         $this->user = UserFactory::createOne();
         $this->actingAs($this->user);
+    }
+
+    /**
+     * @return TaskStatusChange[]
+     */
+    private function statusChangesForTask(Task $task): array
+    {
+        /** @var ManagerRegistry $registry */
+        $registry = static::getContainer()->get(ManagerRegistry::class);
+
+        return $registry->getRepository(TaskStatusChange::class)->findBy(
+            ['task' => $task],
+            ['changedAt' => 'ASC', 'id' => 'ASC'],
+        );
     }
 
     #[Test]
@@ -439,9 +455,7 @@ final class TaskControllerTest extends ApiTestCase
 
         self::assertResponseIsSuccessful();
 
-        $statusChanges = static::getContainer()
-            ->get(TaskStatusChangeRepository::class)
-            ->findByTaskOrdered($task);
+        $statusChanges = $this->statusChangesForTask($task);
 
         self::assertCount(1, $statusChanges);
         self::assertSame(TaskStatus::TODO, $statusChanges[0]->getFromStatus());
@@ -462,9 +476,7 @@ final class TaskControllerTest extends ApiTestCase
 
         self::assertResponseIsSuccessful();
 
-        $statusChanges = static::getContainer()
-            ->get(TaskStatusChangeRepository::class)
-            ->findByTaskOrdered($task);
+        $statusChanges = $this->statusChangesForTask($task);
 
         self::assertCount(0, $statusChanges);
     }
@@ -544,6 +556,47 @@ final class TaskControllerTest extends ApiTestCase
 
         self::assertSame('completed', $this->jsonAttributes($response)['status']);
         self::assertNull($this->jsonAttributes($response)['cancellation_reason']);
+    }
+
+    #[Test]
+    public function updateWhenMovingAwayFromCancelledShouldCreateStatusHistoryRow(): void
+    {
+        $task = TaskFactory::new()->cancelled('Outdated')->create(['user' => $this->user]);
+
+        $this->put($this->route('api_task_update', ['id' => $task->getId()]), [
+            'title' => $task->getTitle(),
+            'description' => $task->getDescription(),
+            'status' => TaskStatus::TODO->value,
+            'due_date' => $task->getDueDate()?->format('Y-m-d'),
+        ]);
+
+        self::assertResponseIsSuccessful();
+
+        $statusChanges = $this->statusChangesForTask($task);
+
+        self::assertCount(1, $statusChanges);
+        self::assertSame(TaskStatus::CANCELLED, $statusChanges[0]->getFromStatus());
+        self::assertSame(TaskStatus::TODO, $statusChanges[0]->getToStatus());
+    }
+
+    #[Test]
+    public function updateWhenOnlyCancellationReasonChangesShouldNotCreateStatusHistoryRow(): void
+    {
+        $task = TaskFactory::new()->cancelled('Outdated')->create(['user' => $this->user]);
+
+        $this->put($this->route('api_task_update', ['id' => $task->getId()]), [
+            'title' => $task->getTitle(),
+            'description' => $task->getDescription(),
+            'status' => TaskStatus::CANCELLED->value,
+            'cancellation_reason' => 'No longer relevant',
+            'due_date' => $task->getDueDate()?->format('Y-m-d'),
+        ]);
+
+        self::assertResponseIsSuccessful();
+
+        $statusChanges = $this->statusChangesForTask($task);
+
+        self::assertCount(0, $statusChanges);
     }
 
     #[Test]
