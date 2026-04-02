@@ -1,0 +1,5 @@
+framework:
+    cache:
+        # Keep test runs independent from external Redis unless a test
+        # explicitly targets Redis-backed infrastructure behavior.
+        app: cache.adapter.array
