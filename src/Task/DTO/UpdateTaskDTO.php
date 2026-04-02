@@ -57,6 +57,11 @@ readonly class UpdateTaskDTO
         }
     }
 
+    public function status(): TaskStatus
+    {
+        return TaskStatus::from($this->status);
+    }
+
     public function dueDate(): ?\DateTimeImmutable
     {
         return self::parseDueDate($this->due_date);

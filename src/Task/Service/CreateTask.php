@@ -19,10 +19,16 @@ final class CreateTask
 
     public function handle(CreateTaskDTO $dto, User $user): Task
     {
+        $status = $dto->status();
+
         $task = new Task();
         $task->setTitle($dto->title);
         $task->setDescription($dto->description);
-        $task->changeStatus(TaskStatus::from($dto->status), $dto->cancellation_reason);
+        $task->changeStatus($status);
+
+        if (TaskStatus::CANCELLED === $status && null !== $dto->cancellation_reason) {
+            $task->setCancellationReason($dto->cancellation_reason);
+        }
         $task->setDueDate($dto->dueDate());
         $task->setUser($user);
 
