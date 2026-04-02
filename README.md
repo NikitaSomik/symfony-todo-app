@@ -3,26 +3,55 @@
 ![CI](https://github.com/NikitaSomik/symfony-todo-app/actions/workflows/ci.yml/badge.svg)
 ![PHP](https://img.shields.io/badge/PHP-8.4-777BB4?logo=php&logoColor=white)
 ![Symfony](https://img.shields.io/badge/Symfony-8.0-000000?logo=symfony&logoColor=white)
-![PHPStan](https://img.shields.io/badge/PHPStan-level%206-brightgreen)
+![PHPStan](https://img.shields.io/badge/PHPStan-level%208-brightgreen)
 
-Symfony 8 + Docker
+Modular Symfony 8 API with Docker, PostgreSQL 17, JWT authentication, integration tests, and OpenAPI documentation.
 
-## Services
+## Stack
 
-| Service | Description |
-|---------|-------------|
-| `app` | PHP 8.4-fpm-alpine + Xdebug |
-| `nginx` | nginx:alpine |
-| `db` | PostgreSQL 17 |
+- PHP 8.4
+- Symfony 8
+- PostgreSQL 17
+- Redis
+- PHPUnit
+- PHPStan
+- Docker Compose
 
 ## Quick Start
 
-```shell
-make build   # build Docker images
-make up      # start containers
-make down    # stop containers
+```sh
+make build
+make up
+make migrate
 ```
 
-## Commands
+## Daily Commands
 
-Run `make` to see all available commands.
+```sh
+make cache-clear
+make migrate
+make run-cs
+make run-phpstan
+make run-tests
+make check-code
+```
+
+## Database Reset
+
+```sh
+make db-reset
+```
+
+Drops all tables and recreates the schema from migrations.
+
+## API Docs
+
+```sh
+make generate-openapi
+```
+
+## Full Command List
+
+```sh
+make
+```
