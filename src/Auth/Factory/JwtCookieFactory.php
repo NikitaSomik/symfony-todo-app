@@ -34,7 +34,7 @@ final class JwtCookieFactory
         return Cookie::create(self::REFRESH_COOKIE)
             ->withValue($refreshToken->getToken())
             ->withExpires($refreshToken->getExpiresAt())
-            ->withPath('/api/v1/auth/refresh')
+            ->withPath('/api/v1/auth')
             ->withHttpOnly(true)
             ->withSameSite(Cookie::SAMESITE_STRICT)
             ->withSecure($this->secure);
@@ -54,7 +54,7 @@ final class JwtCookieFactory
     {
         return Cookie::create(self::REFRESH_COOKIE)
             ->withExpires(new \DateTimeImmutable('1970-01-01'))
-            ->withPath('/api/v1/auth/refresh')
+            ->withPath('/api/v1/auth')
             ->withHttpOnly(true)
             ->withSameSite(Cookie::SAMESITE_STRICT)
             ->withSecure($this->secure);

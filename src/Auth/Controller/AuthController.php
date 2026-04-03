@@ -85,15 +85,18 @@ final class AuthController extends AbstractController
     }
 
     #[Route('/logout', name: 'logout', methods: ['POST'])]
-    #[OA\Post(summary: 'Logout — revoke refresh tokens and clear cookies')]
+    #[OA\Post(summary: 'Logout — revoke refresh token and clear cookies')]
+    #[OA\Parameter(
+        name: 'refresh_token',
+        description: 'Refresh token cookie used to revoke the current authenticated session on logout',
+        in: 'cookie',
+        required: false,
+        schema: new OA\Schema(type: 'string'),
+    )]
     #[OA\Response(
         response: 204,
-        description: 'Logged out — all refresh tokens revoked, cookies cleared',
-        headers: [
-            new OA\Header(header: 'Clear-Site-Data', description: 'Instructs browser to clear cookies', schema: new OA\Schema(type: 'string', example: '"cookies"')),
-        ],
+        description: 'Logged out — cookies cleared and refresh token revoked when a valid refresh_token cookie is present',
     )]
-    #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
     public function logout(): never
     {
         // This method is never executed — the security firewall intercepts the request.

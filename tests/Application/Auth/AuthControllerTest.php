@@ -305,6 +305,37 @@ final class AuthControllerTest extends ApiTestCase
     }
 
     #[Test]
+    public function logoutWithoutAuthenticatedUserShouldRevokeRefreshTokenStoredOnAuthPath(): void
+    {
+        $refreshToken = RefreshTokenFactory::createOne();
+
+        $this->setCookieWithPath('refresh_token', $refreshToken->getToken(), '/api/v1/auth');
+        $this->post($this->route('api_auth_logout'));
+
+        self::assertResponseStatusCodeSame(204);
+
+        $repo = static::getContainer()->get(RefreshTokenRepository::class);
+        self::assertNull($repo->findValidByToken($refreshToken->getToken()));
+    }
+
+    #[Test]
+    public function refreshAfterLogoutShouldFail(): void
+    {
+        $user = UserFactory::createOne();
+        $refreshToken = RefreshTokenFactory::createOne(['user' => $user]);
+
+        $this->setCookieWithPath('refresh_token', $refreshToken->getToken(), '/api/v1/auth');
+        $this->post($this->route('api_auth_logout'));
+
+        self::assertResponseStatusCodeSame(204);
+
+        $this->setCookieWithPath('refresh_token', $refreshToken->getToken(), '/api/v1/auth');
+        $this->post($this->route('api_auth_refresh'));
+
+        self::assertResponseStatusCodeSame(401);
+    }
+
+    #[Test]
     public function logoutShouldSetClearSiteDataHeader(): void
     {
         $user = UserFactory::createOne();
