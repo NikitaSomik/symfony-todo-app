@@ -86,23 +86,22 @@
                 "tags": [
                     "Auth"
                 ],
-                "summary": "Logout \u2014 revoke refresh tokens and clear cookies",
+                "summary": "Logout \u2014 revoke refresh token and clear cookies",
                 "operationId": "post_api_auth_logout",
+                "parameters": [
+                    {
+                        "name": "refresh_token",
+                        "in": "cookie",
+                        "description": "Refresh token cookie used to revoke the current authenticated session on logout",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
                 "responses": {
                     "204": {
-                        "description": "Logged out \u2014 all refresh tokens revoked, cookies cleared",
-                        "headers": {
-                            "Clear-Site-Data": {
-                                "description": "Instructs browser to clear cookies",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "\"cookies\""
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/UnauthorizedError"
+                        "description": "Logged out \u2014 cookies cleared and refresh token revoked when a valid refresh_token cookie is present"
                     }
                 }
             }
