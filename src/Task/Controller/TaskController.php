@@ -5,9 +5,14 @@ declare(strict_types=1);
 namespace App\Task\Controller;
 
 use App\Auth\Entity\User;
+use App\Shared\Activity\Api\Documentation\ActivityLogCollectionResponseSchema;
+use App\Shared\Activity\Enum\ActivityEntityType;
+use App\Shared\Activity\Repository\ActivityLogRepository;
+use App\Shared\Activity\Resource\ActivityLogResource;
 use App\Shared\Api\JsonApiResponse;
 use App\Shared\Api\PaginatedCollection;
 use App\Shared\Api\PaginationLinksBuilder;
+use App\Shared\Api\ResourceCollection;
 use App\Task\Api\Documentation\TaskCollectionResponseSchema;
 use App\Task\Api\Documentation\TaskResponseSchema;
 use App\Task\DTO\CreateTaskDTO;
@@ -39,6 +44,7 @@ final class TaskController extends AbstractController
 {
     public function __construct(
         private readonly TaskRepository $taskRepository,
+        private readonly ActivityLogRepository $activityLogRepository,
         private readonly CreateTask $createTask,
         private readonly UpdateTask $updateTask,
         private readonly DeleteTask $deleteTask,
@@ -89,7 +95,33 @@ final class TaskController extends AbstractController
         return JsonApiResponse::one(TaskResource::toItem($task), Response::HTTP_CREATED);
     }
 
-    #[Route('/{id}', name: 'get', requirements: ['id' => '\d+'], methods: ['GET'])]
+    #[Route('/{id}/activities', name: 'get_activities', requirements: ['id' => '\\d+'], methods: ['GET'])]
+    #[OA\Get(summary: 'Get task activity history')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(response: 200, description: 'Task activity history', content: new OA\JsonContent(ref: new Model(type: ActivityLogCollectionResponseSchema::class)))]
+    #[OA\Response(response: 404, description: 'Task not found')]
+    #[OA\Response(response: 403, description: 'Access denied')]
+    #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
+    #[IsGranted(TaskVoter::ACCESS, 'task')]
+    public function getActivity(Task $task): JsonResponse
+    {
+        /** @var int $taskId */
+        $taskId = $task->getId();
+
+        $activities = $this->activityLogRepository->findForEntity(ActivityEntityType::TASK, $taskId);
+        $historyUrl = $this->generateUrl('api_task_get_activities', ['id' => $taskId]);
+
+        return JsonApiResponse::collection(
+            new ResourceCollection(
+                items: ActivityLogResource::toItems($activities),
+                links: [
+                    'self' => $historyUrl,
+                ],
+            ),
+        );
+    }
+
+    #[Route('/{id}', name: 'get', requirements: ['id' => '\\d+'], methods: ['GET'])]
     #[OA\Get(summary: 'Get a task')]
     #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
     #[OA\Response(response: 200, description: 'Task details', content: new OA\JsonContent(ref: new Model(type: TaskResponseSchema::class)))]
@@ -102,7 +134,7 @@ final class TaskController extends AbstractController
         return JsonApiResponse::one(TaskResource::toItem($task));
     }
 
-    #[Route('/{id}', name: 'update', requirements: ['id' => '\d+'], methods: ['PUT'])]
+    #[Route('/{id}', name: 'update', requirements: ['id' => '\\d+'], methods: ['PUT'])]
     #[OA\Put(summary: 'Update a task')]
     #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
     #[OA\RequestBody(required: true, content: new OA\JsonContent(ref: new Model(type: UpdateTaskDTO::class)))]
@@ -114,12 +146,14 @@ final class TaskController extends AbstractController
     #[IsGranted(TaskVoter::ACCESS, 'task')]
     public function update(#[MapRequestPayload] UpdateTaskDTO $dto, Task $task): JsonResponse
     {
-        $task = $this->updateTask->handle($task, $dto);
+        /** @var User $user */
+        $user = $this->getUser();
+        $task = $this->updateTask->handle($task, $dto, $user);
 
         return JsonApiResponse::one(TaskResource::toItem($task));
     }
 
-    #[Route('/{id}', name: 'delete', requirements: ['id' => '\d+'], methods: ['DELETE'])]
+    #[Route('/{id}', name: 'delete', requirements: ['id' => '\\d+'], methods: ['DELETE'])]
     #[OA\Delete(summary: 'Delete a task')]
     #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
     #[OA\Response(response: 204, description: 'Task deleted')]
@@ -129,7 +163,9 @@ final class TaskController extends AbstractController
     #[IsGranted(TaskVoter::ACCESS, 'task')]
     public function delete(Task $task): Response
     {
-        $this->deleteTask->handle($task);
+        /** @var User $user */
+        $user = $this->getUser();
+        $this->deleteTask->handle($task, $user);
 
         return JsonApiResponse::noContent();
     }

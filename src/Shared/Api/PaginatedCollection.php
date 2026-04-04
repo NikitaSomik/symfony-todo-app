@@ -4,19 +4,20 @@ declare(strict_types=1);
 
 namespace App\Shared\Api;
 
-final readonly class PaginatedCollection
+final readonly class PaginatedCollection extends ResourceCollection
 {
     /**
      * @param ResourceItem[]                                                             $items
      * @param array{first: string, last: string, prev?: string|null, next?: string|null} $links
      */
     public function __construct(
-        public array $items,
+        array $items,
         public int $pageNumber,
         public int $pageSize,
         public int $total,
-        public array $links,
+        array $links,
     ) {
+        parent::__construct($items, $links);
     }
 
     public function lastPage(): int

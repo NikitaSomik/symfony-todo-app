@@ -337,6 +337,47 @@
                 }
             }
         },
+        "/api/v1/tasks/{id}/activities": {
+            "get": {
+                "tags": [
+                    "Tasks"
+                ],
+                "summary": "Get task activity history",
+                "operationId": "get_api_task_get_activities",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "pattern": "\\d+"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Task activity history",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ActivityLogCollectionResponseSchema"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Task not found"
+                    },
+                    "403": {
+                        "description": "Access denied"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    }
+                }
+            }
+        },
         "/api/v1/tasks/{id}": {
             "get": {
                 "tags": [
@@ -836,6 +877,129 @@
                 "properties": {
                     "data": {
                         "$ref": "#/components/schemas/TaskResource"
+                    }
+                },
+                "type": "object"
+            },
+            "CollectionLinksSchema": {
+                "required": [
+                    "self"
+                ],
+                "properties": {
+                    "self": {
+                        "type": "string",
+                        "example": "/api/v1/tasks/1/activity"
+                    }
+                },
+                "type": "object"
+            },
+            "ActivityLogResource": {
+                "required": [
+                    "type",
+                    "id",
+                    "attributes"
+                ],
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "example": "activity_logs"
+                    },
+                    "id": {
+                        "type": "string",
+                        "example": "1"
+                    },
+                    "attributes": {
+                        "properties": {
+                            "entity_type": {
+                                "type": "string",
+                                "enum": [
+                                    "task"
+                                ],
+                                "example": "task"
+                            },
+                            "entity_id": {
+                                "type": "integer",
+                                "example": 42
+                            },
+                            "user_id": {
+                                "type": "integer",
+                                "example": 7,
+                                "nullable": true
+                            },
+                            "action": {
+                                "type": "string",
+                                "enum": [
+                                    "created",
+                                    "updated",
+                                    "deleted"
+                                ],
+                                "example": "updated"
+                            },
+                            "message": {
+                                "type": "string",
+                                "example": "Updated task title for \"Buy almond milk\""
+                            },
+                            "attribute_changes": {
+                                "properties": {
+                                    "old": {
+                                        "type": "object",
+                                        "example": {
+                                            "title": "Buy milk"
+                                        },
+                                        "additionalProperties": {
+                                            "type": "string",
+                                            "nullable": true
+                                        }
+                                    },
+                                    "attributes": {
+                                        "type": "object",
+                                        "example": {
+                                            "title": "Buy almond milk"
+                                        },
+                                        "additionalProperties": {
+                                            "type": "string",
+                                            "nullable": true
+                                        }
+                                    }
+                                },
+                                "type": "object",
+                                "nullable": true
+                            },
+                            "properties": {
+                                "type": "object",
+                                "example": {
+                                    "attributes": {
+                                        "title": "Buy milk",
+                                        "status": "todo"
+                                    }
+                                },
+                                "nullable": true,
+                                "additionalProperties": {}
+                            },
+                            "created_at": {
+                                "type": "string",
+                                "format": "date-time"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "ActivityLogCollectionResponseSchema": {
+                "required": [
+                    "links",
+                    "data"
+                ],
+                "properties": {
+                    "links": {
+                        "$ref": "#/components/schemas/CollectionLinksSchema"
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ActivityLogResource"
+                        }
                     }
                 },
                 "type": "object"
