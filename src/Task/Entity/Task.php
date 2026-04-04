@@ -20,10 +20,10 @@ class Task
     public const string FIELD_TITLE = 'title';
     public const string FIELD_DESCRIPTION = 'description';
     public const string FIELD_STATUS = 'status';
-    public const string FIELD_CANCELLATION_REASON = 'cancellationReason';
-    public const string FIELD_DUE_DATE = 'dueDate';
-    public const string FIELD_CREATED_AT = 'createdAt';
-    public const string FIELD_UPDATED_AT = 'updatedAt';
+    public const string FIELD_CANCELLATION_REASON = 'cancellation_reason';
+    public const string FIELD_DUE_DATE = 'due_date';
+    public const string FIELD_CREATED_AT = 'created_at';
+    public const string FIELD_UPDATED_AT = 'updated_at';
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
