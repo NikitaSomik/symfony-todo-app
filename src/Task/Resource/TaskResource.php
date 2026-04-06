@@ -13,7 +13,7 @@ use OpenApi\Attributes as OA;
 #[OA\Schema(
     properties: [
         new OA\Property(property: 'type', type: 'string', example: 'tasks'),
-        new OA\Property(property: 'id', type: 'string', example: '1'),
+        new OA\Property(property: 'id', type: 'string', format: 'uuid', example: '0195f2f7-1f0a-7db2-b6f6-5d1d48d6752b'),
         new OA\Property(
             property: 'attributes',
             properties: [
@@ -33,15 +33,9 @@ final class TaskResource
 {
     public static function toItem(Task $task): ResourceItem
     {
-        $id = $task->getId();
-
-        if (null === $id) {
-            throw new \LogicException('Task resource cannot be created for an entity without id.');
-        }
-
         return new ResourceItem(
             type: 'tasks',
-            id: $id,
+            id: $task->getId()->toRfc4122(),
             attributes: [
                 'title' => $task->getTitle(),
                 'description' => $task->getDescription(),
