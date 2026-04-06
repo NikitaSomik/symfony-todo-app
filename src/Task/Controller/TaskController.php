@@ -31,14 +31,13 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapQueryString;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Requirement\Requirement;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/api/v1/tasks', name: 'api_task_', format: 'json')]
 #[OA\Tag(name: 'Tasks')]
 final class TaskController extends AbstractController
 {
-    private const string UUID_REQUIREMENT = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}';
-
     public function __construct(
         private readonly TaskRepository $taskRepository,
         private readonly CreateTask $createTask,
@@ -91,7 +90,7 @@ final class TaskController extends AbstractController
         return JsonApiResponse::one(TaskResource::toItem($task), Response::HTTP_CREATED);
     }
 
-    #[Route('/{id}', name: 'get', requirements: ['id' => self::UUID_REQUIREMENT], methods: ['GET'])]
+    #[Route('/{id}', name: 'get', requirements: ['id' => Requirement::UUID_V7], methods: ['GET'])]
     #[OA\Get(summary: 'Get a task')]
     #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))]
     #[OA\Response(response: 200, description: 'Task details', content: new OA\JsonContent(ref: new Model(type: TaskResponseSchema::class)))]
@@ -104,7 +103,7 @@ final class TaskController extends AbstractController
         return JsonApiResponse::one(TaskResource::toItem($task));
     }
 
-    #[Route('/{id}', name: 'update', requirements: ['id' => self::UUID_REQUIREMENT], methods: ['PUT'])]
+    #[Route('/{id}', name: 'update', requirements: ['id' => Requirement::UUID_V7], methods: ['PUT'])]
     #[OA\Put(summary: 'Update a task')]
     #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))]
     #[OA\RequestBody(required: true, content: new OA\JsonContent(ref: new Model(type: UpdateTaskDTO::class)))]
@@ -121,7 +120,7 @@ final class TaskController extends AbstractController
         return JsonApiResponse::one(TaskResource::toItem($task));
     }
 
-    #[Route('/{id}', name: 'delete', requirements: ['id' => self::UUID_REQUIREMENT], methods: ['DELETE'])]
+    #[Route('/{id}', name: 'delete', requirements: ['id' => Requirement::UUID_V7], methods: ['DELETE'])]
     #[OA\Delete(summary: 'Delete a task')]
     #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))]
     #[OA\Response(response: 204, description: 'Task deleted')]
