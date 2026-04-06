@@ -8,12 +8,14 @@ use App\Auth\Entity\User;
 use App\Task\DTO\CreateTaskDTO;
 use App\Task\Entity\Task;
 use App\Task\Enum\TaskStatus;
+use App\Task\Identity\TaskIdGenerator;
 use Doctrine\ORM\EntityManagerInterface;
 
 final class CreateTask
 {
     public function __construct(
         private readonly EntityManagerInterface $em,
+        private readonly TaskIdGenerator $taskIdGenerator,
     ) {
     }
 
@@ -21,7 +23,7 @@ final class CreateTask
     {
         $status = $dto->status();
 
-        $task = new Task();
+        $task = new Task($this->taskIdGenerator->generate());
         $task->setTitle($dto->title);
         $task->setDescription($dto->description);
         $task->changeStatus($status);
