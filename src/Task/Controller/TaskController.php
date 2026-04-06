@@ -8,6 +8,11 @@ use App\Auth\Entity\User;
 use App\Shared\Api\JsonApiResponse;
 use App\Shared\Api\PaginatedCollection;
 use App\Shared\Api\PaginationLinksBuilder;
+use App\Shared\Api\ResourceCollection;
+use App\Shared\AuditLog\Api\Documentation\AuditLogCollectionResponseSchema;
+use App\Shared\AuditLog\Enum\AuditLogEntityType;
+use App\Shared\AuditLog\Repository\AuditLogRepository;
+use App\Shared\AuditLog\Resource\AuditLogResource;
 use App\Task\Api\Documentation\TaskCollectionResponseSchema;
 use App\Task\Api\Documentation\TaskResponseSchema;
 use App\Task\DTO\CreateTaskDTO;
@@ -40,6 +45,7 @@ final class TaskController extends AbstractController
 {
     public function __construct(
         private readonly TaskRepository $taskRepository,
+        private readonly AuditLogRepository $auditLogRepository,
         private readonly CreateTask $createTask,
         private readonly UpdateTask $updateTask,
         private readonly DeleteTask $deleteTask,
@@ -103,6 +109,31 @@ final class TaskController extends AbstractController
         return JsonApiResponse::one(TaskResource::toItem($task));
     }
 
+    #[Route('/{id}/audit-logs', name: 'get_audit_logs', requirements: ['id' => Requirement::UUID_V7], methods: ['GET'])]
+    #[OA\Get(summary: 'Get task audit log history')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))]
+    #[OA\Response(response: 200, description: 'Task audit log history', content: new OA\JsonContent(ref: new Model(type: AuditLogCollectionResponseSchema::class)))]
+    #[OA\Response(response: 404, description: 'Task not found')]
+    #[OA\Response(response: 403, description: 'Access denied')]
+    #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
+    #[IsGranted(TaskVoter::ACCESS, 'task')]
+    public function getAuditLogs(Task $task): JsonResponse
+    {
+        $taskId = $task->getId()->toRfc4122();
+
+        $auditLogs = $this->auditLogRepository->findForEntity(AuditLogEntityType::TASK, $taskId);
+        $auditLogUrl = $this->generateUrl('api_task_get_audit_logs', ['id' => $taskId]);
+
+        return JsonApiResponse::collection(
+            new ResourceCollection(
+                items: AuditLogResource::toItems($auditLogs),
+                links: [
+                    'self' => $auditLogUrl,
+                ],
+            ),
+        );
+    }
+
     #[Route('/{id}', name: 'update', requirements: ['id' => Requirement::UUID_V7], methods: ['PUT'])]
     #[OA\Put(summary: 'Update a task')]
     #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))]
@@ -115,7 +146,9 @@ final class TaskController extends AbstractController
     #[IsGranted(TaskVoter::ACCESS, 'task')]
     public function update(#[MapRequestPayload] UpdateTaskDTO $dto, Task $task): JsonResponse
     {
-        $task = $this->updateTask->handle($task, $dto);
+        /** @var User $user */
+        $user = $this->getUser();
+        $task = $this->updateTask->handle($task, $dto, $user);
 
         return JsonApiResponse::one(TaskResource::toItem($task));
     }
@@ -130,7 +163,9 @@ final class TaskController extends AbstractController
     #[IsGranted(TaskVoter::ACCESS, 'task')]
     public function delete(Task $task): Response
     {
-        $this->deleteTask->handle($task);
+        /** @var User $user */
+        $user = $this->getUser();
+        $this->deleteTask->handle($task, $user);
 
         return JsonApiResponse::noContent();
     }

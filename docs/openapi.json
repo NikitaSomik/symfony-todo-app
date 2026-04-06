@@ -464,6 +464,48 @@
                     }
                 }
             }
+        },
+        "/api/v1/tasks/{id}/audit-logs": {
+            "get": {
+                "tags": [
+                    "Tasks"
+                ],
+                "summary": "Get task audit log history",
+                "operationId": "get_api_task_get_audit_logs",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Task audit log history",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AuditLogCollectionResponseSchema"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Task not found"
+                    },
+                    "403": {
+                        "description": "Access denied"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -840,6 +882,130 @@
                 "properties": {
                     "data": {
                         "$ref": "#/components/schemas/TaskResource"
+                    }
+                },
+                "type": "object"
+            },
+            "CollectionLinksSchema": {
+                "required": [
+                    "self"
+                ],
+                "properties": {
+                    "self": {
+                        "type": "string",
+                        "example": "/api/v1/tasks/0195a6b4-6f15-7d4b-b2c1-05b2a3d6e7f8/audit-logs"
+                    }
+                },
+                "type": "object"
+            },
+            "AuditLogResource": {
+                "required": [
+                    "type",
+                    "id",
+                    "attributes"
+                ],
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "example": "audit_logs"
+                    },
+                    "id": {
+                        "type": "string",
+                        "example": "1"
+                    },
+                    "attributes": {
+                        "properties": {
+                            "entity_type": {
+                                "type": "string",
+                                "enum": [
+                                    "task"
+                                ],
+                                "example": "task"
+                            },
+                            "entity_id": {
+                                "type": "string",
+                                "format": "uuid",
+                                "example": "0195a6b4-6f15-7d4b-b2c1-05b2a3d6e7f8"
+                            },
+                            "user_id": {
+                                "type": "integer",
+                                "example": 7,
+                                "nullable": true
+                            },
+                            "action": {
+                                "type": "string",
+                                "enum": [
+                                    "created",
+                                    "updated",
+                                    "deleted"
+                                ],
+                                "example": "updated"
+                            },
+                            "message": {
+                                "type": "string",
+                                "example": "Updated task title for \"Buy almond milk\""
+                            },
+                            "attribute_changes": {
+                                "properties": {
+                                    "old": {
+                                        "type": "object",
+                                        "example": {
+                                            "title": "Buy milk"
+                                        },
+                                        "additionalProperties": {
+                                            "type": "string",
+                                            "nullable": true
+                                        }
+                                    },
+                                    "new": {
+                                        "type": "object",
+                                        "example": {
+                                            "title": "Buy almond milk"
+                                        },
+                                        "additionalProperties": {
+                                            "type": "string",
+                                            "nullable": true
+                                        }
+                                    }
+                                },
+                                "type": "object",
+                                "nullable": true
+                            },
+                            "metadata": {
+                                "type": "object",
+                                "example": {
+                                    "entity_data": {
+                                        "title": "Buy milk",
+                                        "status": "todo"
+                                    }
+                                },
+                                "nullable": true,
+                                "additionalProperties": {}
+                            },
+                            "created_at": {
+                                "type": "string",
+                                "format": "date-time"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "AuditLogCollectionResponseSchema": {
+                "required": [
+                    "links",
+                    "data"
+                ],
+                "properties": {
+                    "links": {
+                        "$ref": "#/components/schemas/CollectionLinksSchema"
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AuditLogResource"
+                        }
                     }
                 },
                 "type": "object"

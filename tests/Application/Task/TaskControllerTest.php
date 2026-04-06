@@ -6,11 +6,15 @@ namespace App\Tests\Application\Task;
 
 use App\Auth\DataFixtures\UserFactory;
 use App\Auth\Entity\User;
+use App\Shared\AuditLog\Enum\AuditLogEntityType;
+use App\Shared\AuditLog\Repository\AuditLogRepository;
 use App\Task\DataFixtures\TaskFactory;
 use App\Task\Entity\Task;
 use App\Task\Entity\TaskStatusChange;
 use App\Task\Enum\TaskStatus;
+use App\Task\Repository\TaskRepository;
 use App\Tests\ApiTestCase;
+use App\Tests\Support\AuditLogFailureToggle;
 use Doctrine\Persistence\ManagerRegistry;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\Uid\Uuid;
@@ -48,6 +52,18 @@ final class TaskControllerTest extends ApiTestCase
     private function missingTaskId(): string
     {
         return Uuid::v7()->toRfc4122();
+    }
+
+    private function auditLogsForTask(Task $task): array
+    {
+        $repository = static::getContainer()->get(AuditLogRepository::class);
+
+        return $repository->findForEntity(AuditLogEntityType::TASK, $this->taskId($task));
+    }
+
+    private function failAuditLogEventDispatching(): void
+    {
+        static::getContainer()->get(AuditLogFailureToggle::class)->enable();
     }
 
     #[Test]
@@ -698,5 +714,178 @@ final class TaskControllerTest extends ApiTestCase
         $this->delete($this->route('api_task_delete', ['id' => $this->taskId($task)]));
 
         self::assertResponseStatusCodeSame(403);
+    }
+
+    #[Test]
+    public function createWhenValidDataShouldCreateAuditLogEntry(): void
+    {
+        $response = $this->post($this->route('api_task_create'), ['title' => 'Buy milk']);
+        $taskId = $this->jsonData($response)['id'];
+
+        $activities = static::getContainer()->get(AuditLogRepository::class)->findForEntity(AuditLogEntityType::TASK, $taskId);
+
+        self::assertCount(1, $activities);
+        self::assertSame('created', $activities[0]->getAction()->value);
+        self::assertSame('Created task "Buy milk"', $activities[0]->getMessage());
+        self::assertSame($this->user->getId(), $activities[0]->getUser()?->getId());
+        self::assertSame('Buy milk', $activities[0]->getMetadata()['entity_data']['title']);
+    }
+
+    #[Test]
+    public function updateWhenTaskIsChangedShouldCreateAuditLogEntryForEachChangedField(): void
+    {
+        $task = TaskFactory::createOne([
+            'user' => $this->user,
+            'title' => 'Buy milk',
+            'description' => null,
+            'status' => TaskStatus::TODO,
+            'due_date' => null,
+        ]);
+
+        $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), [
+            'title' => 'Buy almond milk',
+            'description' => null,
+            'status' => TaskStatus::COMPLETED->value,
+            'due_date' => '2026-04-03',
+        ]);
+
+        self::assertResponseIsSuccessful();
+
+        $auditLogs = $this->auditLogsForTask($task);
+
+        self::assertCount(3, $auditLogs);
+
+        self::assertSame('updated', $auditLogs[0]->getAction()->value);
+        self::assertSame('Updated task title for "Buy almond milk"', $auditLogs[0]->getMessage());
+        self::assertSame('Buy milk', $auditLogs[0]->getAttributeChanges()['old']['title']);
+        self::assertSame('Buy almond milk', $auditLogs[0]->getAttributeChanges()['new']['title']);
+        self::assertCount(1, $auditLogs[0]->getAttributeChanges()['old']);
+
+        self::assertSame('updated', $auditLogs[1]->getAction()->value);
+        self::assertSame('Updated task status for "Buy almond milk"', $auditLogs[1]->getMessage());
+        self::assertSame('todo', $auditLogs[1]->getAttributeChanges()['old']['status']);
+        self::assertSame('completed', $auditLogs[1]->getAttributeChanges()['new']['status']);
+        self::assertCount(1, $auditLogs[1]->getAttributeChanges()['old']);
+
+        self::assertSame('updated', $auditLogs[2]->getAction()->value);
+        self::assertSame('Updated task due date for "Buy almond milk"', $auditLogs[2]->getMessage());
+        self::assertSame(null, $auditLogs[2]->getAttributeChanges()['old']['due_date']);
+        self::assertSame('2026-04-03', $auditLogs[2]->getAttributeChanges()['new']['due_date']);
+        self::assertCount(1, $auditLogs[2]->getAttributeChanges()['old']);
+    }
+
+    #[Test]
+    public function getAuditLogsShouldReturnTaskHistory(): void
+    {
+        $createResponse = $this->post($this->route('api_task_create'), ['title' => 'Buy milk']);
+        $taskId = $this->jsonData($createResponse)['id'];
+
+        $this->put($this->route('api_task_update', ['id' => $taskId]), [
+            'title' => 'Buy almond milk',
+            'description' => null,
+            'status' => TaskStatus::TODO->value,
+            'due_date' => null,
+        ]);
+
+        $response = $this->get($this->route('api_task_get_audit_logs', ['id' => $taskId]));
+        $data = $this->jsonData($response);
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(2, $data);
+        self::assertSame('created', $data[0]['attributes']['action']);
+        self::assertSame('Created task "Buy milk"', $data[0]['attributes']['message']);
+        self::assertSame('Buy milk', $data[0]['attributes']['metadata']['entity_data']['title']);
+        self::assertSame('updated', $data[1]['attributes']['action']);
+        self::assertSame('Updated task title for "Buy almond milk"', $data[1]['attributes']['message']);
+        self::assertSame('Buy almond milk', $data[1]['attributes']['attribute_changes']['new']['title']);
+    }
+
+    #[Test]
+    public function deleteWhenTaskExistsShouldCreateDeletedAuditLogEntry(): void
+    {
+        $task = TaskFactory::createOne([
+            'user' => $this->user,
+            'title' => 'Buy milk',
+        ]);
+        $taskId = $this->taskId($task);
+
+        $this->delete($this->route('api_task_delete', ['id' => $taskId]));
+
+        self::assertResponseStatusCodeSame(204);
+
+        $activities = static::getContainer()->get(AuditLogRepository::class)->findForEntity(AuditLogEntityType::TASK, $taskId);
+
+        self::assertCount(1, $activities);
+        self::assertSame('deleted', $activities[0]->getAction()->value);
+        self::assertSame('Deleted task "Buy milk"', $activities[0]->getMessage());
+        self::assertSame('Buy milk', $activities[0]->getMetadata()['entity_data']['title']);
+    }
+
+    #[Test]
+    public function createShouldRollbackTaskCreationWhenEventDispatchFails(): void
+    {
+        $this->failAuditLogEventDispatching();
+
+        $response = $this->post($this->route('api_task_create'), ['title' => 'Buy milk']);
+
+        self::assertResponseStatusCodeSame(500);
+
+        $tasks = static::getContainer()->get(TaskRepository::class)->findBy([
+            'user' => $this->user,
+            'title' => 'Buy milk',
+        ]);
+
+        self::assertSame([], $tasks);
+    }
+
+    #[Test]
+    public function updateShouldRollbackChangesWhenEventDispatchFails(): void
+    {
+        $task = TaskFactory::createOne([
+            'user' => $this->user,
+            'title' => 'Buy milk',
+            'description' => null,
+            'status' => TaskStatus::TODO,
+            'dueDate' => null,
+        ]);
+        $taskId = $this->taskId($task);
+
+        $this->failAuditLogEventDispatching();
+
+        $response = $this->put($this->route('api_task_update', ['id' => $taskId]), [
+            'title' => 'Buy almond milk',
+            'description' => null,
+            'status' => TaskStatus::COMPLETED->value,
+            'due_date' => '2026-04-03',
+        ]);
+
+        self::assertResponseStatusCodeSame(500);
+
+        $reloadedTask = static::getContainer()->get(TaskRepository::class)->find($taskId);
+
+        self::assertInstanceOf(Task::class, $reloadedTask);
+        self::assertSame('Buy milk', $reloadedTask->getTitle());
+        self::assertSame(TaskStatus::TODO, $reloadedTask->getStatus());
+        self::assertNull($reloadedTask->getDueDate());
+        self::assertSame([], $this->statusChangesForTask($reloadedTask));
+        self::assertSame([], $this->auditLogsForTask($reloadedTask));
+    }
+
+    #[Test]
+    public function deleteShouldRollbackRemovalWhenEventDispatchFails(): void
+    {
+        $task = TaskFactory::createOne([
+            'user' => $this->user,
+            'title' => 'Buy milk',
+        ]);
+        $taskId = $this->taskId($task);
+
+        $this->failAuditLogEventDispatching();
+
+        $response = $this->delete($this->route('api_task_delete', ['id' => $taskId]));
+
+        self::assertResponseStatusCodeSame(500);
+        self::assertInstanceOf(Task::class, static::getContainer()->get(TaskRepository::class)->find($taskId));
+        self::assertSame([], static::getContainer()->get(AuditLogRepository::class)->findForEntity(AuditLogEntityType::TASK, $taskId));
     }
 }

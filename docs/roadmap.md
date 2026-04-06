@@ -156,11 +156,12 @@ Phase 5: CQRS (where justified)
 ## Phase 4 — Audit Log
 
 > Full history of task changes via Domain Events.
+> Implemented as `AuditLog` + synchronous event listeners for now.
 
-- [ ] `TaskHistory` entity
-- [ ] Domain Events: `TaskStatusChanged`, `TaskAssigned`, `TaskUpdated`
-- [ ] Symfony Messenger handles events → writes history
-- [ ] `GET /api/v1/projects/{id}/tasks/{id}/history`
+- [x] `AuditLog` entity
+- [x] Domain Events: `TaskCreated`, `TaskUpdated`, `TaskDeleted`
+- [x] Symfony EventDispatcher listeners write audit log
+- [x] `GET /api/v1/tasks/{id}/audit-logs`
 
 ---
 
