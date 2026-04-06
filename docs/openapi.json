@@ -350,8 +350,9 @@
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "type": "integer",
-                            "pattern": "\\d+"
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
                         }
                     }
                 ],
@@ -389,8 +390,9 @@
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "type": "integer",
-                            "pattern": "\\d+"
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
                         }
                     }
                 ],
@@ -441,8 +443,9 @@
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "type": "integer",
-                            "pattern": "\\d+"
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
                         }
                     }
                 ],
@@ -729,7 +732,8 @@
                     },
                     "id": {
                         "type": "string",
-                        "example": "1"
+                        "format": "uuid",
+                        "example": "0195f2f7-1f0a-7db2-b6f6-5d1d48d6752b"
                     },
                     "attributes": {
                         "properties": {

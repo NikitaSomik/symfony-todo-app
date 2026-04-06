@@ -202,7 +202,7 @@ class TaskRepository extends ServiceEntityRepository
     }
 
     /**
-     * @param list<int|string> $ids
+     * @param list<string> $ids
      *
      * @return Task[]
      */
@@ -210,20 +210,20 @@ class TaskRepository extends ServiceEntityRepository
     {
         $tasks = $this->createQueryBuilder('t')
             ->where('t.id IN (:ids)')
-            ->setParameter('ids', array_map('intval', $ids))
+            ->setParameter('ids', $ids)
             ->getQuery()
             ->getResult();
 
         $tasksById = [];
 
         foreach ($tasks as $task) {
-            $tasksById[$task->getId()] = $task;
+            $tasksById[$task->getId()->toRfc4122()] = $task;
         }
 
         $orderedTasks = [];
 
         foreach ($ids as $id) {
-            $task = $tasksById[(int) $id] ?? null;
+            $task = $tasksById[$id] ?? null;
 
             if (null !== $task) {
                 $orderedTasks[] = $task;

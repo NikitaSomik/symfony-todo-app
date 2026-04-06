@@ -7,6 +7,7 @@ namespace App\Task\DataFixtures;
 use App\Auth\DataFixtures\UserFactory;
 use App\Task\Entity\Task;
 use App\Task\Enum\TaskStatus;
+use Symfony\Component\Uid\Uuid;
 use Zenstruck\Foundry\Persistence\PersistentObjectFactory;
 
 /**
@@ -53,7 +54,7 @@ final class TaskFactory extends PersistentObjectFactory
     protected function initialize(): static
     {
         return $this->instantiateWith(function (array $attributes): Task {
-            $task = new Task();
+            $task = new Task(Uuid::v7());
             $task->setTitle($attributes['title']);
             $task->setDescription($attributes['description']);
             $task->changeStatus($attributes['status']);

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Task;
 
+use App\Task\Identity\TaskIdGenerator;
+use App\Task\Identity\UuidV7TaskIdGenerator;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 return static function (ContainerConfigurator $di): void {
@@ -20,4 +22,6 @@ return static function (ContainerConfigurator $di): void {
             __DIR__.'/Enum/',
             __DIR__.'/{di,routing}.php',
         ]);
+
+    $services->alias(TaskIdGenerator::class, UuidV7TaskIdGenerator::class);
 };

@@ -9,6 +9,8 @@ use App\Task\Enum\TaskStatus;
 use App\Task\Repository\TaskRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Types\UuidType;
+use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: TaskRepository::class)]
 #[ORM\Table(name: 'tasks')]
@@ -26,9 +28,8 @@ class Task
     public const string FIELD_UPDATED_AT = 'updatedAt';
 
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
-    private ?int $id = null;
+    #[ORM\Column(type: UuidType::NAME, unique: true)]
+    private Uuid $id;
 
     #[ORM\Column(length: 255)]
     private string $title;
@@ -55,8 +56,9 @@ class Task
     #[ORM\JoinColumn(nullable: false)]
     private User $user;
 
-    public function __construct()
+    public function __construct(Uuid $id)
     {
+        $this->id = $id;
         $this->createdAt = new \DateTimeImmutable();
         $this->updatedAt = new \DateTimeImmutable();
     }
@@ -67,7 +69,7 @@ class Task
         $this->updatedAt = new \DateTimeImmutable();
     }
 
-    public function getId(): ?int
+    public function getId(): Uuid
     {
         return $this->id;
     }

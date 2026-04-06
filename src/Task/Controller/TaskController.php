@@ -31,6 +31,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapQueryString;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Requirement\Requirement;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/api/v1/tasks', name: 'api_task_', format: 'json')]
@@ -89,9 +90,9 @@ final class TaskController extends AbstractController
         return JsonApiResponse::one(TaskResource::toItem($task), Response::HTTP_CREATED);
     }
 
-    #[Route('/{id}', name: 'get', requirements: ['id' => '\d+'], methods: ['GET'])]
+    #[Route('/{id}', name: 'get', requirements: ['id' => Requirement::UUID_V7], methods: ['GET'])]
     #[OA\Get(summary: 'Get a task')]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))]
     #[OA\Response(response: 200, description: 'Task details', content: new OA\JsonContent(ref: new Model(type: TaskResponseSchema::class)))]
     #[OA\Response(response: 404, description: 'Task not found')]
     #[OA\Response(response: 403, description: 'Access denied')]
@@ -102,9 +103,9 @@ final class TaskController extends AbstractController
         return JsonApiResponse::one(TaskResource::toItem($task));
     }
 
-    #[Route('/{id}', name: 'update', requirements: ['id' => '\d+'], methods: ['PUT'])]
+    #[Route('/{id}', name: 'update', requirements: ['id' => Requirement::UUID_V7], methods: ['PUT'])]
     #[OA\Put(summary: 'Update a task')]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))]
     #[OA\RequestBody(required: true, content: new OA\JsonContent(ref: new Model(type: UpdateTaskDTO::class)))]
     #[OA\Response(response: 200, description: 'Task updated', content: new OA\JsonContent(ref: new Model(type: TaskResponseSchema::class)))]
     #[OA\Response(response: 404, description: 'Task not found')]
@@ -119,9 +120,9 @@ final class TaskController extends AbstractController
         return JsonApiResponse::one(TaskResource::toItem($task));
     }
 
-    #[Route('/{id}', name: 'delete', requirements: ['id' => '\d+'], methods: ['DELETE'])]
+    #[Route('/{id}', name: 'delete', requirements: ['id' => Requirement::UUID_V7], methods: ['DELETE'])]
     #[OA\Delete(summary: 'Delete a task')]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))]
     #[OA\Response(response: 204, description: 'Task deleted')]
     #[OA\Response(response: 404, description: 'Task not found')]
     #[OA\Response(response: 403, description: 'Access denied')]

@@ -13,6 +13,7 @@ use App\Task\Enum\TaskStatus;
 use App\Tests\ApiTestCase;
 use Doctrine\Persistence\ManagerRegistry;
 use PHPUnit\Framework\Attributes\Test;
+use Symfony\Component\Uid\Uuid;
 
 final class TaskControllerTest extends ApiTestCase
 {
@@ -37,6 +38,16 @@ final class TaskControllerTest extends ApiTestCase
             ['task' => $task],
             ['changedAt' => 'ASC', 'id' => 'ASC'],
         );
+    }
+
+    private function taskId(Task $task): string
+    {
+        return $task->getId()->toRfc4122();
+    }
+
+    private function missingTaskId(): string
+    {
+        return Uuid::v7()->toRfc4122();
     }
 
     #[Test]
@@ -387,7 +398,7 @@ final class TaskControllerTest extends ApiTestCase
             'dueDate' => new \DateTimeImmutable('2026-04-01'),
         ]);
 
-        $response = $this->get($this->route('api_task_get', ['id' => $task->getId()]));
+        $response = $this->get($this->route('api_task_get', ['id' => $this->taskId($task)]));
         $data = $this->jsonData($response);
         $attributes = $data['attributes'];
 
@@ -405,7 +416,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function getWhenTaskNotFoundShouldReturn404(): void
     {
-        $this->get($this->route('api_task_get', ['id' => 99999]));
+        $this->get($this->route('api_task_get', ['id' => $this->missingTaskId()]));
 
         self::assertResponseStatusCodeSame(404);
     }
@@ -416,7 +427,7 @@ final class TaskControllerTest extends ApiTestCase
         $otherUser = UserFactory::createOne();
         $task = TaskFactory::createOne(['user' => $otherUser]);
 
-        $this->get($this->route('api_task_get', ['id' => $task->getId()]));
+        $this->get($this->route('api_task_get', ['id' => $this->taskId($task)]));
 
         self::assertResponseStatusCodeSame(403);
     }
@@ -426,7 +437,7 @@ final class TaskControllerTest extends ApiTestCase
     {
         $task = TaskFactory::createOne(['user' => $this->user]);
 
-        $response = $this->put($this->route('api_task_update', ['id' => $task->getId()]), [
+        $response = $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), [
             'title' => 'Updated title',
             'status' => 'completed',
             'due_date' => '2026-04-03',
@@ -446,7 +457,7 @@ final class TaskControllerTest extends ApiTestCase
     {
         $task = TaskFactory::createOne(['user' => $this->user, 'status' => TaskStatus::TODO]);
 
-        $this->put($this->route('api_task_update', ['id' => $task->getId()]), [
+        $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), [
             'title' => $task->getTitle(),
             'description' => $task->getDescription(),
             'status' => TaskStatus::COMPLETED->value,
@@ -467,7 +478,7 @@ final class TaskControllerTest extends ApiTestCase
     {
         $task = TaskFactory::createOne(['user' => $this->user, 'status' => TaskStatus::TODO]);
 
-        $this->put($this->route('api_task_update', ['id' => $task->getId()]), [
+        $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), [
             'title' => 'Renamed task',
             'description' => $task->getDescription(),
             'status' => TaskStatus::TODO->value,
@@ -486,7 +497,7 @@ final class TaskControllerTest extends ApiTestCase
     {
         $task = TaskFactory::createOne(['user' => $this->user]);
 
-        $this->put($this->route('api_task_update', ['id' => $task->getId()]), ['title' => '']);
+        $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), ['title' => '']);
 
         self::assertResponseStatusCodeSame(422);
     }
@@ -496,7 +507,7 @@ final class TaskControllerTest extends ApiTestCase
     {
         $task = TaskFactory::createOne(['user' => $this->user]);
 
-        $this->put($this->route('api_task_update', ['id' => $task->getId()]), ['title' => 'Test', 'description' => 'ab']);
+        $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), ['title' => 'Test', 'description' => 'ab']);
 
         self::assertResponseStatusCodeSame(422);
     }
@@ -506,7 +517,7 @@ final class TaskControllerTest extends ApiTestCase
     {
         $task = TaskFactory::createOne(['user' => $this->user]);
 
-        $this->put($this->route('api_task_update', ['id' => $task->getId()]), [
+        $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), [
             'title' => 'Test',
             'description' => str_repeat('a', 2001),
         ]);
@@ -519,7 +530,7 @@ final class TaskControllerTest extends ApiTestCase
     {
         $task = TaskFactory::createOne(['user' => $this->user]);
 
-        $this->put($this->route('api_task_update', ['id' => $task->getId()]), [
+        $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), [
             'title' => 'Test',
             'due_date' => 'tomorrow',
         ]);
@@ -532,7 +543,7 @@ final class TaskControllerTest extends ApiTestCase
     {
         $task = TaskFactory::createOne(['user' => $this->user]);
 
-        $response = $this->put($this->route('api_task_update', ['id' => $task->getId()]), [
+        $response = $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), [
             'title' => 'Updated title',
             'status' => 'cancelled',
             'cancellation_reason' => 'Work is no longer required',
@@ -549,7 +560,7 @@ final class TaskControllerTest extends ApiTestCase
     {
         $task = TaskFactory::new()->cancelled('Outdated')->create(['user' => $this->user]);
 
-        $response = $this->put($this->route('api_task_update', ['id' => $task->getId()]), [
+        $response = $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), [
             'title' => 'Updated title',
             'status' => 'completed',
         ]);
@@ -563,7 +574,7 @@ final class TaskControllerTest extends ApiTestCase
     {
         $task = TaskFactory::new()->cancelled('Outdated')->create(['user' => $this->user]);
 
-        $this->put($this->route('api_task_update', ['id' => $task->getId()]), [
+        $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), [
             'title' => $task->getTitle(),
             'description' => $task->getDescription(),
             'status' => TaskStatus::TODO->value,
@@ -584,7 +595,7 @@ final class TaskControllerTest extends ApiTestCase
     {
         $task = TaskFactory::new()->cancelled('Outdated')->create(['user' => $this->user]);
 
-        $this->put($this->route('api_task_update', ['id' => $task->getId()]), [
+        $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), [
             'title' => $task->getTitle(),
             'description' => $task->getDescription(),
             'status' => TaskStatus::CANCELLED->value,
@@ -632,7 +643,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function updateWhenTaskNotFoundShouldReturn404(): void
     {
-        $this->put($this->route('api_task_update', ['id' => 99999]), ['title' => 'Test']);
+        $this->put($this->route('api_task_update', ['id' => $this->missingTaskId()]), ['title' => 'Test']);
 
         self::assertResponseStatusCodeSame(404);
     }
@@ -643,7 +654,7 @@ final class TaskControllerTest extends ApiTestCase
         $otherUser = UserFactory::createOne();
         $task = TaskFactory::createOne(['user' => $otherUser]);
 
-        $this->put($this->route('api_task_update', ['id' => $task->getId()]), ['title' => 'Hacked']);
+        $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), ['title' => 'Hacked']);
 
         self::assertResponseStatusCodeSame(403);
     }
@@ -653,7 +664,7 @@ final class TaskControllerTest extends ApiTestCase
     {
         $task = TaskFactory::createOne(['user' => $this->user]);
 
-        $this->delete($this->route('api_task_delete', ['id' => $task->getId()]));
+        $this->delete($this->route('api_task_delete', ['id' => $this->taskId($task)]));
 
         self::assertResponseStatusCodeSame(204);
     }
@@ -662,7 +673,7 @@ final class TaskControllerTest extends ApiTestCase
     public function deleteWhenTaskDeletedShouldReturn404OnGet(): void
     {
         $task = TaskFactory::createOne(['user' => $this->user]);
-        $taskId = $task->getId();
+        $taskId = $this->taskId($task);
 
         $this->delete($this->route('api_task_delete', ['id' => $taskId]));
         $this->get($this->route('api_task_get', ['id' => $taskId]));
@@ -673,7 +684,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function deleteWhenTaskNotFoundShouldReturn404(): void
     {
-        $this->delete($this->route('api_task_delete', ['id' => 99999]));
+        $this->delete($this->route('api_task_delete', ['id' => $this->missingTaskId()]));
 
         self::assertResponseStatusCodeSame(404);
     }
@@ -684,7 +695,7 @@ final class TaskControllerTest extends ApiTestCase
         $otherUser = UserFactory::createOne();
         $task = TaskFactory::createOne(['user' => $otherUser]);
 
-        $this->delete($this->route('api_task_delete', ['id' => $task->getId()]));
+        $this->delete($this->route('api_task_delete', ['id' => $this->taskId($task)]));
 
         self::assertResponseStatusCodeSame(403);
     }
