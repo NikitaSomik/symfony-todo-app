@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Task\Listener\Activity;
+namespace App\Task\Listener\AuditLog;
 
-use App\Task\Activity\TaskActivity;
+use App\Task\AuditLog\TaskAuditLog;
 use App\Task\Event\TaskDeleted;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 
@@ -12,12 +12,12 @@ use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 final readonly class LogDeleted
 {
     public function __construct(
-        private TaskActivity $taskActivity,
+        private TaskAuditLog $taskAuditLog,
     ) {
     }
 
     public function __invoke(TaskDeleted $event): void
     {
-        $this->taskActivity->deleted($event->taskId, $event->actor, $event->state);
+        $this->taskAuditLog->deleted($event->taskId, $event->actor, $event->state);
     }
 }

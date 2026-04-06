@@ -6,15 +6,15 @@ namespace App\Tests\Application\Task;
 
 use App\Auth\DataFixtures\UserFactory;
 use App\Auth\Entity\User;
-use App\Shared\Activity\Enum\ActivityEntityType;
-use App\Shared\Activity\Repository\ActivityLogRepository;
+use App\Shared\AuditLog\Enum\AuditLogEntityType;
+use App\Shared\AuditLog\Repository\AuditLogRepository;
 use App\Task\DataFixtures\TaskFactory;
 use App\Task\Entity\Task;
 use App\Task\Entity\TaskStatusChange;
 use App\Task\Enum\TaskStatus;
 use App\Task\Repository\TaskRepository;
 use App\Tests\ApiTestCase;
-use App\Tests\Support\ActivityFailureToggle;
+use App\Tests\Support\AuditLogFailureToggle;
 use Doctrine\Persistence\ManagerRegistry;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\Uid\Uuid;
@@ -54,16 +54,16 @@ final class TaskControllerTest extends ApiTestCase
         return Uuid::v7()->toRfc4122();
     }
 
-    private function activityLogsForTask(Task $task): array
+    private function auditLogsForTask(Task $task): array
     {
-        $repository = static::getContainer()->get(ActivityLogRepository::class);
+        $repository = static::getContainer()->get(AuditLogRepository::class);
 
-        return $repository->findForEntity(ActivityEntityType::TASK, $this->taskId($task));
+        return $repository->findForEntity(AuditLogEntityType::TASK, $this->taskId($task));
     }
 
-    private function failActivityEventDispatching(): void
+    private function failAuditLogEventDispatching(): void
     {
-        static::getContainer()->get(ActivityFailureToggle::class)->enable();
+        static::getContainer()->get(AuditLogFailureToggle::class)->enable();
     }
 
     #[Test]
@@ -717,12 +717,12 @@ final class TaskControllerTest extends ApiTestCase
     }
 
     #[Test]
-    public function createWhenValidDataShouldCreateActivityLogEntry(): void
+    public function createWhenValidDataShouldCreateAuditLogEntry(): void
     {
         $response = $this->post($this->route('api_task_create'), ['title' => 'Buy milk']);
         $taskId = $this->jsonData($response)['id'];
 
-        $activities = static::getContainer()->get(ActivityLogRepository::class)->findForEntity(ActivityEntityType::TASK, $taskId);
+        $activities = static::getContainer()->get(AuditLogRepository::class)->findForEntity(AuditLogEntityType::TASK, $taskId);
 
         self::assertCount(1, $activities);
         self::assertSame('created', $activities[0]->getAction()->value);
@@ -732,7 +732,7 @@ final class TaskControllerTest extends ApiTestCase
     }
 
     #[Test]
-    public function updateWhenTaskIsChangedShouldCreateActivityLogEntryWithChanges(): void
+    public function updateWhenTaskIsChangedShouldCreateAuditLogEntryWithChanges(): void
     {
         $task = TaskFactory::createOne([
             'user' => $this->user,
@@ -751,23 +751,23 @@ final class TaskControllerTest extends ApiTestCase
 
         self::assertResponseIsSuccessful();
 
-        $activities = $this->activityLogsForTask($task);
+        $auditLogs = $this->auditLogsForTask($task);
 
-        self::assertCount(1, $activities);
-        self::assertSame('updated', $activities[0]->getAction()->value);
-        self::assertSame('Updated task "Buy almond milk"', $activities[0]->getMessage());
-        self::assertSame('Buy milk', $activities[0]->getAttributeChanges()['old']['title']);
-        self::assertSame('Buy almond milk', $activities[0]->getAttributeChanges()['attributes']['title']);
-        self::assertSame('todo', $activities[0]->getAttributeChanges()['old']['status']);
-        self::assertSame('completed', $activities[0]->getAttributeChanges()['attributes']['status']);
-        self::assertSame(null, $activities[0]->getAttributeChanges()['old']['due_date']);
-        self::assertSame('2026-04-03', $activities[0]->getAttributeChanges()['attributes']['due_date']);
-        self::assertArrayNotHasKey('description', $activities[0]->getAttributeChanges()['old']);
-        self::assertArrayNotHasKey('description', $activities[0]->getAttributeChanges()['attributes']);
+        self::assertCount(1, $auditLogs);
+        self::assertSame('updated', $auditLogs[0]->getAction()->value);
+        self::assertSame('Updated task "Buy almond milk"', $auditLogs[0]->getMessage());
+        self::assertSame('Buy milk', $auditLogs[0]->getAttributeChanges()['old']['title']);
+        self::assertSame('Buy almond milk', $auditLogs[0]->getAttributeChanges()['attributes']['title']);
+        self::assertSame('todo', $auditLogs[0]->getAttributeChanges()['old']['status']);
+        self::assertSame('completed', $auditLogs[0]->getAttributeChanges()['attributes']['status']);
+        self::assertSame(null, $auditLogs[0]->getAttributeChanges()['old']['due_date']);
+        self::assertSame('2026-04-03', $auditLogs[0]->getAttributeChanges()['attributes']['due_date']);
+        self::assertArrayNotHasKey('description', $auditLogs[0]->getAttributeChanges()['old']);
+        self::assertArrayNotHasKey('description', $auditLogs[0]->getAttributeChanges()['attributes']);
     }
 
     #[Test]
-    public function getActivityShouldReturnTaskHistory(): void
+    public function getAuditLogsShouldReturnTaskHistory(): void
     {
         $createResponse = $this->post($this->route('api_task_create'), ['title' => 'Buy milk']);
         $taskId = $this->jsonData($createResponse)['id'];
@@ -779,7 +779,7 @@ final class TaskControllerTest extends ApiTestCase
             'due_date' => null,
         ]);
 
-        $response = $this->get($this->route('api_task_get_activities', ['id' => $taskId]));
+        $response = $this->get($this->route('api_task_get_audit_logs', ['id' => $taskId]));
         $data = $this->jsonData($response);
 
         self::assertResponseIsSuccessful();
@@ -793,7 +793,7 @@ final class TaskControllerTest extends ApiTestCase
     }
 
     #[Test]
-    public function deleteWhenTaskExistsShouldCreateDeletedActivityLogEntry(): void
+    public function deleteWhenTaskExistsShouldCreateDeletedAuditLogEntry(): void
     {
         $task = TaskFactory::createOne([
             'user' => $this->user,
@@ -805,7 +805,7 @@ final class TaskControllerTest extends ApiTestCase
 
         self::assertResponseStatusCodeSame(204);
 
-        $activities = static::getContainer()->get(ActivityLogRepository::class)->findForEntity(ActivityEntityType::TASK, $taskId);
+        $activities = static::getContainer()->get(AuditLogRepository::class)->findForEntity(AuditLogEntityType::TASK, $taskId);
 
         self::assertCount(1, $activities);
         self::assertSame('deleted', $activities[0]->getAction()->value);
@@ -816,7 +816,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function createShouldRollbackTaskCreationWhenEventDispatchFails(): void
     {
-        $this->failActivityEventDispatching();
+        $this->failAuditLogEventDispatching();
 
         $response = $this->post($this->route('api_task_create'), ['title' => 'Buy milk']);
 
@@ -842,7 +842,7 @@ final class TaskControllerTest extends ApiTestCase
         ]);
         $taskId = $this->taskId($task);
 
-        $this->failActivityEventDispatching();
+        $this->failAuditLogEventDispatching();
 
         $response = $this->put($this->route('api_task_update', ['id' => $taskId]), [
             'title' => 'Buy almond milk',
@@ -860,7 +860,7 @@ final class TaskControllerTest extends ApiTestCase
         self::assertSame(TaskStatus::TODO, $reloadedTask->getStatus());
         self::assertNull($reloadedTask->getDueDate());
         self::assertSame([], $this->statusChangesForTask($reloadedTask));
-        self::assertSame([], $this->activityLogsForTask($reloadedTask));
+        self::assertSame([], $this->auditLogsForTask($reloadedTask));
     }
 
     #[Test]
@@ -872,12 +872,12 @@ final class TaskControllerTest extends ApiTestCase
         ]);
         $taskId = $this->taskId($task);
 
-        $this->failActivityEventDispatching();
+        $this->failAuditLogEventDispatching();
 
         $response = $this->delete($this->route('api_task_delete', ['id' => $taskId]));
 
         self::assertResponseStatusCodeSame(500);
         self::assertInstanceOf(Task::class, static::getContainer()->get(TaskRepository::class)->find($taskId));
-        self::assertSame([], static::getContainer()->get(ActivityLogRepository::class)->findForEntity(ActivityEntityType::TASK, $taskId));
+        self::assertSame([], static::getContainer()->get(AuditLogRepository::class)->findForEntity(AuditLogEntityType::TASK, $taskId));
     }
 }

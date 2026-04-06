@@ -9,28 +9,28 @@ use App\Task\Event\TaskDeleted;
 use App\Task\Event\TaskUpdated;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
-final readonly class FailActivityEventSubscriber implements EventSubscriberInterface
+final readonly class FailAuditLogEventSubscriber implements EventSubscriberInterface
 {
     public function __construct(
-        private ActivityFailureToggle $toggle,
+        private AuditLogFailureToggle $toggle,
     ) {
     }
 
     public static function getSubscribedEvents(): array
     {
         return [
-            TaskCreated::class => 'onActivityEvent',
-            TaskUpdated::class => 'onActivityEvent',
-            TaskDeleted::class => 'onActivityEvent',
+            TaskCreated::class => 'onAuditLogEvent',
+            TaskUpdated::class => 'onAuditLogEvent',
+            TaskDeleted::class => 'onAuditLogEvent',
         ];
     }
 
-    public function onActivityEvent(object $event): void
+    public function onAuditLogEvent(object $event): void
     {
         if (!$this->toggle->enabled()) {
             return;
         }
 
-        throw new \RuntimeException('Simulated activity event failure.');
+        throw new \RuntimeException('Simulated audit log event failure.');
     }
 }

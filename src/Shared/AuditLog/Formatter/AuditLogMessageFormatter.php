@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Shared\Activity\Formatter;
+namespace App\Shared\AuditLog\Formatter;
 
-final class ActivityMessageFormatter
+final class AuditLogMessageFormatter
 {
     public function created(string $entityLabel, string $displayName): string
     {

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Task\Activity;
+namespace App\Task\AuditLog;
 
 use App\Task\Entity\Task;
 

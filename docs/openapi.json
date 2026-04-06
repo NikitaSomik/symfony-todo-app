@@ -465,13 +465,13 @@
                 }
             }
         },
-        "/api/v1/tasks/{id}/activities": {
+        "/api/v1/tasks/{id}/audit-logs": {
             "get": {
                 "tags": [
                     "Tasks"
                 ],
-                "summary": "Get task activity history",
-                "operationId": "get_api_task_get_activities",
+                "summary": "Get task audit log history",
+                "operationId": "get_api_task_get_audit_logs",
                 "parameters": [
                     {
                         "name": "id",
@@ -486,11 +486,11 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Task activity history",
+                        "description": "Task audit log history",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ActivityLogCollectionResponseSchema"
+                                    "$ref": "#/components/schemas/AuditLogCollectionResponseSchema"
                                 }
                             }
                         }
@@ -893,12 +893,12 @@
                 "properties": {
                     "self": {
                         "type": "string",
-                        "example": "/api/v1/tasks/1/activity"
+                        "example": "/api/v1/tasks/0195a6b4-6f15-7d4b-b2c1-05b2a3d6e7f8/audit-logs"
                     }
                 },
                 "type": "object"
             },
-            "ActivityLogResource": {
+            "AuditLogResource": {
                 "required": [
                     "type",
                     "id",
@@ -907,7 +907,7 @@
                 "properties": {
                     "type": {
                         "type": "string",
-                        "example": "activity_logs"
+                        "example": "audit_logs"
                     },
                     "id": {
                         "type": "string",
@@ -992,7 +992,7 @@
                 },
                 "type": "object"
             },
-            "ActivityLogCollectionResponseSchema": {
+            "AuditLogCollectionResponseSchema": {
                 "required": [
                     "links",
                     "data"
@@ -1004,7 +1004,7 @@
                     "data": {
                         "type": "array",
                         "items": {
-                            "$ref": "#/components/schemas/ActivityLogResource"
+                            "$ref": "#/components/schemas/AuditLogResource"
                         }
                     }
                 },

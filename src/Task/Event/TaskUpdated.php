@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Task\Event;
 
 use App\Auth\Entity\User;
-use App\Task\Activity\TaskState;
+use App\Task\AuditLog\TaskState;
 use App\Task\Entity\Task;
 
 final readonly class TaskUpdated

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Task\Listener\Activity;
+namespace App\Task\Listener\AuditLog;
 
-use App\Task\Activity\TaskActivity;
+use App\Task\AuditLog\TaskAuditLog;
 use App\Task\Event\TaskCreated;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 
@@ -12,12 +12,12 @@ use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 final readonly class LogCreated
 {
     public function __construct(
-        private TaskActivity $taskActivity,
+        private TaskAuditLog $taskAuditLog,
     ) {
     }
 
     public function __invoke(TaskCreated $event): void
     {
-        $this->taskActivity->created($event->taskId, $event->actor, $event->state);
+        $this->taskAuditLog->created($event->taskId, $event->actor, $event->state);
     }
 }

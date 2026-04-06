@@ -156,12 +156,12 @@ Phase 5: CQRS (where justified)
 ## Phase 4 — Audit Log
 
 > Full history of task changes via Domain Events.
-> Implemented as `ActivityLog` + synchronous event listeners for now.
+> Implemented as `AuditLog` + synchronous event listeners for now.
 
-- [x] `ActivityLog` entity
+- [x] `AuditLog` entity
 - [x] Domain Events: `TaskCreated`, `TaskUpdated`, `TaskDeleted`
-- [x] Symfony EventDispatcher listeners write activity log
-- [x] `GET /api/v1/tasks/{id}/activities`
+- [x] Symfony EventDispatcher listeners write audit log
+- [x] `GET /api/v1/tasks/{id}/audit-logs`
 
 ---
 

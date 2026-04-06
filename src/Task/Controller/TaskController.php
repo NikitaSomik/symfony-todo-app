@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace App\Task\Controller;
 
 use App\Auth\Entity\User;
-use App\Shared\Activity\Api\Documentation\ActivityLogCollectionResponseSchema;
-use App\Shared\Activity\Enum\ActivityEntityType;
-use App\Shared\Activity\Repository\ActivityLogRepository;
-use App\Shared\Activity\Resource\ActivityLogResource;
 use App\Shared\Api\JsonApiResponse;
 use App\Shared\Api\PaginatedCollection;
 use App\Shared\Api\PaginationLinksBuilder;
 use App\Shared\Api\ResourceCollection;
+use App\Shared\AuditLog\Api\Documentation\AuditLogCollectionResponseSchema;
+use App\Shared\AuditLog\Enum\AuditLogEntityType;
+use App\Shared\AuditLog\Repository\AuditLogRepository;
+use App\Shared\AuditLog\Resource\AuditLogResource;
 use App\Task\Api\Documentation\TaskCollectionResponseSchema;
 use App\Task\Api\Documentation\TaskResponseSchema;
 use App\Task\DTO\CreateTaskDTO;
@@ -45,7 +45,7 @@ final class TaskController extends AbstractController
 {
     public function __construct(
         private readonly TaskRepository $taskRepository,
-        private readonly ActivityLogRepository $activityLogRepository,
+        private readonly AuditLogRepository $auditLogRepository,
         private readonly CreateTask $createTask,
         private readonly UpdateTask $updateTask,
         private readonly DeleteTask $deleteTask,
@@ -109,26 +109,26 @@ final class TaskController extends AbstractController
         return JsonApiResponse::one(TaskResource::toItem($task));
     }
 
-    #[Route('/{id}/activities', name: 'get_activities', requirements: ['id' => Requirement::UUID_V7], methods: ['GET'])]
-    #[OA\Get(summary: 'Get task activity history')]
+    #[Route('/{id}/audit-logs', name: 'get_audit_logs', requirements: ['id' => Requirement::UUID_V7], methods: ['GET'])]
+    #[OA\Get(summary: 'Get task audit log history')]
     #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))]
-    #[OA\Response(response: 200, description: 'Task activity history', content: new OA\JsonContent(ref: new Model(type: ActivityLogCollectionResponseSchema::class)))]
+    #[OA\Response(response: 200, description: 'Task audit log history', content: new OA\JsonContent(ref: new Model(type: AuditLogCollectionResponseSchema::class)))]
     #[OA\Response(response: 404, description: 'Task not found')]
     #[OA\Response(response: 403, description: 'Access denied')]
     #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
     #[IsGranted(TaskVoter::ACCESS, 'task')]
-    public function getActivity(Task $task): JsonResponse
+    public function getAuditLogs(Task $task): JsonResponse
     {
         $taskId = $task->getId()->toRfc4122();
 
-        $activities = $this->activityLogRepository->findForEntity(ActivityEntityType::TASK, $taskId);
-        $historyUrl = $this->generateUrl('api_task_get_activities', ['id' => $taskId]);
+        $auditLogs = $this->auditLogRepository->findForEntity(AuditLogEntityType::TASK, $taskId);
+        $auditLogUrl = $this->generateUrl('api_task_get_audit_logs', ['id' => $taskId]);
 
         return JsonApiResponse::collection(
             new ResourceCollection(
-                items: ActivityLogResource::toItems($activities),
+                items: AuditLogResource::toItems($auditLogs),
                 links: [
-                    'self' => $historyUrl,
+                    'self' => $auditLogUrl,
                 ],
             ),
         );

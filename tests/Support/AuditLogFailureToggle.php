@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Support;
 
-final class ActivityFailureToggle
+final class AuditLogFailureToggle
 {
     private bool $enabled = false;
 

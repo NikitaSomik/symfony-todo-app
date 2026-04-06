@@ -2,28 +2,28 @@
 
 declare(strict_types=1);
 
-namespace App\Shared\Activity\Entity;
+namespace App\Shared\AuditLog\Entity;
 
 use App\Auth\Entity\User;
-use App\Shared\Activity\Enum\ActivityAction;
-use App\Shared\Activity\Enum\ActivityEntityType;
-use App\Shared\Activity\Repository\ActivityLogRepository;
+use App\Shared\AuditLog\Enum\AuditLogAction;
+use App\Shared\AuditLog\Enum\AuditLogEntityType;
+use App\Shared\AuditLog\Repository\AuditLogRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity(repositoryClass: ActivityLogRepository::class)]
-#[ORM\Table(name: 'activity_logs')]
-#[ORM\Index(name: 'idx_activity_logs_entity_created_at', columns: ['entity_type', 'entity_id', 'created_at'])]
-#[ORM\Index(name: 'idx_activity_logs_user_id', columns: ['user_id'])]
-class ActivityLog
+#[ORM\Entity(repositoryClass: AuditLogRepository::class)]
+#[ORM\Table(name: 'audit_logs')]
+#[ORM\Index(name: 'idx_audit_logs_entity_created_at', columns: ['entity_type', 'entity_id', 'created_at'])]
+#[ORM\Index(name: 'idx_audit_logs_user_id', columns: ['user_id'])]
+class AuditLog
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 50, enumType: ActivityEntityType::class)]
-    private ActivityEntityType $entityType;
+    #[ORM\Column(length: 50, enumType: AuditLogEntityType::class)]
+    private AuditLogEntityType $entityType;
 
     #[ORM\Column(type: Types::GUID)]
     private string $entityId;
@@ -32,8 +32,8 @@ class ActivityLog
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?User $user;
 
-    #[ORM\Column(length: 50, enumType: ActivityAction::class)]
-    private ActivityAction $action;
+    #[ORM\Column(length: 50, enumType: AuditLogAction::class)]
+    private AuditLogAction $action;
 
     #[ORM\Column(type: Types::TEXT)]
     private string $message;
@@ -54,10 +54,10 @@ class ActivityLog
      * @param array<string, mixed>|null $properties
      */
     public function __construct(
-        ActivityEntityType $entityType,
+        AuditLogEntityType $entityType,
         string $entityId,
         ?User $user,
-        ActivityAction $action,
+        AuditLogAction $action,
         string $message,
         ?array $attributeChanges,
         ?array $properties,
@@ -78,7 +78,7 @@ class ActivityLog
         return $this->id;
     }
 
-    public function getEntityType(): ActivityEntityType
+    public function getEntityType(): AuditLogEntityType
     {
         return $this->entityType;
     }
@@ -93,7 +93,7 @@ class ActivityLog
         return $this->user;
     }
 
-    public function getAction(): ActivityAction
+    public function getAction(): AuditLogAction
     {
         return $this->action;
     }

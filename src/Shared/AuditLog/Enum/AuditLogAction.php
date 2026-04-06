@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Shared\Activity\Enum;
+namespace App\Shared\AuditLog\Enum;
 
-enum ActivityAction: string
+enum AuditLogAction: string
 {
     case CREATED = 'created';
     case UPDATED = 'updated';

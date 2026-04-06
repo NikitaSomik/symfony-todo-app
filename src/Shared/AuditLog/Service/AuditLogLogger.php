@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace App\Shared\Activity\Service;
+namespace App\Shared\AuditLog\Service;
 
 use App\Auth\Entity\User;
-use App\Shared\Activity\Entity\ActivityLog;
-use App\Shared\Activity\Enum\ActivityAction;
-use App\Shared\Activity\Enum\ActivityEntityType;
+use App\Shared\AuditLog\Entity\AuditLog;
+use App\Shared\AuditLog\Enum\AuditLogAction;
+use App\Shared\AuditLog\Enum\AuditLogEntityType;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Clock\ClockInterface;
 
-final class ActivityLogger
+final class AuditLogLogger
 {
     public function __construct(
         private readonly EntityManagerInterface $em,
@@ -24,15 +24,15 @@ final class ActivityLogger
      * @param array<string, mixed>|null $properties
      */
     public function log(
-        ActivityEntityType $entityType,
+        AuditLogEntityType $entityType,
         string $entityId,
         ?User $user,
-        ActivityAction $action,
+        AuditLogAction $action,
         string $message,
         ?array $attributeChanges = null,
         ?array $properties = null,
     ): void {
-        $this->em->persist(new ActivityLog(
+        $this->em->persist(new AuditLog(
             entityType: $entityType,
             entityId: $entityId,
             user: $user,
