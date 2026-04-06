@@ -31,7 +31,7 @@ final class Version20260403153000 extends AbstractMigration
                 action VARCHAR(50) NOT NULL,
                 message TEXT NOT NULL,
                 attribute_changes JSONB DEFAULT NULL,
-                properties JSONB DEFAULT NULL,
+                metadata JSONB DEFAULT NULL,
                 created_at TIMESTAMPTZ NOT NULL,
                 PRIMARY KEY(id)
             )

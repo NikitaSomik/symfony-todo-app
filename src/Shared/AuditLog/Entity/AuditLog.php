@@ -44,14 +44,14 @@ class AuditLog
 
     /** @var array<string, mixed>|null */
     #[ORM\Column(type: Types::JSON, nullable: true, options: ['jsonb' => true])]
-    private ?array $properties;
+    private ?array $metadata;
 
     #[ORM\Column(type: Types::DATETIMETZ_IMMUTABLE)]
     private \DateTimeImmutable $createdAt;
 
     /**
      * @param array<string, mixed>|null $attributeChanges
-     * @param array<string, mixed>|null $properties
+     * @param array<string, mixed>|null $metadata
      */
     public function __construct(
         AuditLogEntityType $entityType,
@@ -60,7 +60,7 @@ class AuditLog
         AuditLogAction $action,
         string $message,
         ?array $attributeChanges,
-        ?array $properties,
+        ?array $metadata,
         \DateTimeImmutable $createdAt,
     ) {
         $this->entityType = $entityType;
@@ -69,7 +69,7 @@ class AuditLog
         $this->action = $action;
         $this->message = $message;
         $this->attributeChanges = $attributeChanges;
-        $this->properties = $properties;
+        $this->metadata = $metadata;
         $this->createdAt = $createdAt;
     }
 
@@ -114,9 +114,9 @@ class AuditLog
     /**
      * @return array<string, mixed>|null
      */
-    public function getProperties(): ?array
+    public function getMetadata(): ?array
     {
-        return $this->properties;
+        return $this->metadata;
     }
 
     public function getCreatedAt(): \DateTimeImmutable

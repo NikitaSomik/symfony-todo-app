@@ -728,11 +728,11 @@ final class TaskControllerTest extends ApiTestCase
         self::assertSame('created', $activities[0]->getAction()->value);
         self::assertSame('Created task "Buy milk"', $activities[0]->getMessage());
         self::assertSame($this->user->getId(), $activities[0]->getUser()?->getId());
-        self::assertSame('Buy milk', $activities[0]->getProperties()['attributes']['title']);
+        self::assertSame('Buy milk', $activities[0]->getMetadata()['entity_data']['title']);
     }
 
     #[Test]
-    public function updateWhenTaskIsChangedShouldCreateAuditLogEntryWithChanges(): void
+    public function updateWhenTaskIsChangedShouldCreateAuditLogEntryForEachChangedField(): void
     {
         $task = TaskFactory::createOne([
             'user' => $this->user,
@@ -753,17 +753,25 @@ final class TaskControllerTest extends ApiTestCase
 
         $auditLogs = $this->auditLogsForTask($task);
 
-        self::assertCount(1, $auditLogs);
+        self::assertCount(3, $auditLogs);
+
         self::assertSame('updated', $auditLogs[0]->getAction()->value);
-        self::assertSame('Updated task "Buy almond milk"', $auditLogs[0]->getMessage());
+        self::assertSame('Updated task title for "Buy almond milk"', $auditLogs[0]->getMessage());
         self::assertSame('Buy milk', $auditLogs[0]->getAttributeChanges()['old']['title']);
-        self::assertSame('Buy almond milk', $auditLogs[0]->getAttributeChanges()['attributes']['title']);
-        self::assertSame('todo', $auditLogs[0]->getAttributeChanges()['old']['status']);
-        self::assertSame('completed', $auditLogs[0]->getAttributeChanges()['attributes']['status']);
-        self::assertSame(null, $auditLogs[0]->getAttributeChanges()['old']['due_date']);
-        self::assertSame('2026-04-03', $auditLogs[0]->getAttributeChanges()['attributes']['due_date']);
-        self::assertArrayNotHasKey('description', $auditLogs[0]->getAttributeChanges()['old']);
-        self::assertArrayNotHasKey('description', $auditLogs[0]->getAttributeChanges()['attributes']);
+        self::assertSame('Buy almond milk', $auditLogs[0]->getAttributeChanges()['new']['title']);
+        self::assertCount(1, $auditLogs[0]->getAttributeChanges()['old']);
+
+        self::assertSame('updated', $auditLogs[1]->getAction()->value);
+        self::assertSame('Updated task status for "Buy almond milk"', $auditLogs[1]->getMessage());
+        self::assertSame('todo', $auditLogs[1]->getAttributeChanges()['old']['status']);
+        self::assertSame('completed', $auditLogs[1]->getAttributeChanges()['new']['status']);
+        self::assertCount(1, $auditLogs[1]->getAttributeChanges()['old']);
+
+        self::assertSame('updated', $auditLogs[2]->getAction()->value);
+        self::assertSame('Updated task due date for "Buy almond milk"', $auditLogs[2]->getMessage());
+        self::assertSame(null, $auditLogs[2]->getAttributeChanges()['old']['due_date']);
+        self::assertSame('2026-04-03', $auditLogs[2]->getAttributeChanges()['new']['due_date']);
+        self::assertCount(1, $auditLogs[2]->getAttributeChanges()['old']);
     }
 
     #[Test]
@@ -786,10 +794,10 @@ final class TaskControllerTest extends ApiTestCase
         self::assertCount(2, $data);
         self::assertSame('created', $data[0]['attributes']['action']);
         self::assertSame('Created task "Buy milk"', $data[0]['attributes']['message']);
-        self::assertSame('Buy milk', $data[0]['attributes']['properties']['attributes']['title']);
+        self::assertSame('Buy milk', $data[0]['attributes']['metadata']['entity_data']['title']);
         self::assertSame('updated', $data[1]['attributes']['action']);
         self::assertSame('Updated task title for "Buy almond milk"', $data[1]['attributes']['message']);
-        self::assertSame('Buy almond milk', $data[1]['attributes']['attribute_changes']['attributes']['title']);
+        self::assertSame('Buy almond milk', $data[1]['attributes']['attribute_changes']['new']['title']);
     }
 
     #[Test]
@@ -810,7 +818,7 @@ final class TaskControllerTest extends ApiTestCase
         self::assertCount(1, $activities);
         self::assertSame('deleted', $activities[0]->getAction()->value);
         self::assertSame('Deleted task "Buy milk"', $activities[0]->getMessage());
-        self::assertSame('Buy milk', $activities[0]->getProperties()['attributes']['title']);
+        self::assertSame('Buy milk', $activities[0]->getMetadata()['entity_data']['title']);
     }
 
     #[Test]

@@ -38,7 +38,7 @@ final class TaskAuditLog
             user: $actor,
             action: AuditLogAction::CREATED,
             message: $this->messageFormatter->created(self::ENTITY_LABEL, $state->title),
-            properties: ['attributes' => $state->toArray()],
+            metadata: ['entity_data' => $state->toArray()],
         );
     }
 
@@ -49,19 +49,21 @@ final class TaskAuditLog
             return;
         }
 
-        $this->auditLogLogger->log(
-            entityType: AuditLogEntityType::TASK,
-            entityId: $taskId,
-            user: $actor,
-            action: AuditLogAction::UPDATED,
-            message: $this->messageFormatter->updated(
-                entityLabel: self::ENTITY_LABEL,
-                displayName: $currentState->title,
-                changes: $changes,
-                fieldLabels: self::FIELD_LABELS,
-            ),
-            attributeChanges: $this->updatedData($changes),
-        );
+        foreach ($changes as $field => $change) {
+            $this->auditLogLogger->log(
+                entityType: AuditLogEntityType::TASK,
+                entityId: $taskId,
+                user: $actor,
+                action: AuditLogAction::UPDATED,
+                message: $this->messageFormatter->updated(
+                    entityLabel: self::ENTITY_LABEL,
+                    displayName: $currentState->title,
+                    field: $field,
+                    fieldLabels: self::FIELD_LABELS,
+                ),
+                attributeChanges: $this->updatedData($field, $change),
+            );
+        }
     }
 
     public function deleted(string $taskId, User $actor, TaskState $state): void
@@ -72,31 +74,23 @@ final class TaskAuditLog
             user: $actor,
             action: AuditLogAction::DELETED,
             message: $this->messageFormatter->deleted(self::ENTITY_LABEL, $state->title),
-            properties: ['attributes' => $state->toArray()],
+            metadata: ['entity_data' => $state->toArray()],
         );
     }
 
     /**
-     * @param array<string, array{old: scalar|null, new: scalar|null}> $changes
+     * @param array{old: scalar|null, new: scalar|null} $change
      *
      * @return array{
      *     old: array<string, scalar|null>,
-     *     attributes: array<string, scalar|null>
+     *     new: array<string, scalar|null>
      * }
      */
-    private function updatedData(array $changes): array
+    private function updatedData(string $field, array $change): array
     {
-        $old = [];
-        $attributes = [];
-
-        foreach ($changes as $field => $change) {
-            $old[$field] = $change['old'];
-            $attributes[$field] = $change['new'];
-        }
-
         return [
-            'old' => $old,
-            'attributes' => $attributes,
+            'old' => [$field => $change['old']],
+            'new' => [$field => $change['new']],
         ];
     }
 }

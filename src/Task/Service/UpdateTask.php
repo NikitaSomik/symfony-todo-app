@@ -50,6 +50,7 @@ final class UpdateTask
                 actor: $user,
                 previousState: $previousState,
             ));
+
             $this->em->flush();
 
             return $task;

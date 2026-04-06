@@ -957,7 +957,7 @@
                                             "nullable": true
                                         }
                                     },
-                                    "attributes": {
+                                    "new": {
                                         "type": "object",
                                         "example": {
                                             "title": "Buy almond milk"
@@ -971,10 +971,10 @@
                                 "type": "object",
                                 "nullable": true
                             },
-                            "properties": {
+                            "metadata": {
                                 "type": "object",
                                 "example": {
-                                    "attributes": {
+                                    "entity_data": {
                                         "title": "Buy milk",
                                         "status": "todo"
                                     }

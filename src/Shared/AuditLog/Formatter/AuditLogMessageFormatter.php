@@ -12,16 +12,10 @@ final class AuditLogMessageFormatter
     }
 
     /**
-     * @param array<string, array{old: scalar|null, new: scalar|null}> $changes
-     * @param array<string, string>                                    $fieldLabels
+     * @param array<string, string> $fieldLabels
      */
-    public function updated(string $entityLabel, string $displayName, array $changes, array $fieldLabels = []): string
+    public function updated(string $entityLabel, string $displayName, string $field, array $fieldLabels = []): string
     {
-        if (1 !== count($changes)) {
-            return sprintf('Updated %s "%s"', $entityLabel, $displayName);
-        }
-
-        $field = array_key_first($changes);
         $label = $fieldLabels[$field] ?? $field;
 
         return sprintf('Updated %s %s for "%s"', $entityLabel, $label, $displayName);

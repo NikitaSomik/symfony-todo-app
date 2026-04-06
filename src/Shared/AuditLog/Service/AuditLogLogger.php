@@ -21,7 +21,7 @@ final class AuditLogLogger
 
     /**
      * @param array<string, mixed>|null $attributeChanges
-     * @param array<string, mixed>|null $properties
+     * @param array<string, mixed>|null $metadata
      */
     public function log(
         AuditLogEntityType $entityType,
@@ -30,7 +30,7 @@ final class AuditLogLogger
         AuditLogAction $action,
         string $message,
         ?array $attributeChanges = null,
-        ?array $properties = null,
+        ?array $metadata = null,
     ): void {
         $this->em->persist(new AuditLog(
             entityType: $entityType,
@@ -39,7 +39,7 @@ final class AuditLogLogger
             action: $action,
             message: $message,
             attributeChanges: $attributeChanges,
-            properties: $properties,
+            metadata: $metadata,
             createdAt: $this->clock->now(),
         ));
     }

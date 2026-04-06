@@ -23,8 +23,8 @@ use OpenApi\Attributes as OA;
                 new OA\Property(property: 'user_id', type: 'integer', example: 7, nullable: true),
                 new OA\Property(property: 'action', type: 'string', enum: [AuditLogAction::CREATED->value, AuditLogAction::UPDATED->value, AuditLogAction::DELETED->value], example: AuditLogAction::UPDATED->value),
                 new OA\Property(property: 'message', type: 'string', example: 'Updated task title for "Buy almond milk"'),
-                new OA\Property(property: 'attribute_changes', properties: [new OA\Property(property: 'old', type: 'object', example: ['title' => 'Buy milk'], additionalProperties: new OA\AdditionalProperties(type: 'string', nullable: true)), new OA\Property(property: 'attributes', type: 'object', example: ['title' => 'Buy almond milk'], additionalProperties: new OA\AdditionalProperties(type: 'string', nullable: true))], type: 'object', nullable: true),
-                new OA\Property(property: 'properties', type: 'object', example: ['attributes' => ['title' => 'Buy milk', 'status' => TaskStatus::TODO->value]], nullable: true, additionalProperties: new OA\AdditionalProperties()),
+                new OA\Property(property: 'attribute_changes', properties: [new OA\Property(property: 'old', type: 'object', example: ['title' => 'Buy milk'], additionalProperties: new OA\AdditionalProperties(type: 'string', nullable: true)), new OA\Property(property: 'new', type: 'object', example: ['title' => 'Buy almond milk'], additionalProperties: new OA\AdditionalProperties(type: 'string', nullable: true))], type: 'object', nullable: true),
+                new OA\Property(property: 'metadata', type: 'object', example: ['entity_data' => ['title' => 'Buy milk', 'status' => TaskStatus::TODO->value]], nullable: true, additionalProperties: new OA\AdditionalProperties()),
                 new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
             ],
             type: 'object',
@@ -38,7 +38,7 @@ final class AuditLogResource
         $id = $auditLog->getId();
 
         if (null === $id) {
-            throw new \LogicException(' AuditLog log resource cannot be created for an entity without id.');
+            throw new \LogicException('Audit log resource cannot be created for an entity without id.');
         }
 
         return new ResourceItem(
@@ -51,7 +51,7 @@ final class AuditLogResource
                 'action' => $auditLog->getAction()->value,
                 'message' => $auditLog->getMessage(),
                 'attribute_changes' => $auditLog->getAttributeChanges(),
-                'properties' => $auditLog->getProperties(),
+                'metadata' => $auditLog->getMetadata(),
                 'created_at' => $auditLog->getCreatedAt()->format(\DateTimeInterface::ATOM),
             ],
         );
