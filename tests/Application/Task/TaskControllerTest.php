@@ -56,15 +56,9 @@ final class TaskControllerTest extends ApiTestCase
 
     private function activityLogsForTask(Task $task): array
     {
-        $taskId = $task->getId();
-
-        if (null === $taskId) {
-            throw new \LogicException('Task activity cannot be fetched for an entity without id.');
-        }
-
         $repository = static::getContainer()->get(ActivityLogRepository::class);
 
-        return $repository->findForEntity(ActivityEntityType::TASK, $taskId);
+        return $repository->findForEntity(ActivityEntityType::TASK, $this->taskId($task));
     }
 
     private function failActivityEventDispatching(): void
@@ -726,7 +720,7 @@ final class TaskControllerTest extends ApiTestCase
     public function createWhenValidDataShouldCreateActivityLogEntry(): void
     {
         $response = $this->post($this->route('api_task_create'), ['title' => 'Buy milk']);
-        $taskId = (int) $this->jsonData($response)['id'];
+        $taskId = $this->jsonData($response)['id'];
 
         $activities = static::getContainer()->get(ActivityLogRepository::class)->findForEntity(ActivityEntityType::TASK, $taskId);
 
@@ -748,7 +742,7 @@ final class TaskControllerTest extends ApiTestCase
             'due_date' => null,
         ]);
 
-        $this->put($this->route('api_task_update', ['id' => $task->getId()]), [
+        $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), [
             'title' => 'Buy almond milk',
             'description' => null,
             'status' => TaskStatus::COMPLETED->value,
@@ -776,7 +770,7 @@ final class TaskControllerTest extends ApiTestCase
     public function getActivityShouldReturnTaskHistory(): void
     {
         $createResponse = $this->post($this->route('api_task_create'), ['title' => 'Buy milk']);
-        $taskId = (int) $this->jsonData($createResponse)['id'];
+        $taskId = $this->jsonData($createResponse)['id'];
 
         $this->put($this->route('api_task_update', ['id' => $taskId]), [
             'title' => 'Buy almond milk',
@@ -805,7 +799,7 @@ final class TaskControllerTest extends ApiTestCase
             'user' => $this->user,
             'title' => 'Buy milk',
         ]);
-        $taskId = $task->getId();
+        $taskId = $this->taskId($task);
 
         $this->delete($this->route('api_task_delete', ['id' => $taskId]));
 
@@ -846,7 +840,7 @@ final class TaskControllerTest extends ApiTestCase
             'status' => TaskStatus::TODO,
             'dueDate' => null,
         ]);
-        $taskId = $task->getId();
+        $taskId = $this->taskId($task);
 
         $this->failActivityEventDispatching();
 
@@ -876,7 +870,7 @@ final class TaskControllerTest extends ApiTestCase
             'user' => $this->user,
             'title' => 'Buy milk',
         ]);
-        $taskId = $task->getId();
+        $taskId = $this->taskId($task);
 
         $this->failActivityEventDispatching();
 

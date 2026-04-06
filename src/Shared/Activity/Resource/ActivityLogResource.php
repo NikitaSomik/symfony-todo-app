@@ -19,7 +19,7 @@ use OpenApi\Attributes as OA;
             property: 'attributes',
             properties: [
                 new OA\Property(property: 'entity_type', type: 'string', enum: [ActivityEntityType::TASK->value], example: ActivityEntityType::TASK->value),
-                new OA\Property(property: 'entity_id', type: 'integer', example: 42),
+                new OA\Property(property: 'entity_id', type: 'string', format: 'uuid', example: '0195a6b4-6f15-7d4b-b2c1-05b2a3d6e7f8'),
                 new OA\Property(property: 'user_id', type: 'integer', example: 7, nullable: true),
                 new OA\Property(property: 'action', type: 'string', enum: [ActivityAction::CREATED->value, ActivityAction::UPDATED->value, ActivityAction::DELETED->value], example: ActivityAction::UPDATED->value),
                 new OA\Property(property: 'message', type: 'string', example: 'Updated task title for "Buy almond milk"'),

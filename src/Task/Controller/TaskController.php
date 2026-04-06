@@ -37,7 +37,6 @@ use Symfony\Component\HttpKernel\Attribute\MapQueryString;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
-use Symfony\Component\Routing\Requirement\Requirement;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/api/v1/tasks', name: 'api_task_', format: 'json')]
@@ -120,8 +119,7 @@ final class TaskController extends AbstractController
     #[IsGranted(TaskVoter::ACCESS, 'task')]
     public function getActivity(Task $task): JsonResponse
     {
-        /** @var int $taskId */
-        $taskId = $task->getId();
+        $taskId = $task->getId()->toRfc4122();
 
         $activities = $this->activityLogRepository->findForEntity(ActivityEntityType::TASK, $taskId);
         $historyUrl = $this->generateUrl('api_task_get_activities', ['id' => $taskId]);
@@ -148,7 +146,6 @@ final class TaskController extends AbstractController
     #[IsGranted(TaskVoter::ACCESS, 'task')]
     public function update(#[MapRequestPayload] UpdateTaskDTO $dto, Task $task): JsonResponse
     {
-
         /** @var User $user */
         $user = $this->getUser();
         $task = $this->updateTask->handle($task, $dto, $user);

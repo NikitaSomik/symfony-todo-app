@@ -30,7 +30,7 @@ final class TaskActivity
     ) {
     }
 
-    public function created(int $taskId, User $actor, TaskState $state): void
+    public function created(string $taskId, User $actor, TaskState $state): void
     {
         $this->activityLogger->log(
             entityType: ActivityEntityType::TASK,
@@ -42,7 +42,7 @@ final class TaskActivity
         );
     }
 
-    public function updated(int $taskId, User $actor, TaskState $previousState, TaskState $currentState): void
+    public function updated(string $taskId, User $actor, TaskState $previousState, TaskState $currentState): void
     {
         $changes = $this->changeSetDetector->detect($previousState->toArray(), $currentState->toArray());
         if (empty($changes)) {
@@ -64,7 +64,7 @@ final class TaskActivity
         );
     }
 
-    public function deleted(int $taskId, User $actor, TaskState $state): void
+    public function deleted(string $taskId, User $actor, TaskState $state): void
     {
         $this->activityLogger->log(
             entityType: ActivityEntityType::TASK,

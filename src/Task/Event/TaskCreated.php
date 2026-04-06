@@ -11,7 +11,7 @@ use App\Task\Entity\Task;
 final readonly class TaskCreated
 {
     public function __construct(
-        public int $taskId,
+        public string $taskId,
         public User $actor,
         public TaskState $state,
     ) {
@@ -19,14 +19,8 @@ final readonly class TaskCreated
 
     public static function from(Task $task, User $actor): self
     {
-        $taskId = $task->getId();
-
-        if (null === $taskId) {
-            throw new \LogicException('Task event cannot be created for an entity without id.');
-        }
-
         return new self(
-            taskId: $taskId,
+            taskId: $task->getId()->toRfc4122(),
             actor: $actor,
             state: TaskState::fromTask($task),
         );

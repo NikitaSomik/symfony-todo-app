@@ -25,8 +25,8 @@ class ActivityLog
     #[ORM\Column(length: 50, enumType: ActivityEntityType::class)]
     private ActivityEntityType $entityType;
 
-    #[ORM\Column]
-    private int $entityId;
+    #[ORM\Column(type: Types::GUID)]
+    private string $entityId;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
@@ -55,7 +55,7 @@ class ActivityLog
      */
     public function __construct(
         ActivityEntityType $entityType,
-        int $entityId,
+        string $entityId,
         ?User $user,
         ActivityAction $action,
         string $message,
@@ -83,7 +83,7 @@ class ActivityLog
         return $this->entityType;
     }
 
-    public function getEntityId(): int
+    public function getEntityId(): string
     {
         return $this->entityId;
     }

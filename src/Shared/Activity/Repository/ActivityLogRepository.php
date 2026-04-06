@@ -22,7 +22,7 @@ final class ActivityLogRepository extends ServiceEntityRepository
     /**
      * @return ActivityLog[]
      */
-    public function findForEntity(ActivityEntityType $entityType, int $entityId): array
+    public function findForEntity(ActivityEntityType $entityType, string $entityId): array
     {
         return $this->findBy(
             ['entityType' => $entityType, 'entityId' => $entityId],

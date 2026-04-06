@@ -8,8 +8,8 @@ use App\Auth\Entity\User;
 use App\Task\DTO\CreateTaskDTO;
 use App\Task\Entity\Task;
 use App\Task\Enum\TaskStatus;
-use App\Task\Identity\TaskIdGenerator;
 use App\Task\Event\TaskCreated;
+use App\Task\Identity\TaskIdGenerator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 

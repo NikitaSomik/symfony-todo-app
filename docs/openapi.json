@@ -337,47 +337,6 @@
                 }
             }
         },
-        "/api/v1/tasks/{id}/activities": {
-            "get": {
-                "tags": [
-                    "Tasks"
-                ],
-                "summary": "Get task activity history",
-                "operationId": "get_api_task_get_activities",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "pattern": "\\d+"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Task activity history",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ActivityLogCollectionResponseSchema"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Task not found"
-                    },
-                    "403": {
-                        "description": "Access denied"
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/UnauthorizedError"
-                    }
-                }
-            }
-        },
         "/api/v1/tasks/{id}": {
             "get": {
                 "tags": [
@@ -493,6 +452,48 @@
                 "responses": {
                     "204": {
                         "description": "Task deleted"
+                    },
+                    "404": {
+                        "description": "Task not found"
+                    },
+                    "403": {
+                        "description": "Access denied"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    }
+                }
+            }
+        },
+        "/api/v1/tasks/{id}/activities": {
+            "get": {
+                "tags": [
+                    "Tasks"
+                ],
+                "summary": "Get task activity history",
+                "operationId": "get_api_task_get_activities",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Task activity history",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ActivityLogCollectionResponseSchema"
+                                }
+                            }
+                        }
                     },
                     "404": {
                         "description": "Task not found"
@@ -922,8 +923,9 @@
                                 "example": "task"
                             },
                             "entity_id": {
-                                "type": "integer",
-                                "example": 42
+                                "type": "string",
+                                "format": "uuid",
+                                "example": "0195a6b4-6f15-7d4b-b2c1-05b2a3d6e7f8"
                             },
                             "user_id": {
                                 "type": "integer",

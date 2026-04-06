@@ -25,7 +25,7 @@ final class ActivityLogger
      */
     public function log(
         ActivityEntityType $entityType,
-        int $entityId,
+        string $entityId,
         ?User $user,
         ActivityAction $action,
         string $message,
