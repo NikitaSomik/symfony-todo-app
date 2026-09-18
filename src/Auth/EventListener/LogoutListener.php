@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Auth\EventListener;
 
 use App\Auth\Factory\JwtCookieFactory;
-use App\Auth\Repository\RefreshTokenRepository;
+use App\Auth\Service\RevokeRefreshTokens;
 use App\Shared\Api\JsonApiResponse;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Security\Http\Event\LogoutEvent;
@@ -14,7 +14,7 @@ use Symfony\Component\Security\Http\Event\LogoutEvent;
 final class LogoutListener
 {
     public function __construct(
-        private readonly RefreshTokenRepository $refreshTokenRepository,
+        private readonly RevokeRefreshTokens $revokeRefreshTokens,
         private readonly JwtCookieFactory $cookieFactory,
     ) {
     }
@@ -24,19 +24,10 @@ final class LogoutListener
         $refreshTokenValue = $event->getRequest()->cookies->get(JwtCookieFactory::REFRESH_COOKIE);
 
         if (null !== $refreshTokenValue) {
-            $this->revokeUserRefreshTokens($refreshTokenValue);
+            $this->revokeRefreshTokens->handle($refreshTokenValue);
         }
 
         $event->setResponse($this->logoutResponse());
-    }
-
-    private function revokeUserRefreshTokens(string $refreshTokenValue): void
-    {
-        $storedRefreshToken = $this->refreshTokenRepository->findValidByToken($refreshTokenValue);
-
-        if (null !== $storedRefreshToken) {
-            $this->refreshTokenRepository->deleteAllForUser($storedRefreshToken->getUser());
-        }
     }
 
     private function logoutResponse(): JsonApiResponse
