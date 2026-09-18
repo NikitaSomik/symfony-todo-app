@@ -6,6 +6,8 @@ namespace App\Auth\Service;
 
 use App\Auth\Entity\RefreshToken;
 use App\Auth\Entity\User;
+use App\Auth\RefreshToken\IssuedRefreshToken;
+use App\Auth\RefreshToken\RefreshTokenHash;
 use Doctrine\ORM\EntityManagerInterface;
 
 final class IssueRefreshToken
@@ -16,15 +18,13 @@ final class IssueRefreshToken
     ) {
     }
 
-    public function handle(User $user): RefreshToken
+    public function handle(User $user): IssuedRefreshToken
     {
-        $token = bin2hex(random_bytes(32));
+        $plainToken = bin2hex(random_bytes(32));
         $expiresAt = new \DateTimeImmutable(sprintf('+%d days', $this->refreshTokenTtl));
 
-        $refreshToken = new RefreshToken($token, $user, $expiresAt);
+        $this->em->persist(new RefreshToken(RefreshTokenHash::fromPlain($plainToken), $user, $expiresAt));
 
-        $this->em->persist($refreshToken);
-
-        return $refreshToken;
+        return new IssuedRefreshToken($plainToken, $expiresAt);
     }
 }

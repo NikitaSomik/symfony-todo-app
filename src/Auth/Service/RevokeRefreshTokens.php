@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Auth\Service;
 
+use App\Auth\RefreshToken\RefreshTokenHash;
 use App\Auth\Repository\RefreshTokenRepository;
 
 final class RevokeRefreshTokens
@@ -19,7 +20,7 @@ final class RevokeRefreshTokens
      */
     public function handle(string $plainToken): void
     {
-        $refreshToken = $this->refreshTokenRepository->findValidByToken($plainToken);
+        $refreshToken = $this->refreshTokenRepository->findValidByToken(RefreshTokenHash::fromPlain($plainToken));
 
         if (null !== $refreshToken) {
             $this->refreshTokenRepository->deleteAllForUser($refreshToken->getUser());

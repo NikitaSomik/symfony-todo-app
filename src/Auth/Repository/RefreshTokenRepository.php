@@ -6,6 +6,7 @@ namespace App\Auth\Repository;
 
 use App\Auth\Entity\RefreshToken;
 use App\Auth\Entity\User;
+use App\Auth\RefreshToken\RefreshTokenHash;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -19,12 +20,12 @@ class RefreshTokenRepository extends ServiceEntityRepository
         parent::__construct($registry, RefreshToken::class);
     }
 
-    public function findValidByToken(string $token): ?RefreshToken
+    public function findValidByToken(RefreshTokenHash $token): ?RefreshToken
     {
         return $this->createQueryBuilder('rt')
             ->where('rt.token = :token')
             ->andWhere('rt.expiresAt > :now')
-            ->setParameter('token', $token)
+            ->setParameter('token', $token->value)
             ->setParameter('now', new \DateTimeImmutable())
             ->getQuery()
             ->getOneOrNullResult();

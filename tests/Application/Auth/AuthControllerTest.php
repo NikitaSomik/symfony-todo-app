@@ -6,6 +6,7 @@ namespace App\Tests\Application\Auth;
 
 use App\Auth\DataFixtures\RefreshTokenFactory;
 use App\Auth\DataFixtures\UserFactory;
+use App\Auth\RefreshToken\RefreshTokenHash;
 use App\Auth\Repository\RefreshTokenRepository;
 use App\Tests\ApiTestCase;
 use PHPUnit\Framework\Attributes\Test;
@@ -140,9 +141,9 @@ final class AuthControllerTest extends ApiTestCase
     #[Test]
     public function refreshWhenValidTokenShouldReturn204(): void
     {
-        $refreshToken = RefreshTokenFactory::createOne();
+        $refreshToken = $this->createRefreshToken();
 
-        $this->setCookie('refresh_token', $refreshToken->getToken());
+        $this->setCookie('refresh_token', $refreshToken);
         $this->post($this->route('api_auth_refresh'));
 
         self::assertResponseStatusCodeSame(204);
@@ -151,9 +152,9 @@ final class AuthControllerTest extends ApiTestCase
     #[Test]
     public function refreshWhenValidTokenShouldRenewCookies(): void
     {
-        $refreshToken = RefreshTokenFactory::createOne();
+        $refreshToken = $this->createRefreshToken();
 
-        $this->setCookie('refresh_token', $refreshToken->getToken());
+        $this->setCookie('refresh_token', $refreshToken);
         $response = $this->post($this->route('api_auth_refresh'));
 
         $responseCookieNames = array_map(
@@ -167,9 +168,9 @@ final class AuthControllerTest extends ApiTestCase
     #[Test]
     public function refreshWhenValidTokenShouldReturnEmptyBody(): void
     {
-        $refreshToken = RefreshTokenFactory::createOne();
+        $refreshToken = $this->createRefreshToken();
 
-        $this->setCookie('refresh_token', $refreshToken->getToken());
+        $this->setCookie('refresh_token', $refreshToken);
         $response = $this->post($this->route('api_auth_refresh'));
 
         self::assertResponseStatusCodeSame(204);
@@ -179,14 +180,13 @@ final class AuthControllerTest extends ApiTestCase
     #[Test]
     public function refreshShouldRotateToken(): void
     {
-        $refreshToken = RefreshTokenFactory::createOne();
-        $oldToken = $refreshToken->getToken();
+        $oldToken = $this->createRefreshToken();
 
         $this->setCookie('refresh_token', $oldToken);
         $this->post($this->route('api_auth_refresh'));
 
         $repo = static::getContainer()->get(RefreshTokenRepository::class);
-        self::assertNull($repo->findValidByToken($oldToken));
+        self::assertNull($repo->findValidByToken(RefreshTokenHash::fromPlain($oldToken)));
     }
 
     #[Test]
@@ -202,9 +202,9 @@ final class AuthControllerTest extends ApiTestCase
     #[Test]
     public function refreshWhenTokenExpiredShouldReturn401(): void
     {
-        $refreshToken = RefreshTokenFactory::new()->expired()->create();
+        $refreshToken = $this->createRefreshToken(['expiresAt' => new \DateTimeImmutable('-1 day')]);
 
-        $this->setCookie('refresh_token', $refreshToken->getToken());
+        $this->setCookie('refresh_token', $refreshToken);
         $response = $this->post($this->route('api_auth_refresh'));
 
         self::assertResponseStatusCodeSame(401);
@@ -251,10 +251,10 @@ final class AuthControllerTest extends ApiTestCase
     public function logoutShouldReturn204(): void
     {
         $user = UserFactory::createOne();
-        $refreshToken = RefreshTokenFactory::createOne(['user' => $user]);
+        $refreshToken = $this->createRefreshToken(['user' => $user]);
 
         $this->actingAs($user);
-        $this->setCookie('refresh_token', $refreshToken->getToken());
+        $this->setCookie('refresh_token', $refreshToken);
         $this->post($this->route('api_auth_logout'));
 
         self::assertResponseStatusCodeSame(204);
@@ -264,10 +264,10 @@ final class AuthControllerTest extends ApiTestCase
     public function logoutShouldClearCookies(): void
     {
         $user = UserFactory::createOne();
-        $refreshToken = RefreshTokenFactory::createOne(['user' => $user]);
+        $refreshToken = $this->createRefreshToken(['user' => $user]);
 
         $this->actingAs($user);
-        $this->setCookie('refresh_token', $refreshToken->getToken());
+        $this->setCookie('refresh_token', $refreshToken);
         $response = $this->post($this->route('api_auth_logout'));
 
         $clearedCookieNames = array_map(
@@ -283,10 +283,10 @@ final class AuthControllerTest extends ApiTestCase
     {
         $user = UserFactory::createOne();
         RefreshTokenFactory::createMany(3, ['user' => $user]);
-        $activeToken = RefreshTokenFactory::createOne(['user' => $user]);
+        $activeToken = $this->createRefreshToken(['user' => $user]);
 
         $this->actingAs($user);
-        $this->setCookie('refresh_token', $activeToken->getToken());
+        $this->setCookie('refresh_token', $activeToken);
         $this->post($this->route('api_auth_logout'));
 
         $repo = static::getContainer()->get(RefreshTokenRepository::class);
@@ -307,29 +307,29 @@ final class AuthControllerTest extends ApiTestCase
     #[Test]
     public function logoutWithoutAuthenticatedUserShouldRevokeRefreshTokenStoredOnAuthPath(): void
     {
-        $refreshToken = RefreshTokenFactory::createOne();
+        $refreshToken = $this->createRefreshToken();
 
-        $this->setCookieWithPath('refresh_token', $refreshToken->getToken(), '/api/v1/auth');
+        $this->setCookieWithPath('refresh_token', $refreshToken, '/api/v1/auth');
         $this->post($this->route('api_auth_logout'));
 
         self::assertResponseStatusCodeSame(204);
 
         $repo = static::getContainer()->get(RefreshTokenRepository::class);
-        self::assertNull($repo->findValidByToken($refreshToken->getToken()));
+        self::assertNull($repo->findValidByToken(RefreshTokenHash::fromPlain($refreshToken)));
     }
 
     #[Test]
     public function refreshAfterLogoutShouldFail(): void
     {
         $user = UserFactory::createOne();
-        $refreshToken = RefreshTokenFactory::createOne(['user' => $user]);
+        $refreshToken = $this->createRefreshToken(['user' => $user]);
 
-        $this->setCookieWithPath('refresh_token', $refreshToken->getToken(), '/api/v1/auth');
+        $this->setCookieWithPath('refresh_token', $refreshToken, '/api/v1/auth');
         $this->post($this->route('api_auth_logout'));
 
         self::assertResponseStatusCodeSame(204);
 
-        $this->setCookieWithPath('refresh_token', $refreshToken->getToken(), '/api/v1/auth');
+        $this->setCookieWithPath('refresh_token', $refreshToken, '/api/v1/auth');
         $this->post($this->route('api_auth_refresh'));
 
         self::assertResponseStatusCodeSame(401);
@@ -356,5 +356,18 @@ final class AuthControllerTest extends ApiTestCase
 
         self::assertResponseStatusCodeSame(204);
         self::assertSame('', $response->getContent());
+    }
+
+    /**
+     * Only the hash is persisted, so the plain value is generated here to be sent as the cookie.
+     *
+     * @param array<string, mixed> $attributes
+     */
+    private function createRefreshToken(array $attributes = []): string
+    {
+        $plainToken = bin2hex(random_bytes(32));
+        RefreshTokenFactory::createOne(['token' => RefreshTokenHash::fromPlain($plainToken), ...$attributes]);
+
+        return $plainToken;
     }
 }

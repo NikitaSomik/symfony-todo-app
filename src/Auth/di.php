@@ -17,6 +17,7 @@ return static function (ContainerConfigurator $di): void {
             __DIR__.'/DataFixtures/',
             __DIR__.'/DTO/',
             __DIR__.'/Entity/',
+            __DIR__.'/RefreshToken/',
             __DIR__.'/{di,routing}.php',
         ]);
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Auth\Factory;
 
-use App\Auth\Entity\RefreshToken;
+use App\Auth\RefreshToken\IssuedRefreshToken;
 use Symfony\Component\HttpFoundation\Cookie;
 
 final class JwtCookieFactory
@@ -29,11 +29,11 @@ final class JwtCookieFactory
             ->withSecure($this->secure);
     }
 
-    public function createRefreshCookie(RefreshToken $refreshToken): Cookie
+    public function createRefreshCookie(IssuedRefreshToken $refreshToken): Cookie
     {
         return Cookie::create(self::REFRESH_COOKIE)
-            ->withValue($refreshToken->getToken())
-            ->withExpires($refreshToken->getExpiresAt())
+            ->withValue($refreshToken->value)
+            ->withExpires($refreshToken->expiresAt)
             ->withPath('/api/v1/auth')
             ->withHttpOnly(true)
             ->withSameSite(Cookie::SAMESITE_STRICT)

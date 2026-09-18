@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace App\Auth\Service;
 
-use App\Auth\Entity\RefreshToken;
 use App\Auth\Exception\InvalidRefreshTokenException;
+use App\Auth\RefreshToken\IssuedRefreshToken;
+use App\Auth\RefreshToken\RefreshTokenHash;
 use App\Auth\Repository\RefreshTokenRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
@@ -20,11 +21,11 @@ final class RefreshAccessToken
     ) {
     }
 
-    /** @return array{jwt: string, refreshToken: RefreshToken} */
+    /** @return array{jwt: string, refreshToken: IssuedRefreshToken} */
     public function handle(string $token): array
     {
         return $this->em->wrapInTransaction(function () use ($token): array {
-            $refreshToken = $this->refreshTokenRepository->findValidByToken($token);
+            $refreshToken = $this->refreshTokenRepository->findValidByToken(RefreshTokenHash::fromPlain($token));
 
             if (null === $refreshToken) {
                 throw new InvalidRefreshTokenException();
