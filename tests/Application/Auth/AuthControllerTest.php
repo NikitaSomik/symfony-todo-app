@@ -136,6 +136,29 @@ final class AuthControllerTest extends ApiTestCase
         self::assertContains('refresh_token', $responseCookieNames);
     }
 
+    #[Test]
+    public function loginShouldStoreOnlyRefreshTokenHash(): void
+    {
+        UserFactory::createOne(['email' => 'user@example.com']);
+
+        $response = $this->post($this->route('api_auth_login'), [
+            'email' => 'user@example.com',
+            'password' => 'password',
+        ]);
+
+        $refreshCookies = array_values(array_filter(
+            $response->headers->getCookies(),
+            static fn (Cookie $c) => 'refresh_token' === $c->getName(),
+        ));
+        self::assertCount(1, $refreshCookies);
+        $plainToken = (string) $refreshCookies[0]->getValue();
+
+        $storedHashes = static::getContainer()->get('doctrine.dbal.default_connection')
+            ->fetchFirstColumn('SELECT token FROM refresh_tokens');
+
+        self::assertSame([hash('sha256', $plainToken)], $storedHashes);
+    }
+
     // --- Refresh ---
 
     #[Test]
