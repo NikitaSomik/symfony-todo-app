@@ -48,3 +48,10 @@ when@prod:
                 channels: [deprecation]
                 path: php://stderr
                 formatter: monolog.formatter.json
+            # Security warnings are not errors, so the fingers_crossed "main" handler would drop them.
+            security:
+                type: stream
+                channels: [security]
+                path: php://stderr
+                level: warning
+                formatter: monolog.formatter.json

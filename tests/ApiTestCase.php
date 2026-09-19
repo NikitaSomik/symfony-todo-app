@@ -20,6 +20,23 @@ abstract class ApiTestCase extends WebTestCase
     protected function setUp(): void
     {
         $this->client = static::createClient();
+
+        // Login throttling counters are persisted in tests; stop them leaking into the next test.
+        static::getContainer()->get('cache.rate_limiter')->clear();
+    }
+
+    protected function fromIp(string $ip): static
+    {
+        $this->client->setServerParameter('REMOTE_ADDR', $ip);
+
+        return $this;
+    }
+
+    protected function withForwardedFor(string $ip): static
+    {
+        $this->client->setServerParameter('HTTP_X_FORWARDED_FOR', $ip);
+
+        return $this;
     }
 
     protected function actingAs(User $user): static
