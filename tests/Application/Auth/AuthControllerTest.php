@@ -10,6 +10,7 @@ use App\Auth\RefreshToken\RandomRefreshTokenGenerator;
 use App\Auth\RefreshToken\RefreshTokenHash;
 use App\Auth\Repository\RefreshTokenRepository;
 use App\Tests\ApiTestCase;
+use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\HttpFoundation\Cookie;
 
@@ -380,6 +381,85 @@ final class AuthControllerTest extends ApiTestCase
 
         self::assertResponseStatusCodeSame(204);
         self::assertSame('', $response->getContent());
+    }
+
+    // --- Stale access token cookie ---
+
+    #[Test]
+    public function refreshWhenAccessTokenCookieIsInvalidShouldReturn204(): void
+    {
+        $refreshToken = $this->createRefreshToken();
+
+        $this->setCookie('access_token', 'stale-access-token');
+        $this->setCookie('refresh_token', $refreshToken);
+        $this->post($this->route('api_auth_refresh'));
+
+        self::assertResponseStatusCodeSame(204);
+    }
+
+    #[Test]
+    public function loginWhenAccessTokenCookieIsInvalidShouldSucceed(): void
+    {
+        UserFactory::createOne(['email' => 'user@example.com']);
+
+        $this->setCookie('access_token', 'stale-access-token');
+        $this->post($this->route('api_auth_login'), [
+            'email' => 'user@example.com',
+            'password' => 'password',
+        ]);
+
+        self::assertResponseIsSuccessful();
+    }
+
+    #[Test]
+    public function registerWhenAccessTokenCookieIsInvalidShouldReturn201(): void
+    {
+        $this->setCookie('access_token', 'stale-access-token');
+        $this->post($this->route('api_auth_register'), [
+            'email' => 'user@example.com',
+            'password' => 'secret123',
+        ]);
+
+        self::assertResponseStatusCodeSame(201);
+    }
+
+    #[Test]
+    public function logoutWhenAccessTokenCookieIsInvalidShouldRevokeSessionAndClearCookies(): void
+    {
+        $refreshToken = $this->createRefreshToken();
+
+        $this->setCookie('access_token', 'stale-access-token');
+        $this->setCookieWithPath('refresh_token', $refreshToken, '/api/v1/auth');
+        $response = $this->post($this->route('api_auth_logout'));
+
+        self::assertResponseStatusCodeSame(204);
+
+        $clearedCookieNames = array_map(
+            static fn (Cookie $c) => $c->getName(),
+            $response->headers->getCookies(),
+        );
+        self::assertContains('access_token', $clearedCookieNames);
+        self::assertContains('refresh_token', $clearedCookieNames);
+
+        $repo = static::getContainer()->get(RefreshTokenRepository::class);
+        self::assertNull($repo->findValidByToken(RefreshTokenHash::fromPlain($refreshToken)));
+    }
+
+    #[Test]
+    public function logoutShouldBlockPresentedAccessToken(): void
+    {
+        $user = UserFactory::createOne();
+        $accessToken = static::getContainer()->get(JWTTokenManagerInterface::class)->create($user);
+
+        $this->setCookie('access_token', $accessToken);
+        $this->post($this->route('api_auth_logout'));
+
+        self::assertResponseStatusCodeSame(204);
+
+        $this->setCookie('access_token', $accessToken);
+        $this->get($this->route('api_profile_me'));
+
+        self::assertResponseStatusCodeSame(401);
     }
 
     /**
