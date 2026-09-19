@@ -48,3 +48,11 @@ when@prod:
                 channels: [deprecation]
                 path: php://stderr
                 formatter: monolog.formatter.json
+            # Security events (e.g. login throttling) are not errors, so "main" would drop them.
+            # Symfony's own security INFO noise stays out: only warning and above are written.
+            security:
+                type: stream
+                channels: [security]
+                path: php://stderr
+                level: warning
+                formatter: monolog.formatter.json
