@@ -17,11 +17,17 @@ final class UserFactory extends PersistentObjectFactory
         return User::class;
     }
 
+    /**
+     * Hash of 'password' with the cheapest bcrypt cost: fixture users exist only in dev and test,
+     * and tests verify this hash on every login, which is the slowest part of the suite.
+     */
+    private const string PASSWORD_HASH = '$2y$04$y0RQCGRHb8dxLRM6JG6DLecaG9cA1DNvkuiucA1aKTJ4to1JgFT6e';
+
     protected function defaults(): array|callable
     {
         return [
             'email' => self::faker()->unique()->email(),
-            'password' => '$2y$12$SnS/ZkwA82FyVBfi6dCeh.6daT9DLVETSLodKeC/GCWt/.lO4sXdC', // 'password'
+            'password' => self::PASSWORD_HASH,
         ];
     }
 
