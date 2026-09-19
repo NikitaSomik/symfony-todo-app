@@ -2,7 +2,7 @@
 
 ![CI](https://github.com/NikitaSomik/symfony-todo-app/actions/workflows/ci.yml/badge.svg)
 ![PHP](https://img.shields.io/badge/PHP-8.5-777BB4?logo=php&logoColor=white)
-![Symfony](https://img.shields.io/badge/Symfony-8.0-000000?logo=symfony&logoColor=white)
+![Symfony](https://img.shields.io/badge/Symfony-8.1-000000?logo=symfony&logoColor=white)
 ![PHPStan](https://img.shields.io/badge/PHPStan-level%208-brightgreen)
 
 Modular Symfony 8 API with Docker, PostgreSQL 18, JWT authentication, integration tests, and OpenAPI documentation.
@@ -10,7 +10,7 @@ Modular Symfony 8 API with Docker, PostgreSQL 18, JWT authentication, integratio
 ## Stack
 
 - PHP 8.5
-- Symfony 8
+- Symfony 8.1
 - PostgreSQL 18
 - Redis
 - PHPUnit
