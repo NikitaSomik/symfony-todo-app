@@ -234,6 +234,22 @@ final class AuthControllerTest extends ApiTestCase
     }
 
     #[Test]
+    public function loginWhenForwardedForIsSpoofedShouldStillBeThrottled(): void
+    {
+        UserFactory::createOne(['email' => 'user@example.com']);
+
+        for ($i = 1; $i <= 5; ++$i) {
+            $this->withForwardedFor('198.51.100.'.$i)->failLogin('user@example.com', 1);
+        }
+        $this->withForwardedFor('198.51.100.99')->post($this->route('api_auth_login'), [
+            'email' => 'user@example.com',
+            'password' => 'password',
+        ]);
+
+        self::assertResponseStatusCodeSame(429);
+    }
+
+    #[Test]
     public function loginWhenSucceededShouldNotCountAsFailedAttempt(): void
     {
         UserFactory::createOne(['email' => 'user@example.com']);

@@ -33,6 +33,13 @@ abstract class ApiTestCase extends WebTestCase
         return $this;
     }
 
+    protected function withForwardedFor(string $ip): static
+    {
+        $this->client->setServerParameter('HTTP_X_FORWARDED_FOR', $ip);
+
+        return $this;
+    }
+
     protected function actingAs(User $user): static
     {
         $jwtManager = static::getContainer()->get(JWTTokenManagerInterface::class);
