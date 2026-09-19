@@ -41,7 +41,7 @@ final class LoginThrottledListenerTest extends TestCase
         self::assertSame('Login throttled.', $record->message);
         self::assertSame([
             'ip' => '203.0.113.10',
-            'identifier' => 'user@example.com',
+            'email' => 'user@example.com',
             'firewall' => 'auth',
         ], $record->context);
     }

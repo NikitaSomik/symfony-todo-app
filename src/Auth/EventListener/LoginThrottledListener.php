@@ -30,7 +30,7 @@ final class LoginThrottledListener
 
         $this->logger->warning('Login throttled.', [
             'ip' => $request->getClientIp(),
-            'identifier' => $request->attributes->get(SecurityRequestAttributes::LAST_USERNAME),
+            'email' => $request->attributes->get(SecurityRequestAttributes::LAST_USERNAME),
             'firewall' => $event->getFirewallName(),
         ]);
     }
