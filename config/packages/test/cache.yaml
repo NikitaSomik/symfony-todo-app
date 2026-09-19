@@ -8,3 +8,7 @@ framework:
             # blocklisted on logout would be forgotten before the next request.
             cache.jwt_blocklist:
                 adapter: cache.adapter.filesystem
+            # Same for login throttling: failed attempts must be counted across requests.
+            # ApiTestCase clears this pool before every test.
+            cache.rate_limiter:
+                adapter: cache.adapter.filesystem
