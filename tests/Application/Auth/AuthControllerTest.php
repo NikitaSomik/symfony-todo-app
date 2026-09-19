@@ -6,6 +6,7 @@ namespace App\Tests\Application\Auth;
 
 use App\Auth\DataFixtures\RefreshTokenFactory;
 use App\Auth\DataFixtures\UserFactory;
+use App\Auth\RefreshToken\RandomRefreshTokenGenerator;
 use App\Auth\RefreshToken\RefreshTokenHash;
 use App\Auth\Repository\RefreshTokenRepository;
 use App\Tests\ApiTestCase;
@@ -388,7 +389,7 @@ final class AuthControllerTest extends ApiTestCase
      */
     private function createRefreshToken(array $attributes = []): string
     {
-        $plainToken = bin2hex(random_bytes(32));
+        $plainToken = (new RandomRefreshTokenGenerator())->generate();
         RefreshTokenFactory::createOne(['token' => RefreshTokenHash::fromPlain($plainToken), ...$attributes]);
 
         return $plainToken;

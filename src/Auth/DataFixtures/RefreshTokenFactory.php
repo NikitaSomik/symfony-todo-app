@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Auth\DataFixtures;
 
 use App\Auth\Entity\RefreshToken;
+use App\Auth\RefreshToken\RandomRefreshTokenGenerator;
 use App\Auth\RefreshToken\RefreshTokenHash;
 use Zenstruck\Foundry\Persistence\PersistentObjectFactory;
 
@@ -21,7 +22,7 @@ final class RefreshTokenFactory extends PersistentObjectFactory
     protected function defaults(): array|callable
     {
         return [
-            'token' => RefreshTokenHash::fromPlain(bin2hex(random_bytes(32))),
+            'token' => RefreshTokenHash::fromPlain((new RandomRefreshTokenGenerator())->generate()),
             'user' => UserFactory::new(),
             'expiresAt' => new \DateTimeImmutable('+30 days'),
         ];
