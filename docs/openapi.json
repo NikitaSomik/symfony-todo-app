@@ -198,16 +198,16 @@
                             "properties": {
                                 "number": {
                                     "type": "integer",
+                                    "example": 1,
                                     "default": 1,
-                                    "minimum": 1,
-                                    "example": 1
+                                    "minimum": 1
                                 },
                                 "size": {
                                     "type": "integer",
+                                    "example": 20,
                                     "default": 20,
                                     "maximum": 100,
-                                    "minimum": 1,
-                                    "example": 20
+                                    "minimum": 1
                                 }
                             },
                             "type": "object"
@@ -279,9 +279,9 @@
                         "required": false,
                         "schema": {
                             "type": "string",
-                            "maxLength": 100,
                             "example": "milk",
-                            "nullable": true
+                            "nullable": true,
+                            "maxLength": 100
                         }
                     }
                 ],
@@ -519,14 +519,14 @@
                     "email": {
                         "type": "string",
                         "format": "email",
-                        "maxLength": 180,
-                        "example": "user@example.com"
+                        "example": "user@example.com",
+                        "maxLength": 180
                     },
                     "password": {
                         "type": "string",
+                        "example": "secret123",
                         "maxLength": 100,
-                        "minLength": 8,
-                        "example": "secret123"
+                        "minLength": 8
                     }
                 },
                 "type": "object"
@@ -551,24 +551,24 @@
                 "properties": {
                     "status": {
                         "type": "string",
+                        "nullable": true,
                         "default": null,
                         "enum": [
                             "todo",
                             "in_progress",
                             "completed",
                             "cancelled"
-                        ],
-                        "nullable": true
+                        ]
                     },
                     "due_from": {
                         "type": "string",
-                        "default": null,
-                        "nullable": true
+                        "nullable": true,
+                        "default": null
                     },
                     "due_to": {
                         "type": "string",
-                        "default": null,
-                        "nullable": true
+                        "nullable": true,
+                        "default": null
                     }
                 },
                 "type": "object"
@@ -600,9 +600,9 @@
                     },
                     "search": {
                         "type": "string",
+                        "nullable": true,
                         "default": null,
-                        "maxLength": 100,
-                        "nullable": true
+                        "maxLength": 100
                     }
                 },
                 "type": "object"
@@ -623,33 +623,34 @@
                 "properties": {
                     "title": {
                         "type": "string",
-                        "maxLength": 255,
-                        "example": "Buy milk"
+                        "example": "Buy milk",
+                        "maxLength": 255
                     },
                     "description": {
                         "type": "string",
+                        "example": "2 liters",
+                        "nullable": true,
                         "default": null,
                         "maxLength": 2000,
-                        "minLength": 3,
-                        "example": "2 liters",
-                        "nullable": true
+                        "minLength": 3
                     },
                     "status": {
                         "$ref": "#/components/schemas/TaskStatus"
                     },
                     "cancellation_reason": {
                         "type": "string",
-                        "maxLength": 500,
-                        "minLength": 3,
                         "example": "Task is no longer relevant",
-                        "nullable": true
+                        "nullable": true,
+                        "default": null,
+                        "maxLength": 500,
+                        "minLength": 3
                     },
                     "due_date": {
                         "type": "string",
                         "format": "date",
-                        "default": null,
                         "example": "2026-04-01",
-                        "nullable": true
+                        "nullable": true,
+                        "default": null
                     }
                 },
                 "type": "object"
@@ -661,33 +662,34 @@
                 "properties": {
                     "title": {
                         "type": "string",
-                        "maxLength": 255,
-                        "example": "Buy milk"
+                        "example": "Buy milk",
+                        "maxLength": 255
                     },
                     "description": {
                         "type": "string",
+                        "example": "2 liters",
+                        "nullable": true,
                         "default": null,
                         "maxLength": 2000,
-                        "minLength": 3,
-                        "example": "2 liters",
-                        "nullable": true
+                        "minLength": 3
                     },
                     "status": {
                         "$ref": "#/components/schemas/TaskStatus"
                     },
                     "cancellation_reason": {
                         "type": "string",
-                        "maxLength": 500,
-                        "minLength": 3,
                         "example": "Task is no longer needed",
-                        "nullable": true
+                        "nullable": true,
+                        "default": null,
+                        "maxLength": 500,
+                        "minLength": 3
                     },
                     "due_date": {
                         "type": "string",
                         "format": "date",
-                        "default": null,
                         "example": "2026-04-01",
-                        "nullable": true
+                        "nullable": true,
+                        "default": null
                     }
                 },
                 "type": "object"
@@ -917,10 +919,10 @@
                         "properties": {
                             "entity_type": {
                                 "type": "string",
+                                "example": "task",
                                 "enum": [
                                     "task"
-                                ],
-                                "example": "task"
+                                ]
                             },
                             "entity_id": {
                                 "type": "string",
@@ -934,12 +936,12 @@
                             },
                             "action": {
                                 "type": "string",
+                                "example": "updated",
                                 "enum": [
                                     "created",
                                     "updated",
                                     "deleted"
-                                ],
-                                "example": "updated"
+                                ]
                             },
                             "message": {
                                 "type": "string",
