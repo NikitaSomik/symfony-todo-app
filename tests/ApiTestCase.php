@@ -26,6 +26,13 @@ abstract class ApiTestCase extends WebTestCase
         static::getContainer()->get('cache.rate_limiter')->clear();
     }
 
+    protected function fromIp(string $ip): static
+    {
+        $this->client->setServerParameter('REMOTE_ADDR', $ip);
+
+        return $this;
+    }
+
     protected function actingAs(User $user): static
     {
         $jwtManager = static::getContainer()->get(JWTTokenManagerInterface::class);

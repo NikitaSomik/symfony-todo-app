@@ -161,6 +161,100 @@ final class AuthControllerTest extends ApiTestCase
         self::assertSame([hash('sha256', $plainToken)], $storedHashes);
     }
 
+    // --- Login throttling ---
+
+    #[Test]
+    public function loginWhenTooManyFailedAttemptsShouldReturn429(): void
+    {
+        UserFactory::createOne(['email' => 'user@example.com']);
+
+        $this->failLogin('user@example.com', 5);
+        $response = $this->post($this->route('api_auth_login'), [
+            'email' => 'user@example.com',
+            'password' => 'wrong_password',
+        ]);
+
+        self::assertResponseStatusCodeSame(429);
+        self::assertSame('429', $this->json($response)['errors'][0]['status']);
+        self::assertSame('Too many login attempts. Please try again later.', $this->json($response)['errors'][0]['message']);
+    }
+
+    #[Test]
+    public function loginWhenThrottledShouldRejectCorrectPassword(): void
+    {
+        UserFactory::createOne(['email' => 'user@example.com']);
+
+        $this->failLogin('user@example.com', 5);
+        $this->post($this->route('api_auth_login'), [
+            'email' => 'user@example.com',
+            'password' => 'password',
+        ]);
+
+        self::assertResponseStatusCodeSame(429);
+    }
+
+    #[Test]
+    public function loginWhenThrottledForUnknownEmailShouldReturn429(): void
+    {
+        $this->failLogin('ghost@example.com', 5);
+        $this->post($this->route('api_auth_login'), [
+            'email' => 'ghost@example.com',
+            'password' => 'password',
+        ]);
+
+        self::assertResponseStatusCodeSame(429);
+    }
+
+    #[Test]
+    public function loginWhenAnotherEmailIsThrottledShouldSucceedFromSameIp(): void
+    {
+        UserFactory::createOne(['email' => 'user@example.com']);
+
+        $this->failLogin('attacked@example.com', 5);
+        $this->post($this->route('api_auth_login'), [
+            'email' => 'user@example.com',
+            'password' => 'password',
+        ]);
+
+        self::assertResponseIsSuccessful();
+    }
+
+    #[Test]
+    public function loginWhenEmailIsThrottledFromAnotherIpShouldSucceed(): void
+    {
+        UserFactory::createOne(['email' => 'user@example.com']);
+
+        $this->fromIp('203.0.113.10')->failLogin('user@example.com', 5);
+        $this->fromIp('203.0.113.20')->post($this->route('api_auth_login'), [
+            'email' => 'user@example.com',
+            'password' => 'password',
+        ]);
+
+        self::assertResponseIsSuccessful();
+    }
+
+    #[Test]
+    public function loginWhenSucceededShouldNotCountAsFailedAttempt(): void
+    {
+        UserFactory::createOne(['email' => 'user@example.com']);
+
+        $this->failLogin('user@example.com', 4);
+        for ($i = 0; $i < 3; ++$i) {
+            $this->post($this->route('api_auth_login'), [
+                'email' => 'user@example.com',
+                'password' => 'password',
+            ]);
+            self::assertResponseIsSuccessful();
+        }
+
+        $this->post($this->route('api_auth_login'), [
+            'email' => 'user@example.com',
+            'password' => 'wrong_password',
+        ]);
+
+        self::assertResponseStatusCodeSame(401);
+    }
+
     // --- Refresh ---
 
     #[Test]
@@ -460,6 +554,17 @@ final class AuthControllerTest extends ApiTestCase
         $this->get($this->route('api_profile_me'));
 
         self::assertResponseStatusCodeSame(401);
+    }
+
+    private function failLogin(string $email, int $times): void
+    {
+        for ($i = 0; $i < $times; ++$i) {
+            $this->post($this->route('api_auth_login'), [
+                'email' => $email,
+                'password' => 'wrong_password',
+            ]);
+            self::assertResponseStatusCodeSame(401);
+        }
     }
 
     /**
