@@ -1,7 +1,7 @@
 parameters:
     level: 8
 
-    phpVersion: 80400
+    phpVersion: 80500
 
     paths:
         - src/
