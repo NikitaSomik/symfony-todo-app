@@ -16,7 +16,6 @@ final class AuthenticationFailureHandler implements AuthenticationFailureHandler
 {
     public function onAuthenticationFailure(Request $request, AuthenticationException $exception): Response
     {
-        // The message never mentions the account: the response is the same whether the email exists or not.
         if ($exception instanceof TooManyLoginAttemptsAuthenticationException) {
             return JsonApiResponse::error(
                 [new JsonApiError((string) Response::HTTP_TOO_MANY_REQUESTS, 'Too many login attempts. Please try again later.')],

@@ -2,8 +2,6 @@
 framework:
     secret: '%env(APP_SECRET)%'
 
-    # Behind a load balancer / CDN the client IP comes from X-Forwarded-For, which is honoured
-    # only for requests from these proxies. IP-based limits (login throttling) depend on it.
     trusted_proxies: '%env(TRUSTED_PROXIES)%'
 
     # Note that the session will be started ONLY if you read or write from it.

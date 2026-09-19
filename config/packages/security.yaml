@@ -28,8 +28,7 @@ security:
                 password_path: password
                 success_handler: lexik_jwt_authentication.handler.authentication_success
                 failure_handler: App\Auth\Security\Authentication\Lexik\AuthenticationFailureHandler
-            # Counted per "email + IP" and, with a 5x higher limit, per IP alone:
-            # a victim's account cannot be locked from another IP.
+            # Per "email + IP", plus a 5x higher limit per IP alone (added by Symfony).
             login_throttling:
                 max_attempts: 5
                 interval: '1 minute'

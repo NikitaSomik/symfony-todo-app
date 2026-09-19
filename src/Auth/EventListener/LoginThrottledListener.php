@@ -11,10 +11,6 @@ use Symfony\Component\Security\Core\Exception\TooManyLoginAttemptsAuthentication
 use Symfony\Component\Security\Http\Event\LoginFailureEvent;
 use Symfony\Component\Security\Http\SecurityRequestAttributes;
 
-/**
- * Records one security event per login lockout (not per failed attempt) so that
- * brute force and credential stuffing are visible in production logs.
- */
 #[AsEventListener(event: LoginFailureEvent::class)]
 #[WithMonologChannel('security')]
 final class LoginThrottledListener

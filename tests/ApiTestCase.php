@@ -21,8 +21,7 @@ abstract class ApiTestCase extends WebTestCase
     {
         $this->client = static::createClient();
 
-        // Rate limiter state (e.g. login throttling) is persisted between requests in tests,
-        // so it has to be wiped to keep failed attempts from leaking into the next test.
+        // Login throttling counters are persisted in tests; stop them leaking into the next test.
         static::getContainer()->get('cache.rate_limiter')->clear();
     }
 
