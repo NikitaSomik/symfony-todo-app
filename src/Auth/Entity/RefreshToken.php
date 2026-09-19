@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Auth\Entity;
 
+use App\Auth\RefreshToken\RefreshTokenHash;
 use App\Auth\Repository\RefreshTokenRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -17,6 +18,10 @@ final class RefreshToken
     #[ORM\Column]
     private ?int $id = null;
 
+    /**
+     * SHA-256 of the token (see RefreshTokenHash). The plain value is never persisted:
+     * it only leaves the server in the refresh cookie.
+     */
     #[ORM\Column(length: 64, unique: true)]
     private string $token;
 
@@ -30,9 +35,9 @@ final class RefreshToken
     #[ORM\Column(type: Types::DATETIMETZ_IMMUTABLE)]
     private \DateTimeImmutable $createdAt;
 
-    public function __construct(string $token, User $user, \DateTimeImmutable $expiresAt)
+    public function __construct(RefreshTokenHash $token, User $user, \DateTimeImmutable $expiresAt)
     {
-        $this->token = $token;
+        $this->token = $token->value;
         $this->user = $user;
         $this->expiresAt = $expiresAt;
         $this->createdAt = new \DateTimeImmutable();
@@ -41,11 +46,6 @@ final class RefreshToken
     public function getId(): ?int
     {
         return $this->id;
-    }
-
-    public function getToken(): string
-    {
-        return $this->token;
     }
 
     public function getUser(): User

@@ -17,6 +17,7 @@ return static function (ContainerConfigurator $di): void {
             __DIR__.'/DataFixtures/',
             __DIR__.'/DTO/',
             __DIR__.'/Entity/',
+            __DIR__.'/RefreshToken/',
             __DIR__.'/{di,routing}.php',
         ]);
 
@@ -26,4 +27,7 @@ return static function (ContainerConfigurator $di): void {
 
     $services->set(Service\IssueRefreshToken::class)
         ->arg('$refreshTokenTtl', '%app.refresh_token_ttl%');
+
+    $services->set(RefreshToken\RandomRefreshTokenGenerator::class);
+    $services->alias(RefreshToken\RefreshTokenGenerator::class, RefreshToken\RandomRefreshTokenGenerator::class);
 };
