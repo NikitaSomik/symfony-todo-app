@@ -197,12 +197,13 @@ final class AuthControllerTest extends ApiTestCase
     public function loginWhenThrottledForUnknownEmailShouldReturn429(): void
     {
         $this->failLogin('ghost@example.com', 5);
-        $this->post($this->route('api_auth_login'), [
+        $response = $this->post($this->route('api_auth_login'), [
             'email' => 'ghost@example.com',
             'password' => 'password',
         ]);
 
         self::assertResponseStatusCodeSame(429);
+        self::assertSame('Too many login attempts. Please try again later.', $this->json($response)['errors'][0]['message']);
     }
 
     #[Test]
