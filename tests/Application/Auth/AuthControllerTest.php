@@ -10,7 +10,6 @@ use App\Auth\RefreshToken\RandomRefreshTokenGenerator;
 use App\Auth\RefreshToken\RefreshTokenHash;
 use App\Auth\Repository\RefreshTokenRepository;
 use App\Tests\ApiTestCase;
-use Lexik\Bundle\JWTAuthenticationBundle\Services\BlockedTokenManagerInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\HttpFoundation\Cookie;
@@ -450,18 +449,17 @@ final class AuthControllerTest extends ApiTestCase
     public function logoutShouldBlockPresentedAccessToken(): void
     {
         $user = UserFactory::createOne();
-        $jwtManager = static::getContainer()->get(JWTTokenManagerInterface::class);
-        $accessToken = $jwtManager->create($user);
+        $accessToken = static::getContainer()->get(JWTTokenManagerInterface::class)->create($user);
 
         $this->setCookie('access_token', $accessToken);
         $this->post($this->route('api_auth_logout'));
 
         self::assertResponseStatusCodeSame(204);
 
-        // The test cache is an in-memory array reset between requests, so the blocklist
-        // is checked right after logout instead of through a follow-up request.
-        $blockedTokenManager = static::getContainer()->get(BlockedTokenManagerInterface::class);
-        self::assertTrue($blockedTokenManager->has($jwtManager->parse($accessToken)));
+        $this->setCookie('access_token', $accessToken);
+        $this->get($this->route('api_profile_me'));
+
+        self::assertResponseStatusCodeSame(401);
     }
 
     /**
