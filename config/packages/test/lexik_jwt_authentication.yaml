@@ -1,0 +1,3 @@
+lexik_jwt_authentication:
+    blocklist_token:
+        cache: cache.jwt_blocklist

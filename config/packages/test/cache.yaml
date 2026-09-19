@@ -3,3 +3,8 @@ framework:
         # Keep test runs independent from external Redis unless a test
         # explicitly targets Redis-backed infrastructure behavior.
         app: cache.adapter.array
+        pools:
+            # The array cache is cleared between requests of one test, so a token
+            # blocklisted on logout would be forgotten before the next request.
+            cache.jwt_blocklist:
+                adapter: cache.adapter.filesystem
