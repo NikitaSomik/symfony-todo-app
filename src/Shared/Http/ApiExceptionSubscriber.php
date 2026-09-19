@@ -19,7 +19,9 @@ final class ApiExceptionSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            KernelEvents::EXCEPTION => 'onKernelException',
+            // Below 0 on purpose: setting a response stops propagation, so a higher priority
+            // would skip Symfony's ErrorListener::logKernelException() and 500s would never be logged.
+            KernelEvents::EXCEPTION => ['onKernelException', -10],
         ];
     }
 
