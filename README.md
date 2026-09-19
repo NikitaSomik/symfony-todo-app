@@ -5,13 +5,13 @@
 ![Symfony](https://img.shields.io/badge/Symfony-8.0-000000?logo=symfony&logoColor=white)
 ![PHPStan](https://img.shields.io/badge/PHPStan-level%208-brightgreen)
 
-Modular Symfony 8 API with Docker, PostgreSQL 17, JWT authentication, integration tests, and OpenAPI documentation.
+Modular Symfony 8 API with Docker, PostgreSQL 18, JWT authentication, integration tests, and OpenAPI documentation.
 
 ## Stack
 
 - PHP 8.5
 - Symfony 8
-- PostgreSQL 17
+- PostgreSQL 18
 - Redis
 - PHPUnit
 - PHPStan

@@ -42,7 +42,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:17-alpine
+        image: postgres:18-alpine
         env:
           POSTGRES_DB: todo_app
           POSTGRES_USER: todo_app
@@ -56,7 +56,7 @@ jobs:
           --health-retries 10
 
     env:
-      DATABASE_URL: postgresql://todo_app:secret@127.0.0.1:5432/todo_app?serverVersion=17&charset=utf8
+      DATABASE_URL: postgresql://todo_app:secret@127.0.0.1:5432/todo_app?serverVersion=18&charset=utf8
 
     steps:
       - name: Checkout
