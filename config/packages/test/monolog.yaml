@@ -1,0 +1,6 @@
+monolog:
+    handlers:
+        # Keeps records in memory so tests can assert that something was logged.
+        test_records:
+            type: test
+            level: debug
