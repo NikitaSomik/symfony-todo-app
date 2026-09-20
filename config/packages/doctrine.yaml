@@ -5,6 +5,10 @@ doctrine:
         server_version: '18'
 
         profiling_collect_backtrace: '%kernel.debug%'
+
+        # Doctrine has no tsvector type; tasks.search_vector is read-only for the ORM anyway.
+        mapping_types:
+            tsvector: text
     orm:
         validate_xml_mapping: true
         naming_strategy: doctrine.orm.naming_strategy.underscore
