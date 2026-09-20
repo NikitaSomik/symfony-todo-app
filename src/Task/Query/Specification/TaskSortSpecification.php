@@ -32,7 +32,7 @@ final readonly class TaskSortSpecification implements QueryBuilderSpecification
             return;
         }
 
-        $queryBuilder->orderBy(
+        $queryBuilder->addOrderBy(
             self::SORT_FIELDS[$this->sort->field],
             $this->sort->direction->uppercased(),
         );

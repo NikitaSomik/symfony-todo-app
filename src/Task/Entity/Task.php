@@ -28,6 +28,9 @@ class Task
     public const string FIELD_CREATED_AT = 'created_at';
     public const string FIELD_UPDATED_AT = 'updated_at';
 
+    /** Dictionary of the generated search_vector column below; queries must use the same one. */
+    public const string SEARCH_CONFIG = 'simple';
+
     #[ORM\Id]
     #[ORM\Column(type: UuidType::NAME, unique: true)]
     private Uuid $id;
@@ -59,7 +62,7 @@ class Task
      * The expression must stay in sync with the one created in Version20260326230945.
      */
     #[ORM\Column(
-        type: Types::TEXT,
+        type: 'tsvector',
         nullable: true,
         insertable: false,
         updatable: false,
