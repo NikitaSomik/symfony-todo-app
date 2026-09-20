@@ -95,6 +95,7 @@ final class ApiExceptionSubscriber implements EventSubscriberInterface
             Response::HTTP_NOT_FOUND => 'Not Found.',
             Response::HTTP_BAD_REQUEST => 'Bad Request.',
             Response::HTTP_METHOD_NOT_ALLOWED => 'Method Not Allowed.',
+            Response::HTTP_TOO_MANY_REQUESTS => 'Too many requests. Please try again later.',
             default => Response::$statusTexts[$exception->getStatusCode()] ?? 'Error.',
         };
     }

@@ -1,0 +1,8 @@
+framework:
+    rate_limiter:
+        registration:
+            policy: sliding_window
+            limit: 10
+            interval: '1 hour'
+            # symfony/lock is not installed; without it the limiter would fail to boot.
+            lock_factory: null

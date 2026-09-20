@@ -20,6 +20,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
+use Symfony\Component\HttpKernel\Attribute\RateLimit;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/api/v1/auth', name: 'api_auth_', format: 'json')]
@@ -39,6 +40,8 @@ final class AuthController extends AbstractController
     #[OA\Response(response: 201, description: 'User registered', content: new OA\JsonContent(ref: new Model(type: UserResponseSchema::class)))]
     #[OA\Response(ref: '#/components/responses/ValidationError', response: 422)]
     #[OA\Response(response: 409, description: 'Email already taken')]
+    #[OA\Response(response: 429, description: 'Too many registration attempts')]
+    #[RateLimit('registration')]
     public function register(#[MapRequestPayload] RegisterDTO $dto): JsonResponse
     {
         $user = $this->registerUser->handle($dto);

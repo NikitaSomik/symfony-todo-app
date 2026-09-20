@@ -137,7 +137,6 @@ Phase 5: CQRS (where justified)
 - [x] `app:auth:purge-expired-refresh-tokens` command
 - [ ] **Refresh token reuse detection (RFC 9700)** — mark tokens used instead of deleting them, group them into families, revoke the whole family when a used token is presented again. Also removes the concurrent-refresh race
 - [ ] Rate limit `POST /api/v1/auth/register`
-- [ ] Refuse to boot in prod with an empty `APP_SECRET` or the default `JWT_SECRET`
 - [ ] Normalise emails (lowercase) on registration and lookup
 - [ ] Identify the user in the JWT by immutable id instead of email
 
