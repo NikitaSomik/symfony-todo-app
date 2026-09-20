@@ -6,9 +6,11 @@ doctrine:
 
         profiling_collect_backtrace: '%kernel.debug%'
 
-        # Doctrine has no tsvector type; tasks.search_vector is read-only for the ORM anyway.
+        types:
+            tsvector: MartinGeorgiev\Doctrine\DBAL\Types\Tsvector
+
         mapping_types:
-            tsvector: text
+            tsvector: !php/const MartinGeorgiev\Doctrine\DBAL\Type::TSVECTOR
     orm:
         validate_xml_mapping: true
         naming_strategy: doctrine.orm.naming_strategy.underscore
@@ -22,6 +24,11 @@ doctrine:
                 dir: '%kernel.project_dir%/src'
                 prefix: 'App'
                 alias: App
+        dql:
+            string_functions:
+                TSMATCH: MartinGeorgiev\Doctrine\ORM\Query\AST\Functions\Tsmatch
+                TS_RANK_CD: MartinGeorgiev\Doctrine\ORM\Query\AST\Functions\TsRankCd
+                WEBSEARCH_TO_TSQUERY: MartinGeorgiev\Doctrine\ORM\Query\AST\Functions\WebsearchToTsquery
 
 when@test:
     doctrine:

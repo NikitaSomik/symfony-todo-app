@@ -11,6 +11,7 @@
         "doctrine/doctrine-migrations-bundle": "^4.0.1",
         "doctrine/orm": "^3.7.1",
         "lexik/jwt-authentication-bundle": "^3.2",
+        "martin-georgiev/postgresql-for-doctrine": "^4.8",
         "nelmio/cors-bundle": "^2.6.1",
         "symfony/asset": "8.1.*",
         "symfony/console": "8.1.*",

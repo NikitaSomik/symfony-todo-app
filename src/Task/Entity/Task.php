@@ -59,7 +59,7 @@ class Task
      * The expression must stay in sync with the one created in Version20260326230945.
      */
     #[ORM\Column(
-        type: Types::TEXT,
+        type: 'tsvector',
         nullable: true,
         insertable: false,
         updatable: false,
