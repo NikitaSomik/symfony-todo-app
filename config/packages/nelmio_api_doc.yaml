@@ -1,56 +1,57 @@
-nelmio_api_doc:
-    documentation:
-        info:
-            title: Todo API
-            description: Todo application REST API
-            version: 1.0.0
-        components:
-            securitySchemes:
-                cookieAuth:
-                    type: apiKey
-                    in: cookie
-                    name: access_token
-                    description: JWT access token stored in an HttpOnly cookie. Obtained via POST /api/v1/auth/login.
-            responses:
-                UnauthorizedError:
-                    description: Unauthorized — valid access_token cookie required
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    errors:
-                                        type: array
-                                        items:
-                                            type: object
-                                            properties:
-                                                status:
-                                                    type: string
-                                                    example: '401'
-                                                message:
-                                                    type: string
-                                                    example: Unauthorized.
-                ValidationError:
-                    description: Validation error
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    errors:
-                                        type: array
-                                        items:
-                                            type: object
-                                            properties:
-                                                status:
-                                                    type: string
-                                                    example: '422'
-                                                field:
-                                                    type: string
-                                                message:
-                                                    type: string
-        security:
-            - cookieAuth: []
-    areas:
-        path_patterns:
-            - ^/api/v1
+when@dev:
+    nelmio_api_doc:
+        documentation:
+            info:
+                title: Todo API
+                description: Todo application REST API
+                version: 1.0.0
+            components:
+                securitySchemes:
+                    cookieAuth:
+                        type: apiKey
+                        in: cookie
+                        name: access_token
+                        description: JWT access token stored in an HttpOnly cookie. Obtained via POST /api/v1/auth/login.
+                responses:
+                    UnauthorizedError:
+                        description: Unauthorized — valid access_token cookie required
+                        content:
+                            application/json:
+                                schema:
+                                    type: object
+                                    properties:
+                                        errors:
+                                            type: array
+                                            items:
+                                                type: object
+                                                properties:
+                                                    status:
+                                                        type: string
+                                                        example: '401'
+                                                    message:
+                                                        type: string
+                                                        example: Unauthorized.
+                    ValidationError:
+                        description: Validation error
+                        content:
+                            application/json:
+                                schema:
+                                    type: object
+                                    properties:
+                                        errors:
+                                            type: array
+                                            items:
+                                                type: object
+                                                properties:
+                                                    status:
+                                                        type: string
+                                                        example: '422'
+                                                    field:
+                                                        type: string
+                                                    message:
+                                                        type: string
+            security:
+                - cookieAuth: []
+        areas:
+            path_patterns:
+                - ^/api/v1
