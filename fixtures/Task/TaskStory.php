@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Task\DataFixtures;
+namespace App\Fixtures\Task;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Zenstruck\Foundry\Story;

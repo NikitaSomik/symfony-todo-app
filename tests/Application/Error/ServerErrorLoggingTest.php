@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Error;
 
-use App\Auth\DataFixtures\UserFactory;
+use App\Fixtures\Auth\UserFactory;
 use App\Tests\ApiTestCase;
 use App\Tests\Support\AuditLogFailureToggle;
 use Monolog\Handler\TestHandler;

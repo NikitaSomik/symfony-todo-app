@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Auth\DataFixtures;
+namespace App\Fixtures\Auth;
 
 use App\Auth\Entity\RefreshToken;
 use App\Auth\RefreshToken\RandomRefreshTokenGenerator;

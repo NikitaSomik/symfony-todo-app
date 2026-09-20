@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Auth\DataFixtures;
+namespace App\Fixtures\Auth;
 
 use App\Auth\Entity\User;
 use Zenstruck\Foundry\Persistence\PersistentObjectFactory;

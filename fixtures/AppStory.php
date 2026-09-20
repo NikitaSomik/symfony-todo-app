@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Story;
+namespace App\Fixtures;
 
-use App\Auth\DataFixtures\UserStory;
-use App\Task\DataFixtures\TaskStory;
+use App\Fixtures\Auth\UserStory;
+use App\Fixtures\Task\TaskStory;
 use Zenstruck\Foundry\Attribute\AsFixture;
 use Zenstruck\Foundry\Story;
 

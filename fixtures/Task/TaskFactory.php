@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Task\DataFixtures;
+namespace App\Fixtures\Task;
 
-use App\Auth\DataFixtures\UserFactory;
+use App\Fixtures\Auth\UserFactory;
 use App\Task\Entity\Task;
 use App\Task\Enum\TaskStatus;
 use Symfony\Component\Uid\Uuid;
