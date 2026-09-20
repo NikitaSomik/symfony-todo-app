@@ -4,13 +4,8 @@ when@dev: &dev
             flush_once: true
 
     services:
-        App\Auth\DataFixtures\:
-            resource: '%kernel.project_dir%/src/Auth/DataFixtures/'
-            autowire: true
-            autoconfigure: true
-
-        App\Task\DataFixtures\:
-            resource: '%kernel.project_dir%/src/Task/DataFixtures/'
+        App\Fixtures\:
+            resource: '%kernel.project_dir%/fixtures/'
             autowire: true
             autoconfigure: true
 
@@ -24,12 +19,7 @@ when@test:
             flush_once: true
 
     services:
-        App\Auth\DataFixtures\:
-            resource: '%kernel.project_dir%/src/Auth/DataFixtures/'
-            autowire: true
-            autoconfigure: true
-
-        App\Task\DataFixtures\:
-            resource: '%kernel.project_dir%/src/Task/DataFixtures/'
+        App\Fixtures\:
+            resource: '%kernel.project_dir%/fixtures/'
             autowire: true
             autoconfigure: true

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Task;
 
-use App\Auth\DataFixtures\UserFactory;
 use App\Auth\Entity\User;
+use App\Fixtures\Auth\UserFactory;
+use App\Fixtures\Task\TaskFactory;
 use App\Shared\AuditLog\Enum\AuditLogEntityType;
 use App\Shared\AuditLog\Repository\AuditLogRepository;
-use App\Task\DataFixtures\TaskFactory;
 use App\Task\Entity\Task;
 use App\Task\Entity\TaskStatusChange;
 use App\Task\Enum\TaskStatus;

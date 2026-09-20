@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Auth;
 
-use App\Auth\DataFixtures\UserFactory;
+use App\Fixtures\Auth\UserFactory;
 use App\Tests\ApiTestCase;
 use PHPUnit\Framework\Attributes\Test;
 

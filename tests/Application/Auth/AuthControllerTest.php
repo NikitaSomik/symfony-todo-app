@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Auth;
 
-use App\Auth\DataFixtures\RefreshTokenFactory;
-use App\Auth\DataFixtures\UserFactory;
 use App\Auth\RefreshToken\RandomRefreshTokenGenerator;
 use App\Auth\RefreshToken\RefreshTokenHash;
 use App\Auth\Repository\RefreshTokenRepository;
+use App\Fixtures\Auth\RefreshTokenFactory;
+use App\Fixtures\Auth\UserFactory;
 use App\Tests\ApiTestCase;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
