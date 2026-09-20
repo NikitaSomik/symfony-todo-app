@@ -15,6 +15,7 @@ use Symfony\Component\Uid\Uuid;
 #[ORM\Entity(repositoryClass: TaskRepository::class)]
 #[ORM\Table(name: 'tasks')]
 #[ORM\Index(name: 'idx_tasks_user_id', columns: ['user_id'])]
+#[ORM\Index(name: 'idx_tasks_search_vector', columns: ['search_vector'])]
 #[ORM\HasLifecycleCallbacks]
 class Task
 {
@@ -51,6 +52,21 @@ class Task
 
     #[ORM\Column(type: Types::DATETIMETZ_IMMUTABLE)]
     private \DateTimeImmutable $updatedAt;
+
+    /**
+     * Maintained by PostgreSQL, never written from PHP: it is mapped only so that schema
+     * comparison knows about it and does not offer to drop the full-text search column.
+     * The expression must stay in sync with the one created in Version20260326230945.
+     */
+    #[ORM\Column(
+        type: Types::TEXT,
+        nullable: true,
+        insertable: false,
+        updatable: false,
+        generated: 'ALWAYS',
+        columnDefinition: "tsvector GENERATED ALWAYS AS (setweight(to_tsvector('simple', coalesce(title, '')), 'A') || setweight(to_tsvector('simple', coalesce(description, '')), 'B')) STORED",
+    )]
+    private ?string $searchVector = null;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(nullable: false)]
