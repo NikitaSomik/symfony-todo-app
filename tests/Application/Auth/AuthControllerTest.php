@@ -119,6 +119,48 @@ final class AuthControllerTest extends ApiTestCase
         self::assertResponseStatusCodeSame(401);
     }
 
+    // --- Registration throttling ---
+
+    #[Test]
+    public function registerWhenTooManyAttemptsShouldReturn429(): void
+    {
+        for ($i = 1; $i <= 10; ++$i) {
+            $this->post($this->route('api_auth_register'), [
+                'email' => sprintf('user%d@example.com', $i),
+                'password' => 'secret123',
+            ]);
+            self::assertResponseStatusCodeSame(201);
+        }
+
+        $response = $this->post($this->route('api_auth_register'), [
+            'email' => 'one-too-many@example.com',
+            'password' => 'secret123',
+        ]);
+
+        self::assertResponseStatusCodeSame(429);
+        self::assertSame('429', $this->json($response)['errors'][0]['status']);
+        self::assertSame('Too many requests. Please try again later.', $this->json($response)['errors'][0]['message']);
+    }
+
+    #[Test]
+    public function registerWhenThrottledFromAnotherIpShouldSucceed(): void
+    {
+        $this->fromIp('203.0.113.10');
+        for ($i = 1; $i <= 10; ++$i) {
+            $this->post($this->route('api_auth_register'), [
+                'email' => sprintf('user%d@example.com', $i),
+                'password' => 'secret123',
+            ]);
+        }
+
+        $this->fromIp('203.0.113.20')->post($this->route('api_auth_register'), [
+            'email' => 'other-ip@example.com',
+            'password' => 'secret123',
+        ]);
+
+        self::assertResponseStatusCodeSame(201);
+    }
+
     // --- Login refresh cookie ---
 
     #[Test]
