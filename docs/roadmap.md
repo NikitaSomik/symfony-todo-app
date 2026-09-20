@@ -122,6 +122,27 @@ Phase 5: CQRS (where justified)
 
 ---
 
+## Phase 1.5 — Auth Hardening ✅ (reuse detection pending)
+
+> Everything the login flow gained after Phase 1: sessions, revocation and abuse protection.
+
+- [x] Access token moved from `Authorization` header to an HttpOnly cookie
+- [x] Refresh tokens — rotated on every use, cookie scoped to `/api/v1/auth`
+- [x] Only SHA-256 hashes of refresh tokens are stored
+- [x] Logout revokes every refresh session and blocklists the access token (Redis)
+- [x] Separate `auth` firewall — a stale `access_token` cookie no longer blocks login/register/refresh/logout
+- [x] Login throttling — 5 attempts per minute per email + IP, 25 per IP, answered with `429`
+- [x] Throttled logins logged to the `security` channel
+- [x] `TRUSTED_PROXIES` so IP-based limits see the real client behind a proxy
+- [x] `app:auth:purge-expired-refresh-tokens` command
+- [ ] **Refresh token reuse detection (RFC 9700)** — mark tokens used instead of deleting them, group them into families, revoke the whole family when a used token is presented again. Also removes the concurrent-refresh race
+- [ ] Rate limit `POST /api/v1/auth/register`
+- [ ] Refuse to boot in prod with an empty `APP_SECRET` or the default `JWT_SECRET`
+- [ ] Normalise emails (lowercase) on registration and lookup
+- [ ] Identify the user in the JWT by immutable id instead of email
+
+---
+
 ## Phase 2 — Projects
 
 > New module: `src/Project/`
