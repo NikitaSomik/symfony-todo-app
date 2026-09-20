@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Shared\Http;
 
-use App\Auth\Exception\EmailAlreadyTakenException;
 use App\Shared\Api\JsonApiError;
 use App\Shared\Api\JsonApiResponse;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -33,15 +32,6 @@ final class ApiExceptionSubscriber implements EventSubscriberInterface
 
         $throwable = $event->getThrowable();
 
-        if ($throwable instanceof EmailAlreadyTakenException) {
-            $event->setResponse(JsonApiResponse::error(
-                [new JsonApiError((string) Response::HTTP_CONFLICT, $throwable->getMessage())],
-                Response::HTTP_CONFLICT,
-            ));
-
-            return;
-        }
-
         $validationException = $this->validationException($throwable);
         if (null !== $validationException) {
             $errors = [];
@@ -61,9 +51,13 @@ final class ApiExceptionSubscriber implements EventSubscriberInterface
 
         if ($throwable instanceof HttpExceptionInterface) {
             $status = $throwable->getStatusCode();
+            $mapped = $throwable->getPrevious();
 
             $event->setResponse(JsonApiResponse::error(
-                [new JsonApiError((string) $status, $this->messageForHttpException($throwable))],
+                [new JsonApiError(
+                    (string) $status,
+                    $mapped instanceof ClientFacingException ? $mapped->getMessage() : $this->messageForHttpException($throwable),
+                )],
                 $status,
             ));
 
