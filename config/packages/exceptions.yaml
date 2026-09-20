@@ -4,3 +4,4 @@ framework:
     exceptions:
         App\Auth\Exception\EmailAlreadyTakenException:
             status_code: 409
+            log_level: info
