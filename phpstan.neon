@@ -5,6 +5,7 @@ parameters:
 
     paths:
         - src/
+        - fixtures/
 
     symfony:
         containerXmlPath: var/cache/dev/App_KernelDevDebugContainer.xml
