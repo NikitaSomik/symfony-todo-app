@@ -17,13 +17,24 @@ doctrine:
         identity_generation_preferences:
             Doctrine\DBAL\Platforms\PostgreSQLPlatform: identity
         auto_mapping: true
+        # Only entity directories: the rest of src/ holds code that must not be reflected
+        # in prod, e.g. fixtures built on dev-only packages.
         mappings:
-            App:
+            Auth:
                 type: attribute
                 is_bundle: false
-                dir: '%kernel.project_dir%/src'
-                prefix: 'App'
-                alias: App
+                dir: '%kernel.project_dir%/src/Auth/Entity'
+                prefix: 'App\Auth\Entity'
+            Task:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Task/Entity'
+                prefix: 'App\Task\Entity'
+            AuditLog:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Shared/AuditLog/Entity'
+                prefix: 'App\Shared\AuditLog\Entity'
         dql:
             string_functions:
                 TSMATCH: MartinGeorgiev\Doctrine\ORM\Query\AST\Functions\Tsmatch
