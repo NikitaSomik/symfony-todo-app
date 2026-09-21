@@ -39,6 +39,13 @@ abstract class ApiTestCase extends WebTestCase
         return $this;
     }
 
+    protected function accepting(string $mimeType): static
+    {
+        $this->client->setServerParameter('HTTP_ACCEPT', $mimeType);
+
+        return $this;
+    }
+
     protected function actingAs(User $user): static
     {
         $jwtManager = static::getContainer()->get(JWTTokenManagerInterface::class);
