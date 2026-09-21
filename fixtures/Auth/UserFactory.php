@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Fixtures\Auth;
 
 use App\Auth\Entity\User;
+use App\Auth\ValueObject\Email;
 use Zenstruck\Foundry\Persistence\PersistentObjectFactory;
 
 /**
@@ -33,6 +34,12 @@ final class UserFactory extends PersistentObjectFactory
 
     protected function initialize(): static
     {
-        return $this;
+        return $this->beforeInstantiate(static function (array $attributes): array {
+            if (is_string($attributes['email'] ?? null)) {
+                $attributes['email'] = new Email($attributes['email']);
+            }
+
+            return $attributes;
+        });
     }
 }
