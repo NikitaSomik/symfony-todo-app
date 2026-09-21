@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Auth\Exception;
 
-final class EmailAlreadyTakenException extends \DomainException
+use App\Shared\Http\ClientFacingException;
+
+final class EmailAlreadyTakenException extends \DomainException implements ClientFacingException
 {
     public function __construct()
     {

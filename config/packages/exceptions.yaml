@@ -1,0 +1,7 @@
+framework:
+    # Maps domain exceptions to HTTP statuses here, so that the modules themselves stay free
+    # of HTTP concerns. Order matters: the first class matching "instanceof" wins.
+    exceptions:
+        App\Auth\Exception\EmailAlreadyTakenException:
+            status_code: 409
+            log_level: info
