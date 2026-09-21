@@ -30,6 +30,8 @@ when@prod:
             main:
                 type: fingers_crossed
                 action_level: error
+                # Without this a lone warning is buffered and dropped, so warnings would be invisible.
+                passthru_level: warning
                 handler: nested
                 # Expected client errors must not flush the whole request buffer.
                 excluded_http_codes: [404, 405]
@@ -48,11 +50,4 @@ when@prod:
                 type: stream
                 channels: [deprecation]
                 path: php://stderr
-                formatter: monolog.formatter.json
-            # Security warnings are not errors, so the fingers_crossed "main" handler would drop them.
-            security:
-                type: stream
-                channels: [security]
-                path: php://stderr
-                level: warning
                 formatter: monolog.formatter.json
