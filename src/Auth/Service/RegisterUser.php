@@ -7,6 +7,7 @@ namespace App\Auth\Service;
 use App\Auth\DTO\RegisterDTO;
 use App\Auth\Entity\User;
 use App\Auth\Exception\EmailAlreadyTakenException;
+use App\Auth\ValueObject\Email;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -22,7 +23,7 @@ final class RegisterUser
     public function handle(RegisterDTO $dto): User
     {
         $user = new User();
-        $user->setEmail($dto->email);
+        $user->setEmail(new Email($dto->email));
         $user->setPassword($this->passwordHasher->hashPassword($user, $dto->password));
 
         try {

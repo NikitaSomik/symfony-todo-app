@@ -45,6 +45,45 @@ final class AuthControllerTest extends ApiTestCase
     }
 
     #[Test]
+    public function registerShouldStoreEmailLowercased(): void
+    {
+        $response = $this->post($this->route('api_auth_register'), [
+            'email' => 'User@Example.com',
+            'password' => 'secret123',
+        ]);
+
+        self::assertResponseStatusCodeSame(201);
+        self::assertSame('user@example.com', $this->jsonData($response)['attributes']['email']);
+    }
+
+    #[Test]
+    public function registerWhenEmailDiffersOnlyByCaseShouldReturn409(): void
+    {
+        UserFactory::createOne(['email' => 'user@example.com']);
+
+        $this->post($this->route('api_auth_register'), [
+            'email' => 'USER@EXAMPLE.COM',
+            'password' => 'secret123',
+        ]);
+
+        self::assertResponseStatusCodeSame(409);
+    }
+
+    #[Test]
+    public function loginShouldIgnoreEmailCase(): void
+    {
+        UserFactory::createOne(['email' => 'user@example.com']);
+
+        $this->post($this->route('api_auth_login'), [
+            'email' => 'USER@Example.com',
+            'password' => 'password',
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertBrowserHasCookie('access_token');
+    }
+
+    #[Test]
     public function registerWhenEmailIsInvalidShouldReturn422(): void
     {
         $this->post($this->route('api_auth_register'), [
