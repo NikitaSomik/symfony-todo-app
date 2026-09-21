@@ -62,8 +62,11 @@ final class TaskController extends AbstractController
     #[OA\Parameter(name: 'search', description: 'Full-text search across task title and description. When provided, results are ranked by relevance.', in: 'query', schema: new OA\Schema(type: 'string', maxLength: 100, example: 'milk', nullable: true), )]
     #[OA\Response(response: 200, description: 'Paginated list of tasks', content: new OA\JsonContent(ref: new Model(type: TaskCollectionResponseSchema::class)))]
     #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
-    public function getAll(#[MapQueryString] TaskListQueryDTO $query, Request $request): JsonResponse
-    {
+    public function getAll(
+        #[MapQueryString(validationFailedStatusCode: Response::HTTP_UNPROCESSABLE_ENTITY)]
+        TaskListQueryDTO $query,
+        Request $request,
+    ): JsonResponse {
         /** @var User $user */
         $user = $this->getUser();
 
