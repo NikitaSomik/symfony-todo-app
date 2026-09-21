@@ -1,6 +1,7 @@
 
 /.idea/
 /.vscode/
+.DS_Store
 
 ###> symfony/framework-bundle ###
 /config/reference.php
