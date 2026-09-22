@@ -61,9 +61,7 @@ final class JsonApiResponse extends JsonResponse
     public static function error(array $errors, int $status): self
     {
         return new self(
-            [
-                'errors' => array_map(static fn (JsonApiError $error): array => $error->toArray(), $errors),
-            ],
+            ['errors' => array_map(static fn (JsonApiError $error): array => $error->toArray(), $errors)],
             $status,
         );
     }

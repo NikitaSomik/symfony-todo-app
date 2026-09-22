@@ -117,7 +117,7 @@ final class AuthControllerTest extends ApiTestCase
 
         self::assertResponseStatusCodeSame(409);
         self::assertSame('409', $this->json($response)['errors'][0]['status']);
-        self::assertSame('Email is already taken.', $this->json($response)['errors'][0]['message']);
+        self::assertSame('Email is already taken.', $this->json($response)['errors'][0]['detail']);
     }
 
     #[Test]
@@ -178,7 +178,7 @@ final class AuthControllerTest extends ApiTestCase
 
         self::assertResponseStatusCodeSame(429);
         self::assertSame('429', $this->json($response)['errors'][0]['status']);
-        self::assertSame('Too many requests. Please try again later.', $this->json($response)['errors'][0]['message']);
+        self::assertSame('Too many requests. Please try again later.', $this->json($response)['errors'][0]['detail']);
     }
 
     #[Test]
@@ -257,7 +257,7 @@ final class AuthControllerTest extends ApiTestCase
 
         self::assertResponseStatusCodeSame(429);
         self::assertSame('429', $this->json($response)['errors'][0]['status']);
-        self::assertSame('Too many login attempts. Please try again in 1 minute.', $this->json($response)['errors'][0]['message']);
+        self::assertSame('Too many login attempts. Please try again in 1 minute.', $this->json($response)['errors'][0]['detail']);
     }
 
     #[Test]
@@ -284,7 +284,7 @@ final class AuthControllerTest extends ApiTestCase
         ]);
 
         self::assertResponseStatusCodeSame(429);
-        self::assertSame('Too many login attempts. Please try again in 1 minute.', $this->json($response)['errors'][0]['message']);
+        self::assertSame('Too many login attempts. Please try again in 1 minute.', $this->json($response)['errors'][0]['detail']);
     }
 
     #[Test]
@@ -413,7 +413,7 @@ final class AuthControllerTest extends ApiTestCase
 
         self::assertResponseStatusCodeSame(401);
         self::assertSame('401', $this->json($response)['errors'][0]['status']);
-        self::assertSame('Unauthorized.', $this->json($response)['errors'][0]['message']);
+        self::assertSame('Unauthorized.', $this->json($response)['errors'][0]['detail']);
     }
 
     #[Test]
@@ -426,7 +426,7 @@ final class AuthControllerTest extends ApiTestCase
 
         self::assertResponseStatusCodeSame(401);
         self::assertSame('401', $this->json($response)['errors'][0]['status']);
-        self::assertSame('Unauthorized.', $this->json($response)['errors'][0]['message']);
+        self::assertSame('Unauthorized.', $this->json($response)['errors'][0]['detail']);
     }
 
     #[Test]
@@ -437,7 +437,7 @@ final class AuthControllerTest extends ApiTestCase
 
         self::assertResponseStatusCodeSame(401);
         self::assertSame('401', $this->json($response)['errors'][0]['status']);
-        self::assertSame('Unauthorized.', $this->json($response)['errors'][0]['message']);
+        self::assertSame('Unauthorized.', $this->json($response)['errors'][0]['detail']);
     }
 
     #[Test]
@@ -448,7 +448,7 @@ final class AuthControllerTest extends ApiTestCase
 
         self::assertResponseStatusCodeSame(401);
         self::assertSame('401', $this->json($response)['errors'][0]['status']);
-        self::assertSame('Unauthorized.', $this->json($response)['errors'][0]['message']);
+        self::assertSame('Unauthorized.', $this->json($response)['errors'][0]['detail']);
     }
 
     #[Test]
@@ -459,7 +459,7 @@ final class AuthControllerTest extends ApiTestCase
 
         self::assertResponseStatusCodeSame(401);
         self::assertSame('401', $this->json($response)['errors'][0]['status']);
-        self::assertSame('Unauthorized.', $this->json($response)['errors'][0]['message']);
+        self::assertSame('Unauthorized.', $this->json($response)['errors'][0]['detail']);
     }
 
     // --- Logout ---

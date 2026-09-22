@@ -14,40 +14,30 @@ use Symfony\Component\Validator\Exception\ValidationFailedException;
 final class JsonApiErrorNormalizer implements NormalizerInterface
 {
     /**
-     * @return array{errors: list<array{status: string, message: string, field?: string}>}
+     * @return array{errors: list<array{status: string, detail: string, source?: array{pointer: string}|array{parameter: string}}>}
      */
     public function normalize(mixed $data, ?string $format = null, array $context = []): array
     {
         \assert($data instanceof FlattenException);
 
         $throwable = $context['exception'] ?? null;
-
         $validationException = $this->validationException($throwable);
+
         if (null !== $validationException) {
-            $errors = [];
-
-            foreach ($validationException->getViolations() as $violation) {
-                $errors[] = new JsonApiError(
-                    (string) $data->getStatusCode(),
-                    (string) $violation->getMessage(),
-                    '' !== $violation->getPropertyPath() ? $violation->getPropertyPath() : null,
-                );
-            }
-
-            return $this->toPayload($errors);
+            return $this->toPayload($this->violationErrors($validationException, $data->getStatusCode()));
         }
 
         if ($throwable instanceof HttpExceptionInterface) {
             $status = $throwable->getStatusCode();
             $mapped = $throwable->getPrevious();
 
-            return $this->toPayload([new JsonApiError(
+            return $this->toPayload([JsonApiError::of(
                 (string) $status,
-                $mapped instanceof ClientFacingException ? $mapped->getMessage() : $this->messageForStatus($status),
+                $mapped instanceof ClientFacingException ? $mapped->getMessage() : $this->detailForStatus($status),
             )]);
         }
 
-        return $this->toPayload([new JsonApiError((string) Response::HTTP_INTERNAL_SERVER_ERROR, 'Server Error.')]);
+        return $this->toPayload([JsonApiError::of((string) Response::HTTP_INTERNAL_SERVER_ERROR, 'Server Error.')]);
     }
 
     public function supportsNormalization(mixed $data, ?string $format = null, array $context = []): bool
@@ -58,6 +48,51 @@ final class JsonApiErrorNormalizer implements NormalizerInterface
     public function getSupportedTypes(?string $format): array
     {
         return [FlattenException::class => true];
+    }
+
+    /**
+     * @return list<JsonApiError>
+     */
+    private function violationErrors(ValidationFailedException $exception, int $status): array
+    {
+        $fromQuery = $exception->getValue() instanceof QueryPayload;
+        $errors = [];
+
+        foreach ($exception->getViolations() as $violation) {
+            $path = $violation->getPropertyPath();
+            $detail = (string) $violation->getMessage();
+
+            $errors[] = match (true) {
+                '' === $path => JsonApiError::of((string) $status, $detail),
+                $fromQuery => JsonApiError::forParameter((string) $status, $detail, self::toParameterName($path)),
+                default => JsonApiError::forPointer((string) $status, $detail, self::toJsonPointer($path)),
+            };
+        }
+
+        return $errors;
+    }
+
+    /**
+     * "page.limit" becomes "/page/limit", "items[0].name" becomes "/items/0/name".
+     */
+    private static function toJsonPointer(string $propertyPath): string
+    {
+        return '/'.str_replace(['[', ']'], ['/', ''], str_replace('.', '/', $propertyPath));
+    }
+
+    /**
+     * "filter.due_to" becomes "filter[due_to]" — the name the client actually sent.
+     */
+    private static function toParameterName(string $propertyPath): string
+    {
+        $segments = explode('.', $propertyPath);
+        $name = array_shift($segments);
+
+        foreach ($segments as $segment) {
+            $name .= '['.$segment.']';
+        }
+
+        return $name;
     }
 
     private function validationException(mixed $throwable): ?ValidationFailedException
@@ -72,16 +107,16 @@ final class JsonApiErrorNormalizer implements NormalizerInterface
     }
 
     /**
-     * @param JsonApiError[] $errors
+     * @param list<JsonApiError> $errors
      *
-     * @return array{errors: list<array{status: string, message: string, field?: string}>}
+     * @return array{errors: list<array{status: string, detail: string, source?: array{pointer: string}|array{parameter: string}}>}
      */
     private function toPayload(array $errors): array
     {
-        return ['errors' => array_values(array_map(static fn (JsonApiError $error): array => $error->toArray(), $errors))];
+        return ['errors' => array_map(static fn (JsonApiError $error): array => $error->toArray(), $errors)];
     }
 
-    private function messageForStatus(int $status): string
+    private function detailForStatus(int $status): string
     {
         return match ($status) {
             Response::HTTP_UNAUTHORIZED => 'Unauthorized.',

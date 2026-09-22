@@ -633,7 +633,8 @@ final class TaskControllerTest extends ApiTestCase
         $json = $this->json($response);
 
         self::assertResponseStatusCodeSame(422);
-        self::assertSame('This value is not a valid date. Use the YYYY-MM-DD format.', $json['errors'][0]['message']);
+        self::assertSame('This value is not a valid date. Use the YYYY-MM-DD format.', $json['errors'][0]['detail']);
+        self::assertSame(['parameter' => 'filter[due_from]'], $json['errors'][0]['source']);
     }
 
     #[Test]
@@ -643,7 +644,7 @@ final class TaskControllerTest extends ApiTestCase
         $json = $this->json($response);
 
         self::assertResponseStatusCodeSame(422);
-        self::assertSame('This value should be greater than or equal to due_from.', $json['errors'][0]['message']);
+        self::assertSame('This value should be greater than or equal to due_from.', $json['errors'][0]['detail']);
     }
 
     #[Test]
@@ -653,7 +654,7 @@ final class TaskControllerTest extends ApiTestCase
         $json = $this->json($response);
 
         self::assertResponseStatusCodeSame(422);
-        self::assertSame('This value is not a valid date. Use the YYYY-MM-DD format.', $json['errors'][0]['message']);
+        self::assertSame('This value is not a valid date. Use the YYYY-MM-DD format.', $json['errors'][0]['detail']);
     }
 
     #[Test]

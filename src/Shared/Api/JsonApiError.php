@@ -6,22 +6,48 @@ namespace App\Shared\Api;
 
 final readonly class JsonApiError
 {
-    public function __construct(
+    /**
+     * @param array{pointer: string}|array{parameter: string}|null $source
+     */
+    private function __construct(
         public string $status,
-        public string $message,
-        public ?string $field = null,
+        public string $detail,
+        public ?array $source = null,
     ) {
     }
 
+    public static function of(string $status, string $detail): self
+    {
+        return new self($status, $detail);
+    }
+
     /**
-     * @return array{status: string, message: string, field?: string}
+     * For a value inside the request document, addressed by an RFC 6901 JSON Pointer.
+     */
+    public static function forPointer(string $status, string $detail, string $pointer): self
+    {
+        return new self($status, $detail, ['pointer' => $pointer]);
+    }
+
+    /**
+     * For a value that arrived as a URI query parameter, named as the client sent it.
+     */
+    public static function forParameter(string $status, string $detail, string $parameter): self
+    {
+        return new self($status, $detail, ['parameter' => $parameter]);
+    }
+
+    /**
+     * @return array{status: string, detail: string, source?: array{pointer: string}|array{parameter: string}}
      */
     public function toArray(): array
     {
-        return array_filter([
-            'status' => $this->status,
-            'message' => $this->message,
-            'field' => $this->field,
-        ], static fn (mixed $value): bool => null !== $value);
+        $error = ['status' => $this->status, 'detail' => $this->detail];
+
+        if (null !== $this->source) {
+            $error['source'] = $this->source;
+        }
+
+        return $error;
     }
 }

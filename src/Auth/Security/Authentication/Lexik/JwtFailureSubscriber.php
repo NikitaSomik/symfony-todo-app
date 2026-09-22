@@ -26,7 +26,7 @@ final class JwtFailureSubscriber implements EventSubscriberInterface
     {
         $event->setResponse(
             JsonApiResponse::error(
-                [new JsonApiError((string) Response::HTTP_UNAUTHORIZED, 'Unauthorized.')],
+                [JsonApiError::of((string) Response::HTTP_UNAUTHORIZED, 'Unauthorized.')],
                 Response::HTTP_UNAUTHORIZED,
             ),
         );
