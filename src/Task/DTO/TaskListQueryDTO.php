@@ -6,23 +6,19 @@ namespace App\Task\DTO;
 
 use App\Shared\Http\PageQueryDTO;
 use App\Shared\Http\QueryPayload;
+use App\Shared\Http\SortableQuery;
 use App\Shared\Query\SearchQuery;
 use App\Shared\Query\Sort;
-use App\Shared\Query\SortDirection;
 use App\Task\Enum\TaskSortField;
 use Symfony\Component\Validator\Constraints as Assert;
 
-readonly class TaskListQueryDTO implements QueryPayload
+readonly class TaskListQueryDTO implements QueryPayload, SortableQuery
 {
     public function __construct(
         #[Assert\Valid]
         public PageQueryDTO $page = new PageQueryDTO(),
 
-        #[Assert\Choice(callback: [TaskSortField::class, 'values'])]
-        public string $sort = TaskSortField::CREATED_AT->value,
-
-        #[Assert\Choice(choices: ['asc', 'desc'])]
-        public string $direction = 'desc',
+        public string $sort = '-'.TaskSortField::CREATED_AT->value,
 
         #[Assert\Valid]
         public TaskFilterDTO $filter = new TaskFilterDTO(),
@@ -32,9 +28,17 @@ readonly class TaskListQueryDTO implements QueryPayload
     ) {
     }
 
-    public function sort(): Sort
+    public static function sortFields(): array
     {
-        return new Sort($this->sort, SortDirection::from($this->direction));
+        return TaskSortField::values();
+    }
+
+    /**
+     * @return list<Sort>
+     */
+    public function sorts(): array
+    {
+        return Sort::listFromQuery($this->sort);
     }
 
     public function searchQuery(): ?SearchQuery
