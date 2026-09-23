@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Task\DTO;
 
+use App\Shared\Query\SearchQuery;
 use App\Task\Enum\TaskStatus;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
@@ -19,7 +20,21 @@ readonly class TaskFilterDTO
 
         #[Assert\Date(message: 'This value is not a valid date. Use the YYYY-MM-DD format.')]
         public ?string $due_to = null,
+
+        #[Assert\Length(max: 100)]
+        public ?string $search = null,
     ) {
+    }
+
+    public function searchQuery(): ?SearchQuery
+    {
+        $term = trim((string) $this->search);
+
+        if ('' === $term) {
+            return null;
+        }
+
+        return new SearchQuery($term);
     }
 
     public function dueFrom(): ?\DateTimeImmutable
