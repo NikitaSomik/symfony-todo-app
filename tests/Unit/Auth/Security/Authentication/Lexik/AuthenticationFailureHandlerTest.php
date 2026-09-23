@@ -34,7 +34,7 @@ final class AuthenticationFailureHandlerTest extends TestCase
 
         self::assertSame(Response::HTTP_TOO_MANY_REQUESTS, $response->getStatusCode());
         self::assertSame(
-            ['errors' => [['status' => '429', 'detail' => $message]]],
+            ['jsonapi' => ['version' => '1.1'], 'errors' => [['status' => '429', 'detail' => $message]]],
             json_decode((string) $response->getContent(), true),
         );
     }
@@ -46,7 +46,7 @@ final class AuthenticationFailureHandlerTest extends TestCase
 
         self::assertSame(Response::HTTP_UNAUTHORIZED, $response->getStatusCode());
         self::assertSame(
-            ['errors' => [['status' => '401', 'detail' => 'Unauthorized.']]],
+            ['jsonapi' => ['version' => '1.1'], 'errors' => [['status' => '401', 'detail' => 'Unauthorized.']]],
             json_decode((string) $response->getContent(), true),
         );
     }

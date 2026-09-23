@@ -24,7 +24,7 @@ final class JsonApiErrorNormalizerTest extends TestCase
         $domain = new class('Email is already taken.') extends \DomainException implements ClientFacingException {};
 
         self::assertSame(
-            ['errors' => [['status' => '409', 'detail' => 'Email is already taken.']]],
+            ['jsonapi' => ['version' => '1.1'], 'errors' => [['status' => '409', 'detail' => 'Email is already taken.']]],
             $this->normalize(new HttpException(409, $domain->getMessage(), $domain)),
         );
     }
@@ -35,7 +35,7 @@ final class JsonApiErrorNormalizerTest extends TestCase
         $internal = new \RuntimeException('SQLSTATE[08006] connection to database failed');
 
         self::assertSame(
-            ['errors' => [['status' => '409', 'detail' => 'Conflict']]],
+            ['jsonapi' => ['version' => '1.1'], 'errors' => [['status' => '409', 'detail' => 'Conflict']]],
             $this->normalize(new HttpException(409, $internal->getMessage(), $internal)),
         );
     }
@@ -44,7 +44,7 @@ final class JsonApiErrorNormalizerTest extends TestCase
     public function unmappedExceptionShouldBecomeServerError(): void
     {
         self::assertSame(
-            ['errors' => [['status' => '500', 'detail' => 'Server Error.']]],
+            ['jsonapi' => ['version' => '1.1'], 'errors' => [['status' => '500', 'detail' => 'Server Error.']]],
             $this->normalize(new \RuntimeException('SQLSTATE[08006] connection to database failed')),
         );
     }
@@ -53,7 +53,7 @@ final class JsonApiErrorNormalizerTest extends TestCase
     public function knownHttpExceptionShouldUseItsOwnText(): void
     {
         self::assertSame(
-            ['errors' => [['status' => '404', 'detail' => 'Not Found.']]],
+            ['jsonapi' => ['version' => '1.1'], 'errors' => [['status' => '404', 'detail' => 'Not Found.']]],
             $this->normalize(new NotFoundHttpException('No route found for "GET /api/v1/ghost"')),
         );
     }
@@ -67,7 +67,7 @@ final class JsonApiErrorNormalizerTest extends TestCase
         ]));
 
         self::assertSame(
-            ['errors' => [
+            ['jsonapi' => ['version' => '1.1'], 'errors' => [
                 ['status' => '422', 'detail' => 'This value is not a valid email address.', 'source' => ['pointer' => '/email']],
                 ['status' => '422', 'detail' => 'This value is too short.', 'source' => ['pointer' => '/page/limit']],
             ]],
@@ -86,7 +86,7 @@ final class JsonApiErrorNormalizerTest extends TestCase
         ]));
 
         self::assertSame(
-            ['errors' => [
+            ['jsonapi' => ['version' => '1.1'], 'errors' => [
                 ['status' => '422', 'detail' => 'This value is not a valid date.', 'source' => ['parameter' => 'filter[due_to]']],
                 ['status' => '422', 'detail' => 'This value is not a valid choice.', 'source' => ['parameter' => 'sort']],
             ]],
@@ -102,7 +102,7 @@ final class JsonApiErrorNormalizerTest extends TestCase
         ]));
 
         self::assertSame(
-            ['errors' => [['status' => '422', 'detail' => 'The payload is invalid.']]],
+            ['jsonapi' => ['version' => '1.1'], 'errors' => [['status' => '422', 'detail' => 'The payload is invalid.']]],
             $this->normalize(new HttpException(422, 'Validation failed', $validation)),
         );
     }
