@@ -26,6 +26,8 @@ final class QueryParameterTest extends ApiTestCase
     #[TestWith(['page[offset]=10', 'page[offset]'])]
     #[TestWith(['filter=abc', 'filter'])]
     #[TestWith(['page=5', 'page'])]
+    #[TestWith(['search=milk', 'search'])]
+    #[TestWith(['direction=asc', 'direction'])]
     public function unknownParameterShouldBeRejectedWith400(string $query, string $parameter): void
     {
         $response = $this->get('/api/v1/tasks?'.$query);

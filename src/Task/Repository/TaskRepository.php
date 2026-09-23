@@ -33,7 +33,7 @@ class TaskRepository extends ServiceEntityRepository
      */
     public function findForUserList(User $user, TaskListQueryDTO $query): array
     {
-        $search = $query->searchQuery();
+        $search = $query->filter->searchQuery();
 
         $queryBuilder = $this->createQueryBuilder('t')
             ->where('t.user = :user')
@@ -67,7 +67,7 @@ class TaskRepository extends ServiceEntityRepository
             ->setParameter('user', $user);
 
         $this->specificationApplier->apply($queryBuilder, [
-            new TaskSearchSpecification($query->searchQuery()),
+            new TaskSearchSpecification($query->filter->searchQuery()),
             new TaskStatusSpecification($query->filter->status),
             new TaskDueRangeSpecification($query->filter->dueFrom(), $query->filter->dueTo()),
         ]);
