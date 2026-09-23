@@ -84,6 +84,16 @@ abstract class ApiTestCase extends WebTestCase
         return $this->request('PUT', $uri, $body);
     }
 
+    /**
+     * Sends a body as it is, with the given Content-Type, or with none when it is null.
+     */
+    protected function sendRaw(string $method, string $uri, ?string $contentType, string $content): Response
+    {
+        $this->client->request($method, $uri, server: null === $contentType ? [] : ['CONTENT_TYPE' => $contentType], content: $content);
+
+        return $this->client->getResponse();
+    }
+
     protected function delete(string $uri): Response
     {
         return $this->request('DELETE', $uri);

@@ -42,7 +42,7 @@ final class AuthController extends AbstractController
     #[OA\Response(response: 409, description: 'Email already taken')]
     #[OA\Response(response: 429, description: 'Too many registration attempts')]
     #[RateLimit('registration')]
-    public function register(#[MapRequestPayload] RegisterDTO $dto): JsonResponse
+    public function register(#[MapRequestPayload(acceptFormat: 'json')] RegisterDTO $dto): JsonResponse
     {
         $user = $this->registerUser->handle($dto);
 

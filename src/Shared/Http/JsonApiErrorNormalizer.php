@@ -15,7 +15,7 @@ use Symfony\Component\Validator\Exception\ValidationFailedException;
 final class JsonApiErrorNormalizer implements NormalizerInterface
 {
     /**
-     * @return array{jsonapi: array{version: string}, errors: list<array{status: string, detail: string, source?: array{pointer: string}|array{parameter: string}}>}
+     * @return array{jsonapi: array{version: string}, errors: list<array{status: string, detail: string, source?: array{pointer: string}|array{parameter: string}|array{header: string}}>}
      */
     public function normalize(mixed $data, ?string $format = null, array $context = []): array
     {
@@ -30,6 +30,14 @@ final class JsonApiErrorNormalizer implements NormalizerInterface
 
         if ($throwable instanceof JsonApiRequestException) {
             return $this->toPayload($throwable->errors);
+        }
+
+        if ($throwable instanceof HttpExceptionInterface && Response::HTTP_UNSUPPORTED_MEDIA_TYPE === $throwable->getStatusCode()) {
+            return $this->toPayload([JsonApiError::forHeader(
+                (string) Response::HTTP_UNSUPPORTED_MEDIA_TYPE,
+                'The request body must be sent as application/json.',
+                'Content-Type',
+            )]);
         }
 
         if ($throwable instanceof HttpExceptionInterface) {
@@ -114,7 +122,7 @@ final class JsonApiErrorNormalizer implements NormalizerInterface
     /**
      * @param list<JsonApiError> $errors
      *
-     * @return array{jsonapi: array{version: string}, errors: list<array{status: string, detail: string, source?: array{pointer: string}|array{parameter: string}}>}
+     * @return array{jsonapi: array{version: string}, errors: list<array{status: string, detail: string, source?: array{pointer: string}|array{parameter: string}|array{header: string}}>}
      */
     private function toPayload(array $errors): array
     {

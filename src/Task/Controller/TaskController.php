@@ -89,7 +89,7 @@ final class TaskController extends AbstractController
     #[OA\Response(response: 201, description: 'Task created', headers: [new OA\Header(header: 'Location', description: 'URL of the created task', schema: new OA\Schema(type: 'string'))], content: new OA\JsonContent(ref: new Model(type: TaskResponseSchema::class)))]
     #[OA\Response(ref: '#/components/responses/ValidationError', response: 422)]
     #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
-    public function create(#[MapRequestPayload] CreateTaskDTO $dto): JsonResponse
+    public function create(#[MapRequestPayload(acceptFormat: 'json')] CreateTaskDTO $dto): JsonResponse
     {
         /** @var User $user */
         $user = $this->getUser();
@@ -149,7 +149,7 @@ final class TaskController extends AbstractController
     #[OA\Response(ref: '#/components/responses/ValidationError', response: 422)]
     #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
     #[IsGranted(TaskVoter::ACCESS, 'task')]
-    public function update(#[MapRequestPayload] UpdateTaskDTO $dto, Task $task): JsonResponse
+    public function update(#[MapRequestPayload(acceptFormat: 'json')] UpdateTaskDTO $dto, Task $task): JsonResponse
     {
         /** @var User $user */
         $user = $this->getUser();
