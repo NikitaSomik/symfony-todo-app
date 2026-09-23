@@ -513,7 +513,7 @@ final class TaskControllerTest extends ApiTestCase
     {
         $task = TaskFactory::createOne(['user' => $this->user]);
 
-        $response = $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), [
+        $response = $this->patchResource($this->route('api_task_update', ['id' => $this->taskId($task)]), 'tasks', $this->taskId($task), [
             'title' => 'Updated title',
             'status' => 'completed',
             'due_date' => '2026-04-03',
@@ -533,7 +533,7 @@ final class TaskControllerTest extends ApiTestCase
     {
         $task = TaskFactory::createOne(['user' => $this->user, 'status' => TaskStatus::TODO]);
 
-        $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), [
+        $this->patchResource($this->route('api_task_update', ['id' => $this->taskId($task)]), 'tasks', $this->taskId($task), [
             'title' => $task->getTitle(),
             'description' => $task->getDescription(),
             'status' => TaskStatus::COMPLETED->value,
@@ -554,7 +554,7 @@ final class TaskControllerTest extends ApiTestCase
     {
         $task = TaskFactory::createOne(['user' => $this->user, 'status' => TaskStatus::TODO]);
 
-        $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), [
+        $this->patchResource($this->route('api_task_update', ['id' => $this->taskId($task)]), 'tasks', $this->taskId($task), [
             'title' => 'Renamed task',
             'description' => $task->getDescription(),
             'status' => TaskStatus::TODO->value,
@@ -573,7 +573,7 @@ final class TaskControllerTest extends ApiTestCase
     {
         $task = TaskFactory::createOne(['user' => $this->user]);
 
-        $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), ['title' => '']);
+        $this->patchResource($this->route('api_task_update', ['id' => $this->taskId($task)]), 'tasks', $this->taskId($task), ['title' => '']);
 
         self::assertResponseStatusCodeSame(422);
     }
@@ -583,7 +583,7 @@ final class TaskControllerTest extends ApiTestCase
     {
         $task = TaskFactory::createOne(['user' => $this->user]);
 
-        $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), ['title' => 'Test', 'description' => 'ab']);
+        $this->patchResource($this->route('api_task_update', ['id' => $this->taskId($task)]), 'tasks', $this->taskId($task), ['title' => 'Test', 'description' => 'ab']);
 
         self::assertResponseStatusCodeSame(422);
     }
@@ -593,7 +593,7 @@ final class TaskControllerTest extends ApiTestCase
     {
         $task = TaskFactory::createOne(['user' => $this->user]);
 
-        $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), [
+        $this->patchResource($this->route('api_task_update', ['id' => $this->taskId($task)]), 'tasks', $this->taskId($task), [
             'title' => 'Test',
             'description' => str_repeat('a', 2001),
         ]);
@@ -606,7 +606,7 @@ final class TaskControllerTest extends ApiTestCase
     {
         $task = TaskFactory::createOne(['user' => $this->user]);
 
-        $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), [
+        $this->patchResource($this->route('api_task_update', ['id' => $this->taskId($task)]), 'tasks', $this->taskId($task), [
             'title' => 'Test',
             'due_date' => 'tomorrow',
         ]);
@@ -619,7 +619,7 @@ final class TaskControllerTest extends ApiTestCase
     {
         $task = TaskFactory::createOne(['user' => $this->user]);
 
-        $response = $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), [
+        $response = $this->patchResource($this->route('api_task_update', ['id' => $this->taskId($task)]), 'tasks', $this->taskId($task), [
             'title' => 'Updated title',
             'status' => 'cancelled',
             'cancellation_reason' => 'Work is no longer required',
@@ -636,13 +636,30 @@ final class TaskControllerTest extends ApiTestCase
     {
         $task = TaskFactory::new()->cancelled('Outdated')->create(['user' => $this->user]);
 
-        $response = $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), [
-            'title' => 'Updated title',
+        $response = $this->patchResource($this->route('api_task_update', ['id' => $this->taskId($task)]), 'tasks', $this->taskId($task), [
             'status' => 'completed',
+            'cancellation_reason' => null,
         ]);
 
         self::assertSame('completed', $this->jsonAttributes($response)['status']);
         self::assertNull($this->jsonAttributes($response)['cancellation_reason']);
+    }
+
+    /**
+     * JSON:API reads a left-out attribute as its current value, so the old reason still counts
+     * and has to be cleared explicitly.
+     */
+    #[Test]
+    public function updateWhenMovingAwayFromCancelledWithoutClearingTheReasonShouldReturn422(): void
+    {
+        $task = TaskFactory::new()->cancelled('Outdated')->create(['user' => $this->user]);
+
+        $response = $this->patchResource($this->route('api_task_update', ['id' => $this->taskId($task)]), 'tasks', $this->taskId($task), [
+            'status' => 'completed',
+        ]);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSame(['pointer' => '/data/attributes/cancellation_reason'], $this->json($response)['errors'][0]['source']);
     }
 
     #[Test]
@@ -650,11 +667,9 @@ final class TaskControllerTest extends ApiTestCase
     {
         $task = TaskFactory::new()->cancelled('Outdated')->create(['user' => $this->user]);
 
-        $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), [
-            'title' => $task->getTitle(),
-            'description' => $task->getDescription(),
+        $this->patchResource($this->route('api_task_update', ['id' => $this->taskId($task)]), 'tasks', $this->taskId($task), [
             'status' => TaskStatus::TODO->value,
-            'due_date' => $task->getDueDate()?->format('Y-m-d'),
+            'cancellation_reason' => null,
         ]);
 
         self::assertResponseIsSuccessful();
@@ -671,7 +686,7 @@ final class TaskControllerTest extends ApiTestCase
     {
         $task = TaskFactory::new()->cancelled('Outdated')->create(['user' => $this->user]);
 
-        $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), [
+        $this->patchResource($this->route('api_task_update', ['id' => $this->taskId($task)]), 'tasks', $this->taskId($task), [
             'title' => $task->getTitle(),
             'description' => $task->getDescription(),
             'status' => TaskStatus::CANCELLED->value,
@@ -718,9 +733,91 @@ final class TaskControllerTest extends ApiTestCase
     }
 
     #[Test]
+    public function updateShouldKeepEveryAttributeLeftOutOfTheDocument(): void
+    {
+        $task = TaskFactory::createOne([
+            'user' => $this->user,
+            'title' => 'Buy milk',
+            'description' => '2 liters',
+            'dueDate' => new \DateTimeImmutable('2026-04-01'),
+        ]);
+
+        $response = $this->patchResource($this->route('api_task_update', ['id' => $this->taskId($task)]), 'tasks', $this->taskId($task), [
+            'status' => 'in_progress',
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertSame([
+            'title' => 'Buy milk',
+            'description' => '2 liters',
+            'status' => 'in_progress',
+            'due_date' => '2026-04-01',
+        ], array_intersect_key($this->jsonAttributes($response), array_flip(['title', 'description', 'status', 'due_date'])));
+    }
+
+    #[Test]
+    public function updateWithAnExplicitNullShouldClearTheAttribute(): void
+    {
+        $task = TaskFactory::createOne(['user' => $this->user, 'description' => '2 liters']);
+
+        $response = $this->patchResource($this->route('api_task_update', ['id' => $this->taskId($task)]), 'tasks', $this->taskId($task), [
+            'description' => null,
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertNull($this->jsonAttributes($response)['description']);
+    }
+
+    #[Test]
+    public function updateWhenDocumentIdDoesNotMatchTheUrlShouldReturn409(): void
+    {
+        $task = TaskFactory::createOne(['user' => $this->user]);
+
+        $response = $this->patchResource($this->route('api_task_update', ['id' => $this->taskId($task)]), 'tasks', $this->missingTaskId(), [
+            'title' => 'Renamed',
+        ]);
+
+        self::assertResponseStatusCodeSame(409);
+        self::assertSame(['pointer' => '/data/id'], $this->json($response)['errors'][0]['source']);
+    }
+
+    #[Test]
+    public function updateWhenDocumentHasNoIdShouldReturn400(): void
+    {
+        $task = TaskFactory::createOne(['user' => $this->user]);
+
+        $response = $this->sendDocument('PATCH', $this->route('api_task_update', ['id' => $this->taskId($task)]), [
+            'data' => ['type' => 'tasks', 'attributes' => ['title' => 'Renamed']],
+        ]);
+
+        self::assertResponseStatusCodeSame(400);
+        self::assertSame(['pointer' => '/data/id'], $this->json($response)['errors'][0]['source']);
+    }
+
+    #[Test]
+    public function updateWithPutShouldReturn405(): void
+    {
+        $task = TaskFactory::createOne(['user' => $this->user]);
+
+        $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), ['title' => 'Renamed']);
+
+        self::assertResponseStatusCodeSame(405);
+    }
+
+    #[Test]
+    public function updateOfAnotherUsersTaskShouldReturn403BeforeTheDocumentIsRead(): void
+    {
+        $task = TaskFactory::createOne(['user' => UserFactory::createOne()]);
+
+        $this->sendRaw('PATCH', $this->route('api_task_update', ['id' => $this->taskId($task)]), 'application/json', 'not a document');
+
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    #[Test]
     public function updateWhenTaskNotFoundShouldReturn404(): void
     {
-        $this->put($this->route('api_task_update', ['id' => $this->missingTaskId()]), ['title' => 'Test']);
+        $this->patchResource($this->route('api_task_update', ['id' => $this->missingTaskId()]), 'tasks', $this->missingTaskId(), ['title' => 'Test']);
 
         self::assertResponseStatusCodeSame(404);
     }
@@ -731,7 +828,7 @@ final class TaskControllerTest extends ApiTestCase
         $otherUser = UserFactory::createOne();
         $task = TaskFactory::createOne(['user' => $otherUser]);
 
-        $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), ['title' => 'Hacked']);
+        $this->patchResource($this->route('api_task_update', ['id' => $this->taskId($task)]), 'tasks', $this->taskId($task), ['title' => 'Hacked']);
 
         self::assertResponseStatusCodeSame(403);
     }
@@ -803,7 +900,7 @@ final class TaskControllerTest extends ApiTestCase
             'due_date' => null,
         ]);
 
-        $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), [
+        $this->patchResource($this->route('api_task_update', ['id' => $this->taskId($task)]), 'tasks', $this->taskId($task), [
             'title' => 'Buy almond milk',
             'description' => null,
             'status' => TaskStatus::COMPLETED->value,
@@ -841,7 +938,7 @@ final class TaskControllerTest extends ApiTestCase
         $createResponse = $this->postResource($this->route('api_task_create'), 'tasks', ['title' => 'Buy milk']);
         $taskId = $this->jsonData($createResponse)['id'];
 
-        $this->put($this->route('api_task_update', ['id' => $taskId]), [
+        $this->patchResource($this->route('api_task_update', ['id' => $taskId]), 'tasks', $taskId, [
             'title' => 'Buy almond milk',
             'description' => null,
             'status' => TaskStatus::TODO->value,
@@ -913,7 +1010,7 @@ final class TaskControllerTest extends ApiTestCase
 
         $this->failAuditLogEventDispatching();
 
-        $response = $this->put($this->route('api_task_update', ['id' => $taskId]), [
+        $response = $this->patchResource($this->route('api_task_update', ['id' => $taskId]), 'tasks', $taskId, [
             'title' => 'Buy almond milk',
             'description' => null,
             'status' => TaskStatus::COMPLETED->value,

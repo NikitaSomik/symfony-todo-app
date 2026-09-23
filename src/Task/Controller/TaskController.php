@@ -16,9 +16,12 @@ use App\Shared\AuditLog\Repository\AuditLogRepository;
 use App\Shared\AuditLog\Resource\AuditLogResource;
 use App\Shared\Http\MapJsonApiResource;
 use App\Shared\Http\PageQueryDTO;
+use App\Shared\Http\ResourceDocument;
+use App\Shared\Http\ResourceDocumentMapper;
 use App\Task\Api\Documentation\CreateTaskRequestSchema;
 use App\Task\Api\Documentation\TaskCollectionResponseSchema;
 use App\Task\Api\Documentation\TaskResponseSchema;
+use App\Task\Api\Documentation\UpdateTaskRequestSchema;
 use App\Task\DTO\CreateTaskDTO;
 use App\Task\DTO\TaskListQueryDTO;
 use App\Task\DTO\UpdateTaskDTO;
@@ -38,7 +41,6 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapQueryString;
-use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -54,6 +56,7 @@ final class TaskController extends AbstractController
         private readonly UpdateTask $updateTask,
         private readonly DeleteTask $deleteTask,
         private readonly PaginationLinksBuilder $paginationLinksBuilder,
+        private readonly ResourceDocumentMapper $resourceDocumentMapper,
     ) {
     }
 
@@ -146,18 +149,26 @@ final class TaskController extends AbstractController
         );
     }
 
-    #[Route('/{id}', name: 'update', requirements: ['id' => Requirement::UUID_V7], methods: ['PUT'])]
-    #[OA\Put(summary: 'Update a task')]
+    #[Route('/{id}', name: 'update', requirements: ['id' => Requirement::UUID_V7], methods: ['PATCH'])]
+    #[OA\Patch(summary: 'Update a task', description: 'Attributes left out of the document keep their current values.')]
     #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))]
-    #[OA\RequestBody(required: true, content: new OA\JsonContent(ref: new Model(type: UpdateTaskDTO::class)))]
-    #[OA\Response(response: 200, description: 'Task updated', content: new OA\JsonContent(ref: new Model(type: TaskResponseSchema::class)))]
+    #[OA\RequestBody(required: true, content: new JsonApiContent(ref: new Model(type: UpdateTaskRequestSchema::class)))]
+    #[OA\Response(response: 200, description: 'Task updated', content: new JsonApiContent(ref: new Model(type: TaskResponseSchema::class)))]
+    #[OA\Response(response: 400, description: 'Malformed JSON:API document')]
+    #[OA\Response(response: 409, description: 'Resource type or id does not match the endpoint')]
+    #[OA\Response(response: 415, description: 'Body is not sent as application/vnd.api+json')]
     #[OA\Response(response: 404, description: 'Task not found')]
     #[OA\Response(response: 403, description: 'Access denied')]
     #[OA\Response(ref: '#/components/responses/ValidationError', response: 422)]
     #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
     #[IsGranted(TaskVoter::ACCESS, 'task')]
-    public function update(#[MapRequestPayload] UpdateTaskDTO $dto, Task $task): JsonResponse
-    {
+    public function update(
+        Task $task,
+        #[MapJsonApiResource(type: TaskResource::TYPE, idFromRoute: 'id')]
+        ResourceDocument $document,
+    ): JsonResponse {
+        $dto = $this->resourceDocumentMapper->map($document, UpdateTaskDTO::class, TaskResource::toItem($task)->attributes);
+
         /** @var User $user */
         $user = $this->getUser();
         $task = $this->updateTask->handle($task, $dto, $user);

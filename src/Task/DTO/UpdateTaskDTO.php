@@ -11,7 +11,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 #[OA\Schema(
-    required: ['title'],
+    description: 'Attributes to change; any attribute left out keeps its current value.',
     properties: [
         new OA\Property(property: 'title', type: 'string', example: 'Buy milk'),
         new OA\Property(property: 'description', type: 'string', maxLength: 2000, minLength: 3, example: '2 liters', nullable: true),
