@@ -28,6 +28,10 @@ final class JsonApiErrorNormalizer implements NormalizerInterface
             return $this->toPayload($this->violationErrors($validationException, $data->getStatusCode()));
         }
 
+        if ($throwable instanceof JsonApiRequestException) {
+            return $this->toPayload($throwable->errors);
+        }
+
         if ($throwable instanceof HttpExceptionInterface) {
             $status = $throwable->getStatusCode();
             $mapped = $throwable->getPrevious();
