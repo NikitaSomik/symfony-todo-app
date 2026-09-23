@@ -63,4 +63,16 @@ final class QueryParameterTest extends ApiTestCase
         self::assertResponseStatusCodeSame(422);
         self::assertSame(['parameter' => 'filter[status]'], $this->json($response)['errors'][0]['source']);
     }
+
+    #[Test]
+    #[TestWith(['10001'])]
+    #[TestWith(['9223372036854775807'])]
+    #[TestWith(['9223372036854775808'])]
+    public function pageNumberBeyondTheLimitShouldBeA422(string $number): void
+    {
+        $response = $this->get('/api/v1/tasks?page[number]='.$number);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSame(['parameter' => 'page[number]'], $this->json($response)['errors'][0]['source']);
+    }
 }

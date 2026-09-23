@@ -13,6 +13,7 @@ use App\Shared\AuditLog\Api\Documentation\AuditLogCollectionResponseSchema;
 use App\Shared\AuditLog\Enum\AuditLogEntityType;
 use App\Shared\AuditLog\Repository\AuditLogRepository;
 use App\Shared\AuditLog\Resource\AuditLogResource;
+use App\Shared\Http\PageQueryDTO;
 use App\Task\Api\Documentation\TaskCollectionResponseSchema;
 use App\Task\Api\Documentation\TaskResponseSchema;
 use App\Task\DTO\CreateTaskDTO;
@@ -55,7 +56,7 @@ final class TaskController extends AbstractController
 
     #[Route('', name: 'get_all', methods: ['GET'])]
     #[OA\Get(summary: 'Get all tasks (paginated)')]
-    #[OA\Parameter(name: 'page', in: 'query', schema: new OA\Schema(properties: [new OA\Property(property: 'number', type: 'integer', default: 1, minimum: 1, example: 1), new OA\Property(property: 'size', type: 'integer', default: 20, maximum: 100, minimum: 1, example: 20)], type: 'object'), style: 'deepObject', explode: true, )]
+    #[OA\Parameter(name: 'page', in: 'query', schema: new OA\Schema(properties: [new OA\Property(property: 'number', type: 'integer', default: 1, maximum: PageQueryDTO::MAX_NUMBER, minimum: 1, example: 1), new OA\Property(property: 'size', type: 'integer', default: 20, maximum: 100, minimum: 1, example: 20)], type: 'object'), style: 'deepObject', explode: true, )]
     #[OA\Parameter(name: 'filter', in: 'query', schema: new OA\Schema(properties: [new OA\Property(property: 'status', ref: new Model(type: TaskStatus::class), nullable: true), new OA\Property(property: 'due_from', type: 'string', format: 'date', example: '2026-04-01', nullable: true), new OA\Property(property: 'due_to', type: 'string', format: 'date', example: '2026-04-30', nullable: true), new OA\Property(property: 'search', description: 'Full-text search across task title and description. When provided, results are ranked by relevance.', type: 'string', maxLength: 100, example: 'milk', nullable: true)], type: 'object'), style: 'deepObject', explode: true, )]
     #[OA\Parameter(name: 'sort', description: 'Comma-separated sort fields, applied in order; a "-" prefix sorts that field in descending order.', in: 'query', schema: new OA\Schema(type: 'string', default: '-'.TaskSortField::CREATED_AT->value, example: '-status,due_date'))]
     #[OA\Response(response: 200, description: 'Paginated list of tasks', content: new OA\JsonContent(ref: new Model(type: TaskCollectionResponseSchema::class)))]
