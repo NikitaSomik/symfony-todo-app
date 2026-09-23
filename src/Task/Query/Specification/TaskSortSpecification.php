@@ -17,24 +17,34 @@ final readonly class TaskSortSpecification implements QueryBuilderSpecification
         TaskSortField::DUE_DATE->value => 't.dueDate',
     ];
 
+    /**
+     * @param list<Sort> $sorts applied in order, each one breaking ties left by the previous
+     */
     public function __construct(
-        private Sort $sort,
+        private array $sorts,
     ) {
     }
 
     public function apply(QueryBuilder $queryBuilder): void
     {
-        if (TaskSortField::DUE_DATE->value === $this->sort->field) {
+        foreach ($this->sorts as $sort) {
+            $this->applySort($queryBuilder, $sort);
+        }
+    }
+
+    private function applySort(QueryBuilder $queryBuilder, Sort $sort): void
+    {
+        if (TaskSortField::DUE_DATE->value === $sort->field) {
             $queryBuilder
                 ->addOrderBy('CASE WHEN t.dueDate IS NULL THEN 1 ELSE 0 END', 'ASC')
-                ->addOrderBy('t.dueDate', $this->sort->direction->uppercased());
+                ->addOrderBy('t.dueDate', $sort->direction->uppercased());
 
             return;
         }
 
         $queryBuilder->addOrderBy(
-            self::SORT_FIELDS[$this->sort->field],
-            $this->sort->direction->uppercased(),
+            self::SORT_FIELDS[$sort->field],
+            $sort->direction->uppercased(),
         );
     }
 }

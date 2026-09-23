@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Shared\Http;
 
 use App\Shared\Api\JsonApiError;
+use App\Shared\Query\Sort;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapQueryString;
@@ -15,6 +16,8 @@ use Symfony\Component\HttpKernel\KernelEvents;
  * JSON:API requires a 400 for a query parameter the server does not know. The parameters an action
  * knows are the ones its #[MapQueryString] DTO can hold, so they are read from the DTO's constructor:
  * a scalar argument is a parameter, an object argument is a family such as "filter[...]".
+ *
+ * A "sort" field outside SortableQuery::sortFields() is rejected the same way.
  *
  * The serializer's "allow_extra_attributes" option cannot do this: it throws instead of collecting
  * the error, and the request ends with a 500.
@@ -35,16 +38,46 @@ final class SupportedQueryParametersListener
             return;
         }
 
-        $unknown = $this->unknownParameters($event->getRequest()->query->all(), $this->shape($dtoClass));
+        $query = $event->getRequest()->query->all();
 
-        if ([] === $unknown) {
-            return;
+        $errors = [
+            ...array_map(self::unsupportedParameter(...), $this->unknownParameters($query, $this->shape($dtoClass))),
+            ...$this->unsupportedSorts($dtoClass, $query['sort'] ?? null),
+        ];
+
+        if ([] !== $errors) {
+            throw JsonApiRequestException::of(Response::HTTP_BAD_REQUEST, ...$errors);
         }
-
-        throw JsonApiRequestException::of(Response::HTTP_BAD_REQUEST, ...array_map(self::unsupported(...), $unknown));
     }
 
-    private static function unsupported(string $parameter): JsonApiError
+    /**
+     * @param class-string $dtoClass
+     *
+     * @return list<JsonApiError>
+     */
+    private function unsupportedSorts(string $dtoClass, mixed $sort): array
+    {
+        // A "sort" that is not a string is a wrong type, left to validation.
+        if (!is_a($dtoClass, SortableQuery::class, true) || !\is_string($sort)) {
+            return [];
+        }
+
+        $errors = [];
+
+        foreach (Sort::listFromQuery($sort) as $field) {
+            if (!\in_array($field->field, $dtoClass::sortFields(), true)) {
+                $errors[] = JsonApiError::forParameter(
+                    (string) Response::HTTP_BAD_REQUEST,
+                    sprintf('Sorting by "%s" is not supported.', $field->field),
+                    'sort',
+                );
+            }
+        }
+
+        return $errors;
+    }
+
+    private static function unsupportedParameter(string $parameter): JsonApiError
     {
         return JsonApiError::forParameter(
             (string) Response::HTTP_BAD_REQUEST,
