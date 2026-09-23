@@ -7,6 +7,7 @@ namespace App\Auth\Controller;
 use App\Auth\Api\Documentation\UserResponseSchema;
 use App\Auth\Entity\User;
 use App\Auth\Resource\UserResource;
+use App\Shared\Api\Documentation\JsonApiContent;
 use App\Shared\Api\JsonApiResponse;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
@@ -21,7 +22,7 @@ final class ProfileController extends AbstractController
 {
     #[Route('', name: 'me', methods: ['GET'])]
     #[OA\Get(summary: 'Get current authenticated user')]
-    #[OA\Response(response: 200, description: 'Current user', content: new OA\JsonContent(ref: new Model(type: UserResponseSchema::class)))]
+    #[OA\Response(response: 200, description: 'Current user', content: new JsonApiContent(ref: new Model(type: UserResponseSchema::class)))]
     #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
     public function me(#[CurrentUser] User $user): JsonResponse
     {

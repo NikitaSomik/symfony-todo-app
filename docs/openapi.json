@@ -27,18 +27,24 @@
                     "201": {
                         "description": "User registered",
                         "content": {
-                            "application/json": {
+                            "application/vnd.api+json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/UserResponseSchema"
                                 }
                             }
                         }
                     },
+                    "415": {
+                        "description": "Body is not sent as application/json"
+                    },
                     "422": {
                         "$ref": "#/components/responses/ValidationError"
                     },
                     "409": {
                         "description": "Email already taken"
+                    },
+                    "429": {
+                        "description": "Too many registration attempts"
                     }
                 },
                 "security": []
@@ -167,7 +173,7 @@
                     "200": {
                         "description": "Current user",
                         "content": {
-                            "application/json": {
+                            "application/vnd.api+json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/UserResponseSchema"
                                 }
@@ -200,6 +206,7 @@
                                     "type": "integer",
                                     "example": 1,
                                     "default": 1,
+                                    "maximum": 10000,
                                     "minimum": 1
                                 },
                                 "size": {
@@ -240,6 +247,13 @@
                                     "format": "date",
                                     "example": "2026-04-30",
                                     "nullable": true
+                                },
+                                "search": {
+                                    "description": "Full-text search across task title and description. When provided, results are ranked by relevance.",
+                                    "type": "string",
+                                    "example": "milk",
+                                    "nullable": true,
+                                    "maxLength": 100
                                 }
                             },
                             "type": "object"
@@ -248,40 +262,12 @@
                     {
                         "name": "sort",
                         "in": "query",
+                        "description": "Comma-separated sort fields, applied in order; a \"-\" prefix sorts that field in descending order.",
                         "required": false,
                         "schema": {
                             "type": "string",
-                            "default": "created_at",
-                            "enum": [
-                                "created_at",
-                                "status",
-                                "due_date"
-                            ]
-                        }
-                    },
-                    {
-                        "name": "direction",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "default": "desc",
-                            "enum": [
-                                "asc",
-                                "desc"
-                            ]
-                        }
-                    },
-                    {
-                        "name": "search",
-                        "in": "query",
-                        "description": "Full-text search across task title and description. When provided, results are ranked by relevance.",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "example": "milk",
-                            "nullable": true,
-                            "maxLength": 100
+                            "example": "-status,due_date",
+                            "default": "-created_at"
                         }
                     }
                 ],
@@ -289,7 +275,7 @@
                     "200": {
                         "description": "Paginated list of tasks",
                         "content": {
-                            "application/json": {
+                            "application/vnd.api+json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/TaskCollectionResponseSchema"
                                 }
@@ -320,13 +306,24 @@
                 "responses": {
                     "201": {
                         "description": "Task created",
+                        "headers": {
+                            "Location": {
+                                "description": "URL of the created task",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
                         "content": {
-                            "application/json": {
+                            "application/vnd.api+json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/TaskResponseSchema"
                                 }
                             }
                         }
+                    },
+                    "415": {
+                        "description": "Body is not sent as application/json"
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationError"
@@ -360,7 +357,7 @@
                     "200": {
                         "description": "Task details",
                         "content": {
-                            "application/json": {
+                            "application/vnd.api+json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/TaskResponseSchema"
                                 }
@@ -410,7 +407,7 @@
                     "200": {
                         "description": "Task updated",
                         "content": {
-                            "application/json": {
+                            "application/vnd.api+json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/TaskResponseSchema"
                                 }
@@ -422,6 +419,9 @@
                     },
                     "403": {
                         "description": "Access denied"
+                    },
+                    "415": {
+                        "description": "Body is not sent as application/json"
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationError"
@@ -488,7 +488,7 @@
                     "200": {
                         "description": "Task audit log history",
                         "content": {
-                            "application/json": {
+                            "application/vnd.api+json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/AuditLogCollectionResponseSchema"
                                 }
@@ -536,6 +536,7 @@
                     "number": {
                         "type": "integer",
                         "default": 1,
+                        "maximum": 10000,
                         "minimum": 1
                     },
                     "size": {
@@ -569,6 +570,12 @@
                         "type": "string",
                         "nullable": true,
                         "default": null
+                    },
+                    "search": {
+                        "type": "string",
+                        "nullable": true,
+                        "default": null,
+                        "maxLength": 100
                     }
                 },
                 "type": "object"
@@ -580,29 +587,10 @@
                     },
                     "sort": {
                         "type": "string",
-                        "default": "created_at",
-                        "enum": [
-                            "created_at",
-                            "status",
-                            "due_date"
-                        ]
-                    },
-                    "direction": {
-                        "type": "string",
-                        "default": "desc",
-                        "enum": [
-                            "asc",
-                            "desc"
-                        ]
+                        "default": "-created_at"
                     },
                     "filter": {
                         "$ref": "#/components/schemas/TaskFilterDTO"
-                    },
-                    "search": {
-                        "type": "string",
-                        "nullable": true,
-                        "default": null,
-                        "maxLength": 100
                     }
                 },
                 "type": "object"
@@ -694,6 +682,19 @@
                 },
                 "type": "object"
             },
+            "JsonApiObjectSchema": {
+                "description": "The top-level \"jsonapi\" member every document carries.",
+                "required": [
+                    "version"
+                ],
+                "properties": {
+                    "version": {
+                        "type": "string",
+                        "example": "1.1"
+                    }
+                },
+                "type": "object"
+            },
             "UserResource": {
                 "required": [
                     "type",
@@ -727,9 +728,13 @@
             },
             "UserResponseSchema": {
                 "required": [
+                    "jsonapi",
                     "data"
                 ],
                 "properties": {
+                    "jsonapi": {
+                        "$ref": "#/components/schemas/JsonApiObjectSchema"
+                    },
                     "data": {
                         "$ref": "#/components/schemas/UserResource"
                     }
@@ -857,11 +862,15 @@
             },
             "TaskCollectionResponseSchema": {
                 "required": [
+                    "jsonapi",
                     "links",
                     "data",
                     "meta"
                 ],
                 "properties": {
+                    "jsonapi": {
+                        "$ref": "#/components/schemas/JsonApiObjectSchema"
+                    },
                     "links": {
                         "$ref": "#/components/schemas/PaginationLinksSchema"
                     },
@@ -879,9 +888,13 @@
             },
             "TaskResponseSchema": {
                 "required": [
+                    "jsonapi",
                     "data"
                 ],
                 "properties": {
+                    "jsonapi": {
+                        "$ref": "#/components/schemas/JsonApiObjectSchema"
+                    },
                     "data": {
                         "$ref": "#/components/schemas/TaskResource"
                     }
@@ -996,10 +1009,14 @@
             },
             "AuditLogCollectionResponseSchema": {
                 "required": [
+                    "jsonapi",
                     "links",
                     "data"
                 ],
                 "properties": {
+                    "jsonapi": {
+                        "$ref": "#/components/schemas/JsonApiObjectSchema"
+                    },
                     "links": {
                         "$ref": "#/components/schemas/CollectionLinksSchema"
                     },
@@ -1017,9 +1034,12 @@
             "UnauthorizedError": {
                 "description": "Unauthorized \u2014 valid access_token cookie required",
                 "content": {
-                    "application/json": {
+                    "application/vnd.api+json": {
                         "schema": {
                             "properties": {
+                                "jsonapi": {
+                                    "$ref": "#/components/schemas/JsonApiObjectSchema"
+                                },
                                 "errors": {
                                     "type": "array",
                                     "items": {
@@ -1028,7 +1048,7 @@
                                                 "type": "string",
                                                 "example": "401"
                                             },
-                                            "message": {
+                                            "detail": {
                                                 "type": "string",
                                                 "example": "Unauthorized."
                                             }
@@ -1043,11 +1063,14 @@
                 }
             },
             "ValidationError": {
-                "description": "Validation error",
+                "description": "Validation error: a value in the request body or a query parameter is invalid",
                 "content": {
-                    "application/json": {
+                    "application/vnd.api+json": {
                         "schema": {
                             "properties": {
+                                "jsonapi": {
+                                    "$ref": "#/components/schemas/JsonApiObjectSchema"
+                                },
                                 "errors": {
                                     "type": "array",
                                     "items": {
@@ -1056,11 +1079,27 @@
                                                 "type": "string",
                                                 "example": "422"
                                             },
-                                            "field": {
-                                                "type": "string"
+                                            "detail": {
+                                                "type": "string",
+                                                "example": "This value is not a valid email address."
                                             },
-                                            "message": {
-                                                "type": "string"
+                                            "source": {
+                                                "description": "One of: \"pointer\" for a value in the request body, \"parameter\" for a query parameter, \"header\" for a request header.",
+                                                "properties": {
+                                                    "pointer": {
+                                                        "type": "string",
+                                                        "example": "/email"
+                                                    },
+                                                    "parameter": {
+                                                        "type": "string",
+                                                        "example": "filter[due_to]"
+                                                    },
+                                                    "header": {
+                                                        "type": "string",
+                                                        "example": "Content-Type"
+                                                    }
+                                                },
+                                                "type": "object"
                                             }
                                         },
                                         "type": "object"

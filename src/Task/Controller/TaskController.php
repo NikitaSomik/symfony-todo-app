@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Task\Controller;
 
 use App\Auth\Entity\User;
+use App\Shared\Api\Documentation\JsonApiContent;
 use App\Shared\Api\JsonApiResponse;
 use App\Shared\Api\PaginatedCollection;
 use App\Shared\Api\PaginationLinksBuilder;
@@ -59,7 +60,7 @@ final class TaskController extends AbstractController
     #[OA\Parameter(name: 'page', in: 'query', schema: new OA\Schema(properties: [new OA\Property(property: 'number', type: 'integer', default: 1, maximum: PageQueryDTO::MAX_NUMBER, minimum: 1, example: 1), new OA\Property(property: 'size', type: 'integer', default: 20, maximum: 100, minimum: 1, example: 20)], type: 'object'), style: 'deepObject', explode: true, )]
     #[OA\Parameter(name: 'filter', in: 'query', schema: new OA\Schema(properties: [new OA\Property(property: 'status', ref: new Model(type: TaskStatus::class), nullable: true), new OA\Property(property: 'due_from', type: 'string', format: 'date', example: '2026-04-01', nullable: true), new OA\Property(property: 'due_to', type: 'string', format: 'date', example: '2026-04-30', nullable: true), new OA\Property(property: 'search', description: 'Full-text search across task title and description. When provided, results are ranked by relevance.', type: 'string', maxLength: 100, example: 'milk', nullable: true)], type: 'object'), style: 'deepObject', explode: true, )]
     #[OA\Parameter(name: 'sort', description: 'Comma-separated sort fields, applied in order; a "-" prefix sorts that field in descending order.', in: 'query', schema: new OA\Schema(type: 'string', default: '-'.TaskSortField::CREATED_AT->value, example: '-status,due_date'))]
-    #[OA\Response(response: 200, description: 'Paginated list of tasks', content: new OA\JsonContent(ref: new Model(type: TaskCollectionResponseSchema::class)))]
+    #[OA\Response(response: 200, description: 'Paginated list of tasks', content: new JsonApiContent(ref: new Model(type: TaskCollectionResponseSchema::class)))]
     #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
     public function getAll(
         #[MapQueryString(validationFailedStatusCode: Response::HTTP_UNPROCESSABLE_ENTITY)]
@@ -86,7 +87,8 @@ final class TaskController extends AbstractController
     #[Route('', name: 'create', methods: ['POST'])]
     #[OA\Post(summary: 'Create a task')]
     #[OA\RequestBody(required: true, content: new OA\JsonContent(ref: new Model(type: CreateTaskDTO::class)))]
-    #[OA\Response(response: 201, description: 'Task created', headers: [new OA\Header(header: 'Location', description: 'URL of the created task', schema: new OA\Schema(type: 'string'))], content: new OA\JsonContent(ref: new Model(type: TaskResponseSchema::class)))]
+    #[OA\Response(response: 201, description: 'Task created', headers: [new OA\Header(header: 'Location', description: 'URL of the created task', schema: new OA\Schema(type: 'string'))], content: new JsonApiContent(ref: new Model(type: TaskResponseSchema::class)))]
+    #[OA\Response(response: 415, description: 'Body is not sent as application/json')]
     #[OA\Response(ref: '#/components/responses/ValidationError', response: 422)]
     #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
     public function create(#[MapRequestPayload(acceptFormat: 'json')] CreateTaskDTO $dto): JsonResponse
@@ -104,7 +106,7 @@ final class TaskController extends AbstractController
     #[Route('/{id}', name: 'get', requirements: ['id' => Requirement::UUID_V7], methods: ['GET'])]
     #[OA\Get(summary: 'Get a task')]
     #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))]
-    #[OA\Response(response: 200, description: 'Task details', content: new OA\JsonContent(ref: new Model(type: TaskResponseSchema::class)))]
+    #[OA\Response(response: 200, description: 'Task details', content: new JsonApiContent(ref: new Model(type: TaskResponseSchema::class)))]
     #[OA\Response(response: 404, description: 'Task not found')]
     #[OA\Response(response: 403, description: 'Access denied')]
     #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
@@ -117,7 +119,7 @@ final class TaskController extends AbstractController
     #[Route('/{id}/audit-logs', name: 'get_audit_logs', requirements: ['id' => Requirement::UUID_V7], methods: ['GET'])]
     #[OA\Get(summary: 'Get task audit log history')]
     #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))]
-    #[OA\Response(response: 200, description: 'Task audit log history', content: new OA\JsonContent(ref: new Model(type: AuditLogCollectionResponseSchema::class)))]
+    #[OA\Response(response: 200, description: 'Task audit log history', content: new JsonApiContent(ref: new Model(type: AuditLogCollectionResponseSchema::class)))]
     #[OA\Response(response: 404, description: 'Task not found')]
     #[OA\Response(response: 403, description: 'Access denied')]
     #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
@@ -143,9 +145,10 @@ final class TaskController extends AbstractController
     #[OA\Put(summary: 'Update a task')]
     #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))]
     #[OA\RequestBody(required: true, content: new OA\JsonContent(ref: new Model(type: UpdateTaskDTO::class)))]
-    #[OA\Response(response: 200, description: 'Task updated', content: new OA\JsonContent(ref: new Model(type: TaskResponseSchema::class)))]
+    #[OA\Response(response: 200, description: 'Task updated', content: new JsonApiContent(ref: new Model(type: TaskResponseSchema::class)))]
     #[OA\Response(response: 404, description: 'Task not found')]
     #[OA\Response(response: 403, description: 'Access denied')]
+    #[OA\Response(response: 415, description: 'Body is not sent as application/json')]
     #[OA\Response(ref: '#/components/responses/ValidationError', response: 422)]
     #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
     #[IsGranted(TaskVoter::ACCESS, 'task')]
