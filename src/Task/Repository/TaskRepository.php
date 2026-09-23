@@ -49,10 +49,8 @@ class TaskRepository extends ServiceEntityRepository
             new TaskSortSpecification($query->sort()),
         ]);
 
-        if (null !== $search) {
-            // Keeps paging stable when relevance and sort field are equal.
-            $queryBuilder->addOrderBy('t.id', 'DESC');
-        }
+        // The last sort key: tasks that tie on relevance and on the sort field keep one fixed order across pages.
+        $queryBuilder->addOrderBy('t.id', 'DESC');
 
         return $queryBuilder
             ->getQuery()
