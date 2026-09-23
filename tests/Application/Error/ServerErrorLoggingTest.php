@@ -18,7 +18,7 @@ final class ServerErrorLoggingTest extends ApiTestCase
         $this->actingAs(UserFactory::createOne());
         static::getContainer()->get(AuditLogFailureToggle::class)->enable();
 
-        $response = $this->post($this->route('api_task_create'), ['title' => 'Buy milk']);
+        $response = $this->postResource($this->route('api_task_create'), 'tasks', ['title' => 'Buy milk']);
 
         self::assertResponseStatusCodeSame(500);
         self::assertSame('500', $this->json($response)['errors'][0]['status']);

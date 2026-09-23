@@ -84,6 +84,37 @@ abstract class ApiTestCase extends WebTestCase
         return $this->request('PUT', $uri, $body);
     }
 
+    /**
+     * Creates a resource with a JSON:API document: {"data": {"type": ..., "attributes": ...}}.
+     */
+    protected function postResource(string $uri, string $type, array $attributes): Response
+    {
+        return $this->sendDocument('POST', $uri, ['data' => ['type' => $type, 'attributes' => (object) $attributes]]);
+    }
+
+    /**
+     * Updates a resource with a JSON:API document: {"data": {"type": ..., "id": ..., "attributes": ...}}.
+     */
+    protected function patchResource(string $uri, string $type, string $id, array $attributes): Response
+    {
+        return $this->sendDocument('PATCH', $uri, ['data' => ['type' => $type, 'id' => $id, 'attributes' => (object) $attributes]]);
+    }
+
+    /**
+     * Sends any document, well-formed or not, with the JSON:API media type.
+     */
+    protected function sendDocument(string $method, string $uri, array $document): Response
+    {
+        return $this->sendRaw($method, $uri, 'application/vnd.api+json', (string) json_encode($document));
+    }
+
+    protected function sendRaw(string $method, string $uri, string $contentType, string $content): Response
+    {
+        $this->client->request($method, $uri, server: ['CONTENT_TYPE' => $contentType], content: $content);
+
+        return $this->client->getResponse();
+    }
+
     protected function delete(string $uri): Response
     {
         return $this->request('DELETE', $uri);

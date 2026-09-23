@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Task\Controller;
 
 use App\Auth\Entity\User;
+use App\Shared\Api\Documentation\JsonApiContent;
 use App\Shared\Api\JsonApiResponse;
 use App\Shared\Api\PaginatedCollection;
 use App\Shared\Api\PaginationLinksBuilder;
@@ -13,7 +14,9 @@ use App\Shared\AuditLog\Api\Documentation\AuditLogCollectionResponseSchema;
 use App\Shared\AuditLog\Enum\AuditLogEntityType;
 use App\Shared\AuditLog\Repository\AuditLogRepository;
 use App\Shared\AuditLog\Resource\AuditLogResource;
+use App\Shared\Http\MapJsonApiResource;
 use App\Shared\Http\PageQueryDTO;
+use App\Task\Api\Documentation\CreateTaskRequestSchema;
 use App\Task\Api\Documentation\TaskCollectionResponseSchema;
 use App\Task\Api\Documentation\TaskResponseSchema;
 use App\Task\DTO\CreateTaskDTO;
@@ -85,17 +88,24 @@ final class TaskController extends AbstractController
 
     #[Route('', name: 'create', methods: ['POST'])]
     #[OA\Post(summary: 'Create a task')]
-    #[OA\RequestBody(required: true, content: new OA\JsonContent(ref: new Model(type: CreateTaskDTO::class)))]
-    #[OA\Response(response: 201, description: 'Task created', content: new OA\JsonContent(ref: new Model(type: TaskResponseSchema::class)))]
+    #[OA\RequestBody(required: true, content: new JsonApiContent(ref: new Model(type: CreateTaskRequestSchema::class)))]
+    #[OA\Response(response: 201, description: 'Task created', headers: [new OA\Header(header: 'Location', description: 'URL of the created task', schema: new OA\Schema(type: 'string'))], content: new JsonApiContent(ref: new Model(type: TaskResponseSchema::class)))]
+    #[OA\Response(response: 400, description: 'Malformed JSON:API document')]
+    #[OA\Response(response: 403, description: 'Client-generated id is not supported')]
+    #[OA\Response(response: 409, description: 'Resource type does not match the endpoint')]
+    #[OA\Response(response: 415, description: 'Body is not sent as application/vnd.api+json')]
     #[OA\Response(ref: '#/components/responses/ValidationError', response: 422)]
     #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
-    public function create(#[MapRequestPayload] CreateTaskDTO $dto): JsonResponse
+    public function create(#[MapJsonApiResource(type: TaskResource::TYPE)] CreateTaskDTO $dto): JsonResponse
     {
         /** @var User $user */
         $user = $this->getUser();
         $task = $this->createTask->handle($dto, $user);
 
-        return JsonApiResponse::one(TaskResource::toItem($task), Response::HTTP_CREATED);
+        return JsonApiResponse::created(
+            TaskResource::toItem($task),
+            $this->generateUrl('api_task_get', ['id' => $task->getId()->toRfc4122()]),
+        );
     }
 
     #[Route('/{id}', name: 'get', requirements: ['id' => Requirement::UUID_V7], methods: ['GET'])]

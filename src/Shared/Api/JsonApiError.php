@@ -7,7 +7,7 @@ namespace App\Shared\Api;
 final readonly class JsonApiError
 {
     /**
-     * @param array{pointer: string}|array{parameter: string}|null $source
+     * @param array{pointer: string}|array{parameter: string}|array{header: string}|null $source
      */
     private function __construct(
         public string $status,
@@ -38,7 +38,15 @@ final readonly class JsonApiError
     }
 
     /**
-     * @return array{status: string, detail: string, source?: array{pointer: string}|array{parameter: string}}
+     * For a request header, such as a Content-Type the server does not accept.
+     */
+    public static function forHeader(string $status, string $detail, string $header): self
+    {
+        return new self($status, $detail, ['header' => $header]);
+    }
+
+    /**
+     * @return array{status: string, detail: string, source?: array{pointer: string}|array{parameter: string}|array{header: string}}
      */
     public function toArray(): array
     {

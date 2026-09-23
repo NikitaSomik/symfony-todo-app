@@ -327,15 +327,26 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function createWhenValidDataShouldReturn201(): void
     {
-        $this->post($this->route('api_task_create'), ['title' => 'Buy milk']);
+        $this->postResource($this->route('api_task_create'), 'tasks', ['title' => 'Buy milk']);
 
         self::assertResponseStatusCodeSame(201);
     }
 
     #[Test]
+    public function createShouldPointToTheNewTaskWithTheLocationHeader(): void
+    {
+        $response = $this->postResource($this->route('api_task_create'), 'tasks', ['title' => 'Buy milk']);
+
+        self::assertSame(
+            $this->route('api_task_get', ['id' => $this->jsonData($response)['id']]),
+            $response->headers->get('Location'),
+        );
+    }
+
+    #[Test]
     public function createWhenValidDataShouldReturnTask(): void
     {
-        $response = $this->post($this->route('api_task_create'), ['title' => 'Buy milk']);
+        $response = $this->postResource($this->route('api_task_create'), 'tasks', ['title' => 'Buy milk']);
         $data = $this->jsonData($response);
         $attributes = $data['attributes'];
 
@@ -353,7 +364,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function createWhenAllFieldsProvidedShouldReturnTask(): void
     {
-        $response = $this->post($this->route('api_task_create'), [
+        $response = $this->postResource($this->route('api_task_create'), 'tasks', [
             'title' => 'Buy milk',
             'description' => '2 liters',
             'status' => 'in_progress',
@@ -371,15 +382,25 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function createWhenTitleIsEmptyShouldReturn422(): void
     {
-        $this->post($this->route('api_task_create'), ['title' => '']);
+        $response = $this->postResource($this->route('api_task_create'), 'tasks', ['title' => '']);
 
         self::assertResponseStatusCodeSame(422);
+        self::assertSame(['pointer' => '/data/attributes/title'], $this->json($response)['errors'][0]['source']);
+    }
+
+    #[Test]
+    public function createWhenTitleIsMissingShouldReturn422(): void
+    {
+        $response = $this->postResource($this->route('api_task_create'), 'tasks', []);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSame(['pointer' => '/data/attributes/title'], $this->json($response)['errors'][0]['source']);
     }
 
     #[Test]
     public function createWhenStatusIsInvalidShouldReturn422(): void
     {
-        $this->post($this->route('api_task_create'), ['title' => 'Test', 'status' => 'invalid']);
+        $this->postResource($this->route('api_task_create'), 'tasks', ['title' => 'Test', 'status' => 'invalid']);
 
         self::assertResponseStatusCodeSame(422);
     }
@@ -387,15 +408,16 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function createWhenCancelledWithoutCancellationReasonShouldReturn422(): void
     {
-        $this->post($this->route('api_task_create'), ['title' => 'Test', 'status' => 'cancelled']);
+        $response = $this->postResource($this->route('api_task_create'), 'tasks', ['title' => 'Test', 'status' => 'cancelled']);
 
         self::assertResponseStatusCodeSame(422);
+        self::assertSame(['pointer' => '/data/attributes/cancellation_reason'], $this->json($response)['errors'][0]['source']);
     }
 
     #[Test]
     public function createWhenCancellationReasonIsProvidedForNonCancelledStatusShouldReturn422(): void
     {
-        $this->post($this->route('api_task_create'), [
+        $this->postResource($this->route('api_task_create'), 'tasks', [
             'title' => 'Test',
             'status' => 'todo',
             'cancellation_reason' => 'No longer needed',
@@ -407,7 +429,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function createWhenCancelledShouldReturnTaskWithCancellationReason(): void
     {
-        $response = $this->post($this->route('api_task_create'), [
+        $response = $this->postResource($this->route('api_task_create'), 'tasks', [
             'title' => 'Deprecated task',
             'status' => 'cancelled',
             'cancellation_reason' => 'No longer needed',
@@ -422,7 +444,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function createWhenDescriptionIsTooShortShouldReturn422(): void
     {
-        $this->post($this->route('api_task_create'), ['title' => 'Test', 'description' => 'ab']);
+        $this->postResource($this->route('api_task_create'), 'tasks', ['title' => 'Test', 'description' => 'ab']);
 
         self::assertResponseStatusCodeSame(422);
     }
@@ -430,7 +452,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function createWhenDescriptionIsTooLongShouldReturn422(): void
     {
-        $this->post($this->route('api_task_create'), ['title' => 'Test', 'description' => str_repeat('a', 2001)]);
+        $this->postResource($this->route('api_task_create'), 'tasks', ['title' => 'Test', 'description' => str_repeat('a', 2001)]);
 
         self::assertResponseStatusCodeSame(422);
     }
@@ -438,7 +460,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function createWhenDueDateIsInvalidShouldReturn422(): void
     {
-        $this->post($this->route('api_task_create'), ['title' => 'Test', 'due_date' => 'tomorrow']);
+        $this->postResource($this->route('api_task_create'), 'tasks', ['title' => 'Test', 'due_date' => 'tomorrow']);
 
         self::assertResponseStatusCodeSame(422);
     }
@@ -758,7 +780,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function createWhenValidDataShouldCreateAuditLogEntry(): void
     {
-        $response = $this->post($this->route('api_task_create'), ['title' => 'Buy milk']);
+        $response = $this->postResource($this->route('api_task_create'), 'tasks', ['title' => 'Buy milk']);
         $taskId = $this->jsonData($response)['id'];
 
         $activities = static::getContainer()->get(AuditLogRepository::class)->findForEntity(AuditLogEntityType::TASK, $taskId);
@@ -816,7 +838,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function getAuditLogsShouldReturnTaskHistory(): void
     {
-        $createResponse = $this->post($this->route('api_task_create'), ['title' => 'Buy milk']);
+        $createResponse = $this->postResource($this->route('api_task_create'), 'tasks', ['title' => 'Buy milk']);
         $taskId = $this->jsonData($createResponse)['id'];
 
         $this->put($this->route('api_task_update', ['id' => $taskId]), [
@@ -865,7 +887,7 @@ final class TaskControllerTest extends ApiTestCase
     {
         $this->failAuditLogEventDispatching();
 
-        $response = $this->post($this->route('api_task_create'), ['title' => 'Buy milk']);
+        $response = $this->postResource($this->route('api_task_create'), 'tasks', ['title' => 'Buy milk']);
 
         self::assertResponseStatusCodeSame(500);
 

@@ -31,10 +31,12 @@ use OpenApi\Attributes as OA;
 )]
 final class TaskResource
 {
+    public const string TYPE = 'tasks';
+
     public static function toItem(Task $task): ResourceItem
     {
         return new ResourceItem(
-            type: 'tasks',
+            type: self::TYPE,
             id: $task->getId()->toRfc4122(),
             attributes: [
                 'title' => $task->getTitle(),

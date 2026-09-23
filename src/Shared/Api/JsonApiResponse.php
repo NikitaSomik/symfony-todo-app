@@ -30,6 +30,17 @@ final class JsonApiResponse extends JsonResponse
     }
 
     /**
+     * A 201 for a resource the server created, pointing to it with the Location header.
+     */
+    public static function created(ResourceItem $item, string $location): self
+    {
+        $response = self::one($item, self::HTTP_CREATED);
+        $response->headers->set('Location', $location);
+
+        return $response;
+    }
+
+    /**
      * @param ResourceItem[] $included
      */
     public static function collection(ResourceCollection $collection, int $status = self::HTTP_OK, array $included = []): self

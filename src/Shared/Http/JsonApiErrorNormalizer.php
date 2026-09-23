@@ -15,7 +15,7 @@ use Symfony\Component\Validator\Exception\ValidationFailedException;
 final class JsonApiErrorNormalizer implements NormalizerInterface
 {
     /**
-     * @return array{jsonapi: array{version: string}, errors: list<array{status: string, detail: string, source?: array{pointer: string}|array{parameter: string}}>}
+     * @return array{jsonapi: array{version: string}, errors: list<array{status: string, detail: string, source?: array{pointer: string}|array{parameter: string}|array{header: string}}>}
      */
     public function normalize(mixed $data, ?string $format = null, array $context = []): array
     {
@@ -69,35 +69,12 @@ final class JsonApiErrorNormalizer implements NormalizerInterface
 
             $errors[] = match (true) {
                 '' === $path => JsonApiError::of((string) $status, $detail),
-                $fromQuery => JsonApiError::forParameter((string) $status, $detail, self::toParameterName($path)),
-                default => JsonApiError::forPointer((string) $status, $detail, self::toJsonPointer($path)),
+                $fromQuery => JsonApiError::forParameter((string) $status, $detail, PropertyPath::toParameterName($path)),
+                default => JsonApiError::forPointer((string) $status, $detail, PropertyPath::toJsonPointer($path)),
             };
         }
 
         return $errors;
-    }
-
-    /**
-     * "page.limit" becomes "/page/limit", "items[0].name" becomes "/items/0/name".
-     */
-    private static function toJsonPointer(string $propertyPath): string
-    {
-        return '/'.str_replace(['[', ']'], ['/', ''], str_replace('.', '/', $propertyPath));
-    }
-
-    /**
-     * "filter.due_to" becomes "filter[due_to]" — the name the client actually sent.
-     */
-    private static function toParameterName(string $propertyPath): string
-    {
-        $segments = explode('.', $propertyPath);
-        $name = array_shift($segments);
-
-        foreach ($segments as $segment) {
-            $name .= '['.$segment.']';
-        }
-
-        return $name;
     }
 
     private function validationException(mixed $throwable): ?ValidationFailedException
@@ -114,7 +91,7 @@ final class JsonApiErrorNormalizer implements NormalizerInterface
     /**
      * @param list<JsonApiError> $errors
      *
-     * @return array{jsonapi: array{version: string}, errors: list<array{status: string, detail: string, source?: array{pointer: string}|array{parameter: string}}>}
+     * @return array{jsonapi: array{version: string}, errors: list<array{status: string, detail: string, source?: array{pointer: string}|array{parameter: string}|array{header: string}}>}
      */
     private function toPayload(array $errors): array
     {
