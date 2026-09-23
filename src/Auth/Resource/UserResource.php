@@ -24,6 +24,8 @@ use OpenApi\Attributes as OA;
 )]
 final class UserResource
 {
+    public const string TYPE = 'users';
+
     public static function toItem(User $user): ResourceItem
     {
         $id = $user->getId();
@@ -33,7 +35,7 @@ final class UserResource
         }
 
         return new ResourceItem(
-            type: 'users',
+            type: self::TYPE,
             id: $id,
             attributes: [
                 'email' => $user->getEmail(),

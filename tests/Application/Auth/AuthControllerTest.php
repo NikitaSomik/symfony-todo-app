@@ -19,7 +19,7 @@ final class AuthControllerTest extends ApiTestCase
     #[Test]
     public function registerWhenValidDataShouldReturn201(): void
     {
-        $this->post($this->route('api_auth_register'), [
+        $this->postResource($this->route('api_auth_register'), 'users', [
             'email' => 'user@example.com',
             'password' => 'secret123',
         ]);
@@ -30,7 +30,7 @@ final class AuthControllerTest extends ApiTestCase
     #[Test]
     public function registerWhenValidDataShouldReturnUser(): void
     {
-        $response = $this->post($this->route('api_auth_register'), [
+        $response = $this->postResource($this->route('api_auth_register'), 'users', [
             'email' => 'user@example.com',
             'password' => 'secret123',
         ]);
@@ -47,7 +47,7 @@ final class AuthControllerTest extends ApiTestCase
     #[Test]
     public function registerShouldStoreEmailLowercased(): void
     {
-        $response = $this->post($this->route('api_auth_register'), [
+        $response = $this->postResource($this->route('api_auth_register'), 'users', [
             'email' => 'User@Example.com',
             'password' => 'secret123',
         ]);
@@ -61,7 +61,7 @@ final class AuthControllerTest extends ApiTestCase
     {
         UserFactory::createOne(['email' => 'user@example.com']);
 
-        $this->post($this->route('api_auth_register'), [
+        $this->postResource($this->route('api_auth_register'), 'users', [
             'email' => 'USER@EXAMPLE.COM',
             'password' => 'secret123',
         ]);
@@ -86,7 +86,7 @@ final class AuthControllerTest extends ApiTestCase
     #[Test]
     public function registerWhenEmailIsInvalidShouldReturn422(): void
     {
-        $this->post($this->route('api_auth_register'), [
+        $this->postResource($this->route('api_auth_register'), 'users', [
             'email' => 'not-an-email',
             'password' => 'secret123',
         ]);
@@ -97,7 +97,7 @@ final class AuthControllerTest extends ApiTestCase
     #[Test]
     public function registerWhenPasswordTooShortShouldReturn422(): void
     {
-        $this->post($this->route('api_auth_register'), [
+        $this->postResource($this->route('api_auth_register'), 'users', [
             'email' => 'user@example.com',
             'password' => '123',
         ]);
@@ -110,7 +110,7 @@ final class AuthControllerTest extends ApiTestCase
     {
         UserFactory::createOne(['email' => 'user@example.com']);
 
-        $response = $this->post($this->route('api_auth_register'), [
+        $response = $this->postResource($this->route('api_auth_register'), 'users', [
             'email' => 'user@example.com',
             'password' => 'secret123',
         ]);
@@ -164,14 +164,14 @@ final class AuthControllerTest extends ApiTestCase
     public function registerWhenTooManyAttemptsShouldReturn429(): void
     {
         for ($i = 1; $i <= 10; ++$i) {
-            $this->post($this->route('api_auth_register'), [
+            $this->postResource($this->route('api_auth_register'), 'users', [
                 'email' => sprintf('user%d@example.com', $i),
                 'password' => 'secret123',
             ]);
             self::assertResponseStatusCodeSame(201);
         }
 
-        $response = $this->post($this->route('api_auth_register'), [
+        $response = $this->postResource($this->route('api_auth_register'), 'users', [
             'email' => 'one-too-many@example.com',
             'password' => 'secret123',
         ]);
@@ -186,13 +186,13 @@ final class AuthControllerTest extends ApiTestCase
     {
         $this->fromIp('203.0.113.10');
         for ($i = 1; $i <= 10; ++$i) {
-            $this->post($this->route('api_auth_register'), [
+            $this->postResource($this->route('api_auth_register'), 'users', [
                 'email' => sprintf('user%d@example.com', $i),
                 'password' => 'secret123',
             ]);
         }
 
-        $this->fromIp('203.0.113.20')->post($this->route('api_auth_register'), [
+        $this->fromIp('203.0.113.20')->postResource($this->route('api_auth_register'), 'users', [
             'email' => 'other-ip@example.com',
             'password' => 'secret123',
         ]);
@@ -607,7 +607,7 @@ final class AuthControllerTest extends ApiTestCase
     public function registerWhenAccessTokenCookieIsInvalidShouldReturn201(): void
     {
         $this->setCookie('access_token', 'stale-access-token');
-        $this->post($this->route('api_auth_register'), [
+        $this->postResource($this->route('api_auth_register'), 'users', [
             'email' => 'user@example.com',
             'password' => 'secret123',
         ]);

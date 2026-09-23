@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Auth\Controller;
 
+use App\Auth\Api\Documentation\RegisterRequestSchema;
 use App\Auth\Api\Documentation\UserResponseSchema;
 use App\Auth\DTO\RegisterDTO;
 use App\Auth\Exception\InvalidRefreshTokenException;
@@ -11,15 +12,16 @@ use App\Auth\Factory\JwtCookieFactory;
 use App\Auth\Resource\UserResource;
 use App\Auth\Service\RefreshAccessToken;
 use App\Auth\Service\RegisterUser;
+use App\Shared\Api\Documentation\JsonApiContent;
 use App\Shared\Api\JsonApiError;
 use App\Shared\Api\JsonApiResponse;
+use App\Shared\Http\MapJsonApiResource;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\HttpKernel\Attribute\RateLimit;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -36,13 +38,16 @@ final class AuthController extends AbstractController
 
     #[Route('/register', name: 'register', methods: ['POST'])]
     #[OA\Post(summary: 'Register a new user', security: [])]
-    #[OA\RequestBody(required: true, content: new OA\JsonContent(ref: new Model(type: RegisterDTO::class)))]
-    #[OA\Response(response: 201, description: 'User registered', content: new OA\JsonContent(ref: new Model(type: UserResponseSchema::class)))]
+    #[OA\RequestBody(required: true, content: new JsonApiContent(ref: new Model(type: RegisterRequestSchema::class)))]
+    #[OA\Response(response: 201, description: 'User registered', content: new JsonApiContent(ref: new Model(type: UserResponseSchema::class)))]
+    #[OA\Response(response: 400, description: 'Malformed JSON:API document')]
+    #[OA\Response(response: 403, description: 'Client-generated id is not supported')]
+    #[OA\Response(response: 415, description: 'Body is not sent as application/vnd.api+json')]
     #[OA\Response(ref: '#/components/responses/ValidationError', response: 422)]
-    #[OA\Response(response: 409, description: 'Email already taken')]
+    #[OA\Response(response: 409, description: 'Email already taken, or the resource type does not match the endpoint')]
     #[OA\Response(response: 429, description: 'Too many registration attempts')]
     #[RateLimit('registration')]
-    public function register(#[MapRequestPayload] RegisterDTO $dto): JsonResponse
+    public function register(#[MapJsonApiResource(type: UserResource::TYPE)] RegisterDTO $dto): JsonResponse
     {
         $user = $this->registerUser->handle($dto);
 

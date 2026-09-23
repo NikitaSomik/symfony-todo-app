@@ -56,7 +56,7 @@ final class ErrorResponseFormatTest extends ApiTestCase
     #[Test]
     public function validationFailureShouldReturnApplicationErrorShape(): void
     {
-        $response = $this->post($this->route('api_auth_register'), [
+        $response = $this->postResource($this->route('api_auth_register'), 'users', [
             'email' => 'not-an-email',
             'password' => '123',
         ]);
@@ -66,9 +66,9 @@ final class ErrorResponseFormatTest extends ApiTestCase
         self::assertSame(['jsonapi', 'errors'], array_keys($json));
         self::assertCount(2, $json['errors']);
         self::assertSame('422', $json['errors'][0]['status']);
-        self::assertSame('/email', $json['errors'][0]['source']['pointer']);
+        self::assertSame('/data/attributes/email', $json['errors'][0]['source']['pointer']);
         self::assertSame('This value is not a valid email address.', $json['errors'][0]['detail']);
         self::assertSame('422', $json['errors'][1]['status']);
-        self::assertSame('/password', $json['errors'][1]['source']['pointer']);
+        self::assertSame('/data/attributes/password', $json['errors'][1]['source']['pointer']);
     }
 }
