@@ -22,13 +22,6 @@ when@dev:
                                     properties:
                                         jsonapi:
                                             $ref: '#/components/schemas/JsonApiObjectSchema'
-                                        meta:
-                                            type: object
-                                            properties:
-                                                request_id:
-                                                    type: string
-                                                    description: The X-Request-Id of this response; quote it to find the error in the logs
-                                                    example: 01a0cf3e-b75b-75d9-af18-4b08fd521145
                                         errors:
                                             type: array
                                             items:
@@ -49,13 +42,6 @@ when@dev:
                                     properties:
                                         jsonapi:
                                             $ref: '#/components/schemas/JsonApiObjectSchema'
-                                        meta:
-                                            type: object
-                                            properties:
-                                                request_id:
-                                                    type: string
-                                                    description: The X-Request-Id of this response; quote it to find the error in the logs
-                                                    example: 01a0cf3e-b75b-75d9-af18-4b08fd521145
                                         errors:
                                             type: array
                                             items:

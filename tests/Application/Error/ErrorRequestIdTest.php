@@ -10,77 +10,77 @@ use App\Tests\ApiTestCase;
 use App\Tests\Support\AuditLogFailureToggle;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Uid\Uuid;
 
 /**
- * Every error document quotes the id of its request, so an error a user reports can be found in the logs.
- * Each test goes through a different place that builds error documents.
+ * Error responses are built in several places — the exception normalizer and each security handler —
+ * and every one of them must still carry the request id header, so the error can be found in the logs.
  */
 final class ErrorRequestIdTest extends ApiTestCase
 {
     #[Test]
-    public function missingTokenShouldQuoteTheRequestId(): void
+    public function missingTokenShouldCarryTheRequestId(): void
     {
-        $this->assertRequestIdQuoted($this->get($this->route('api_profile_me')), 401);
+        $this->assertRequestIdHeader($this->get($this->route('api_profile_me')), 401);
     }
 
     #[Test]
-    public function invalidTokenShouldQuoteTheRequestId(): void
+    public function invalidTokenShouldCarryTheRequestId(): void
     {
         $this->setCookie('access_token', 'not-a-jwt');
 
-        $this->assertRequestIdQuoted($this->get($this->route('api_profile_me')), 401);
+        $this->assertRequestIdHeader($this->get($this->route('api_profile_me')), 401);
     }
 
     #[Test]
-    public function failedLoginShouldQuoteTheRequestId(): void
+    public function failedLoginShouldCarryTheRequestId(): void
     {
         UserFactory::createOne(['email' => 'user@example.com']);
 
-        $this->assertRequestIdQuoted(
+        $this->assertRequestIdHeader(
             $this->post($this->route('api_auth_login'), ['email' => 'user@example.com', 'password' => 'wrong']),
             401,
         );
     }
 
     #[Test]
-    public function invalidRefreshTokenShouldQuoteTheRequestId(): void
+    public function invalidRefreshTokenShouldCarryTheRequestId(): void
     {
         $this->setCookie('refresh_token', 'invalid-token-value');
 
-        $this->assertRequestIdQuoted($this->post($this->route('api_auth_refresh')), 401);
+        $this->assertRequestIdHeader($this->post($this->route('api_auth_refresh')), 401);
     }
 
     #[Test]
-    public function forbiddenResourceShouldQuoteTheRequestId(): void
+    public function forbiddenResourceShouldCarryTheRequestId(): void
     {
         $task = TaskFactory::createOne(['user' => UserFactory::createOne()]);
         $this->actingAs(UserFactory::createOne());
 
-        $this->assertRequestIdQuoted($this->get($this->route('api_task_get', ['id' => $task->getId()->toRfc4122()])), 403);
+        $this->assertRequestIdHeader($this->get($this->route('api_task_get', ['id' => $task->getId()->toRfc4122()])), 403);
     }
 
     #[Test]
-    public function validationErrorShouldQuoteTheRequestId(): void
+    public function validationErrorShouldCarryTheRequestId(): void
     {
-        $this->assertRequestIdQuoted(
+        $this->assertRequestIdHeader(
             $this->post($this->route('api_auth_register'), ['email' => 'not-an-email', 'password' => '1']),
             422,
         );
     }
 
     #[Test]
-    public function serverErrorShouldQuoteTheRequestId(): void
+    public function serverErrorShouldCarryTheRequestId(): void
     {
         $this->actingAs(UserFactory::createOne());
         static::getContainer()->get(AuditLogFailureToggle::class)->enable();
 
-        $this->assertRequestIdQuoted($this->post($this->route('api_task_create'), ['title' => 'Buy milk']), 500);
+        $this->assertRequestIdHeader($this->post($this->route('api_task_create'), ['title' => 'Buy milk']), 500);
     }
 
-    private function assertRequestIdQuoted(Response $response, int $status): void
+    private function assertRequestIdHeader(Response $response, int $status): void
     {
         self::assertResponseStatusCodeSame($status);
-        self::assertNotNull($response->headers->get('X-Request-Id'));
-        self::assertSame($response->headers->get('X-Request-Id'), $this->json($response)['meta']['request_id'] ?? null);
+        self::assertTrue(Uuid::isValid((string) $response->headers->get('X-Request-Id')));
     }
 }

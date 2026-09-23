@@ -22,7 +22,7 @@ final class ErrorResponseFormatTest extends ApiTestCase
         $json = $this->json($response);
 
         self::assertResponseStatusCodeSame(401);
-        self::assertSame(['jsonapi', 'meta', 'errors'], array_keys($json));
+        self::assertSame(['jsonapi', 'errors'], array_keys($json));
         self::assertSame('401', $json['errors'][0]['status']);
         self::assertSame('Unauthorized.', $json['errors'][0]['detail']);
     }
@@ -34,7 +34,7 @@ final class ErrorResponseFormatTest extends ApiTestCase
         $json = $this->json($response);
 
         self::assertResponseStatusCodeSame(401);
-        self::assertSame(['jsonapi', 'meta', 'errors'], array_keys($json));
+        self::assertSame(['jsonapi', 'errors'], array_keys($json));
         self::assertSame('401', $json['errors'][0]['status']);
         self::assertSame('Unauthorized.', $json['errors'][0]['detail']);
     }
@@ -48,7 +48,7 @@ final class ErrorResponseFormatTest extends ApiTestCase
         $json = $this->json($response);
 
         self::assertResponseStatusCodeSame(401);
-        self::assertSame(['jsonapi', 'meta', 'errors'], array_keys($json));
+        self::assertSame(['jsonapi', 'errors'], array_keys($json));
         self::assertSame('401', $json['errors'][0]['status']);
         self::assertSame('Unauthorized.', $json['errors'][0]['detail']);
     }
@@ -63,7 +63,7 @@ final class ErrorResponseFormatTest extends ApiTestCase
         $json = $this->json($response);
 
         self::assertResponseStatusCodeSame(422);
-        self::assertSame(['jsonapi', 'meta', 'errors'], array_keys($json));
+        self::assertSame(['jsonapi', 'errors'], array_keys($json));
         self::assertCount(2, $json['errors']);
         self::assertSame('422', $json['errors'][0]['status']);
         self::assertSame('/email', $json['errors'][0]['source']['pointer']);

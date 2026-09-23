@@ -1097,16 +1097,6 @@
                                 "jsonapi": {
                                     "$ref": "#/components/schemas/JsonApiObjectSchema"
                                 },
-                                "meta": {
-                                    "properties": {
-                                        "request_id": {
-                                            "description": "The X-Request-Id of this response; quote it to find the error in the logs",
-                                            "type": "string",
-                                            "example": "01a0cf3e-b75b-75d9-af18-4b08fd521145"
-                                        }
-                                    },
-                                    "type": "object"
-                                },
                                 "errors": {
                                     "type": "array",
                                     "items": {
@@ -1137,16 +1127,6 @@
                             "properties": {
                                 "jsonapi": {
                                     "$ref": "#/components/schemas/JsonApiObjectSchema"
-                                },
-                                "meta": {
-                                    "properties": {
-                                        "request_id": {
-                                            "description": "The X-Request-Id of this response; quote it to find the error in the logs",
-                                            "type": "string",
-                                            "example": "01a0cf3e-b75b-75d9-af18-4b08fd521145"
-                                        }
-                                    },
-                                    "type": "object"
                                 },
                                 "errors": {
                                     "type": "array",
