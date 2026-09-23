@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace App\Task\DTO;
 
 use App\Shared\Http\PageQueryDTO;
+use App\Shared\Http\QueryPayload;
 use App\Shared\Query\SearchQuery;
 use App\Shared\Query\Sort;
 use App\Shared\Query\SortDirection;
 use App\Task\Enum\TaskSortField;
 use Symfony\Component\Validator\Constraints as Assert;
 
-readonly class TaskListQueryDTO
+readonly class TaskListQueryDTO implements QueryPayload
 {
     public function __construct(
         #[Assert\Valid]

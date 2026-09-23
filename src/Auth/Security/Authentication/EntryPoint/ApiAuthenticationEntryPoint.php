@@ -16,7 +16,7 @@ final class ApiAuthenticationEntryPoint implements AuthenticationEntryPointInter
     public function start(Request $request, ?AuthenticationException $authException = null): Response
     {
         return JsonApiResponse::error(
-            [new JsonApiError((string) Response::HTTP_UNAUTHORIZED, 'Unauthorized.')],
+            [JsonApiError::of((string) Response::HTTP_UNAUTHORIZED, 'Unauthorized.')],
             Response::HTTP_UNAUTHORIZED,
         );
     }

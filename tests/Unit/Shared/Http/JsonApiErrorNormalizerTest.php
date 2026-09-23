@@ -6,6 +6,7 @@ namespace App\Tests\Unit\Shared\Http;
 
 use App\Shared\Http\ClientFacingException;
 use App\Shared\Http\JsonApiErrorNormalizer;
+use App\Shared\Http\QueryPayload;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\ErrorHandler\Exception\FlattenException;
@@ -23,18 +24,18 @@ final class JsonApiErrorNormalizerTest extends TestCase
         $domain = new class('Email is already taken.') extends \DomainException implements ClientFacingException {};
 
         self::assertSame(
-            ['errors' => [['status' => '409', 'message' => 'Email is already taken.']]],
+            ['errors' => [['status' => '409', 'detail' => 'Email is already taken.']]],
             $this->normalize(new HttpException(409, $domain->getMessage(), $domain)),
         );
     }
 
     #[Test]
-    public function unmarkedHttpExceptionShouldUseGenericMessage(): void
+    public function unmarkedHttpExceptionShouldUseGenericDetail(): void
     {
         $internal = new \RuntimeException('SQLSTATE[08006] connection to database failed');
 
         self::assertSame(
-            ['errors' => [['status' => '409', 'message' => 'Conflict']]],
+            ['errors' => [['status' => '409', 'detail' => 'Conflict']]],
             $this->normalize(new HttpException(409, $internal->getMessage(), $internal)),
         );
     }
@@ -43,7 +44,7 @@ final class JsonApiErrorNormalizerTest extends TestCase
     public function unmappedExceptionShouldBecomeServerError(): void
     {
         self::assertSame(
-            ['errors' => [['status' => '500', 'message' => 'Server Error.']]],
+            ['errors' => [['status' => '500', 'detail' => 'Server Error.']]],
             $this->normalize(new \RuntimeException('SQLSTATE[08006] connection to database failed')),
         );
     }
@@ -52,26 +53,56 @@ final class JsonApiErrorNormalizerTest extends TestCase
     public function knownHttpExceptionShouldUseItsOwnText(): void
     {
         self::assertSame(
-            ['errors' => [['status' => '404', 'message' => 'Not Found.']]],
+            ['errors' => [['status' => '404', 'detail' => 'Not Found.']]],
             $this->normalize(new NotFoundHttpException('No route found for "GET /api/v1/ghost"')),
         );
     }
 
     #[Test]
-    public function violationsShouldBecomeOneErrorPerFieldWithTheResponseStatus(): void
+    public function bodyViolationsShouldBecomeJsonPointers(): void
     {
-        $violations = new ConstraintViolationList([
+        $validation = new ValidationFailedException(new \stdClass(), new ConstraintViolationList([
             new ConstraintViolation('This value is not a valid email address.', null, [], null, 'email', 'not-an-email'),
-            new ConstraintViolation('This value is too short.', null, [], null, 'password', '123'),
-        ]);
-
-        $validation = new ValidationFailedException(new \stdClass(), $violations);
+            new ConstraintViolation('This value is too short.', null, [], null, 'page.limit', '0'),
+        ]));
 
         self::assertSame(
             ['errors' => [
-                ['status' => '422', 'message' => 'This value is not a valid email address.', 'field' => 'email'],
-                ['status' => '422', 'message' => 'This value is too short.', 'field' => 'password'],
+                ['status' => '422', 'detail' => 'This value is not a valid email address.', 'source' => ['pointer' => '/email']],
+                ['status' => '422', 'detail' => 'This value is too short.', 'source' => ['pointer' => '/page/limit']],
             ]],
+            $this->normalize(new HttpException(422, 'Validation failed', $validation)),
+        );
+    }
+
+    #[Test]
+    public function queryViolationsShouldBecomeParameterNames(): void
+    {
+        $query = new class implements QueryPayload {};
+
+        $validation = new ValidationFailedException($query, new ConstraintViolationList([
+            new ConstraintViolation('This value is not a valid date.', null, [], null, 'filter.due_to', 'not-a-date'),
+            new ConstraintViolation('This value is not a valid choice.', null, [], null, 'sort', 'nope'),
+        ]));
+
+        self::assertSame(
+            ['errors' => [
+                ['status' => '422', 'detail' => 'This value is not a valid date.', 'source' => ['parameter' => 'filter[due_to]']],
+                ['status' => '422', 'detail' => 'This value is not a valid choice.', 'source' => ['parameter' => 'sort']],
+            ]],
+            $this->normalize(new HttpException(422, 'Validation failed', $validation)),
+        );
+    }
+
+    #[Test]
+    public function violationWithoutAPathShouldCarryNoSource(): void
+    {
+        $validation = new ValidationFailedException(new \stdClass(), new ConstraintViolationList([
+            new ConstraintViolation('The payload is invalid.', null, [], null, '', null),
+        ]));
+
+        self::assertSame(
+            ['errors' => [['status' => '422', 'detail' => 'The payload is invalid.']]],
             $this->normalize(new HttpException(422, 'Validation failed', $validation)),
         );
     }

@@ -28,7 +28,7 @@ when@dev:
                                                     status:
                                                         type: string
                                                         example: '401'
-                                                    message:
+                                                    detail:
                                                         type: string
                                                         example: Unauthorized.
                     ValidationError:
@@ -46,10 +46,19 @@ when@dev:
                                                     status:
                                                         type: string
                                                         example: '422'
-                                                    field:
+                                                    detail:
                                                         type: string
-                                                    message:
-                                                        type: string
+                                                        example: This value is not a valid email address.
+                                                    source:
+                                                        type: object
+                                                        description: 'One of: "pointer" for a value in the request body, "parameter" for a query parameter.'
+                                                        properties:
+                                                            pointer:
+                                                                type: string
+                                                                example: /email
+                                                            parameter:
+                                                                type: string
+                                                                example: filter[due_to]
             security:
                 - cookieAuth: []
         areas:

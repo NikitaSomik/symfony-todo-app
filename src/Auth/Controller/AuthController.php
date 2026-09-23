@@ -139,7 +139,7 @@ final class AuthController extends AbstractController
     private function unauthorizedResponse(): Response
     {
         return JsonApiResponse::error(
-            [new JsonApiError((string) Response::HTTP_UNAUTHORIZED, 'Unauthorized.')],
+            [JsonApiError::of((string) Response::HTTP_UNAUTHORIZED, 'Unauthorized.')],
             Response::HTTP_UNAUTHORIZED,
         );
     }

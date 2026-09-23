@@ -18,13 +18,13 @@ final class AuthenticationFailureHandler implements AuthenticationFailureHandler
     {
         if ($exception instanceof TooManyLoginAttemptsAuthenticationException) {
             return JsonApiResponse::error(
-                [new JsonApiError((string) Response::HTTP_TOO_MANY_REQUESTS, $this->tooManyAttemptsMessage($exception))],
+                [JsonApiError::of((string) Response::HTTP_TOO_MANY_REQUESTS, $this->tooManyAttemptsMessage($exception))],
                 Response::HTTP_TOO_MANY_REQUESTS,
             );
         }
 
         return JsonApiResponse::error(
-            [new JsonApiError((string) Response::HTTP_UNAUTHORIZED, 'Unauthorized.')],
+            [JsonApiError::of((string) Response::HTTP_UNAUTHORIZED, 'Unauthorized.')],
             Response::HTTP_UNAUTHORIZED,
         );
     }

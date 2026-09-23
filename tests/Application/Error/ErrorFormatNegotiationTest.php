@@ -24,7 +24,7 @@ final class ErrorFormatNegotiationTest extends ApiTestCase
         self::assertResponseStatusCodeSame(404);
         self::assertResponseHeaderSame('Content-Type', 'application/json');
         self::assertSame(
-            ['errors' => [['status' => '404', 'message' => 'Not Found.']]],
+            ['errors' => [['status' => '404', 'detail' => 'Not Found.']]],
             $this->json($response),
         );
     }

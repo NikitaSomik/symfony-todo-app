@@ -16,7 +16,7 @@ final class ApiAccessDeniedHandler implements AccessDeniedHandlerInterface
     public function handle(Request $request, AccessDeniedException $accessDeniedException): Response
     {
         return JsonApiResponse::error(
-            [new JsonApiError((string) Response::HTTP_FORBIDDEN, 'Forbidden.')],
+            [JsonApiError::of((string) Response::HTTP_FORBIDDEN, 'Forbidden.')],
             Response::HTTP_FORBIDDEN,
         );
     }
