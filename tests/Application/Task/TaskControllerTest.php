@@ -160,6 +160,24 @@ final class TaskControllerTest extends ApiTestCase
         self::assertSame('No deadline', $data[2]['attributes']['title']);
     }
 
+    /**
+     * Tasks that tie on the sort field must still come in one fixed order, or paging through them
+     * shows some twice and skips others. The id is the last sort key; UUIDv7 puts the newest first.
+     */
+    #[Test]
+    public function getAllShouldBreakSortTiesByNewestTaskFirst(): void
+    {
+        $tasks = TaskFactory::createMany(3, ['user' => $this->user, 'status' => TaskStatus::TODO]);
+        $expected = array_reverse(array_map(fn (Task $task): string => $this->taskId($task), $tasks));
+
+        $pages = [];
+        foreach ([1, 2, 3] as $number) {
+            $pages[] = $this->jsonData($this->get('/api/v1/tasks?sort=status&page[size]=1&page[number]='.$number))[0]['id'];
+        }
+
+        self::assertSame($expected, $pages);
+    }
+
     #[Test]
     public function getAllWhenSortFieldIsNotSupportedShouldReturn422(): void
     {
