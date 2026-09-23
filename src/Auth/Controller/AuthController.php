@@ -11,6 +11,7 @@ use App\Auth\Factory\JwtCookieFactory;
 use App\Auth\Resource\UserResource;
 use App\Auth\Service\RefreshAccessToken;
 use App\Auth\Service\RegisterUser;
+use App\Shared\Api\Documentation\JsonApiContent;
 use App\Shared\Api\JsonApiError;
 use App\Shared\Api\JsonApiResponse;
 use Nelmio\ApiDocBundle\Attribute\Model;
@@ -37,12 +38,13 @@ final class AuthController extends AbstractController
     #[Route('/register', name: 'register', methods: ['POST'])]
     #[OA\Post(summary: 'Register a new user', security: [])]
     #[OA\RequestBody(required: true, content: new OA\JsonContent(ref: new Model(type: RegisterDTO::class)))]
-    #[OA\Response(response: 201, description: 'User registered', content: new OA\JsonContent(ref: new Model(type: UserResponseSchema::class)))]
+    #[OA\Response(response: 201, description: 'User registered', content: new JsonApiContent(ref: new Model(type: UserResponseSchema::class)))]
+    #[OA\Response(response: 415, description: 'Body is not sent as application/json')]
     #[OA\Response(ref: '#/components/responses/ValidationError', response: 422)]
     #[OA\Response(response: 409, description: 'Email already taken')]
     #[OA\Response(response: 429, description: 'Too many registration attempts')]
     #[RateLimit('registration')]
-    public function register(#[MapRequestPayload] RegisterDTO $dto): JsonResponse
+    public function register(#[MapRequestPayload(acceptFormat: 'json')] RegisterDTO $dto): JsonResponse
     {
         $user = $this->registerUser->handle($dto);
 

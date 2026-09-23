@@ -8,12 +8,19 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 
 final class JsonApiResponse extends JsonResponse
 {
+    public const string MEDIA_TYPE = 'application/vnd.api+json';
+
+    /**
+     * The top-level "jsonapi" member every document carries.
+     */
+    public const array JSONAPI = ['version' => '1.1'];
+
     /**
      * @param ResourceItem[] $included
      */
     public static function one(ResourceItem $item, int $status = self::HTTP_OK, array $included = []): self
     {
-        $payload = ['data' => $item->toArray()];
+        $payload = ['jsonapi' => self::JSONAPI, 'data' => $item->toArray()];
 
         if ([] !== $included) {
             $payload['included'] = array_map(static fn (ResourceItem $resourceItem): array => $resourceItem->toArray(), $included);
@@ -23,11 +30,23 @@ final class JsonApiResponse extends JsonResponse
     }
 
     /**
+     * A 201 for a resource the server created, pointing to it with the Location header.
+     */
+    public static function created(ResourceItem $item, string $location): self
+    {
+        $response = self::one($item, self::HTTP_CREATED);
+        $response->headers->set('Location', $location);
+
+        return $response;
+    }
+
+    /**
      * @param ResourceItem[] $included
      */
     public static function collection(ResourceCollection $collection, int $status = self::HTTP_OK, array $included = []): self
     {
         $payload = [
+            'jsonapi' => self::JSONAPI,
             'links' => $collection->links,
             'data' => array_map(fn (ResourceItem $item) => $item->toArray(), $collection->items),
         ];
@@ -61,7 +80,7 @@ final class JsonApiResponse extends JsonResponse
     public static function error(array $errors, int $status): self
     {
         return new self(
-            ['errors' => array_map(static fn (JsonApiError $error): array => $error->toArray(), $errors)],
+            ['jsonapi' => self::JSONAPI, 'errors' => array_map(static fn (JsonApiError $error): array => $error->toArray(), $errors)],
             $status,
         );
     }

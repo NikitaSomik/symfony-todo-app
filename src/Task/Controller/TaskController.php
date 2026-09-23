@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Task\Controller;
 
 use App\Auth\Entity\User;
+use App\Shared\Api\Documentation\JsonApiContent;
 use App\Shared\Api\JsonApiResponse;
 use App\Shared\Api\PaginatedCollection;
 use App\Shared\Api\PaginationLinksBuilder;
@@ -13,6 +14,7 @@ use App\Shared\AuditLog\Api\Documentation\AuditLogCollectionResponseSchema;
 use App\Shared\AuditLog\Enum\AuditLogEntityType;
 use App\Shared\AuditLog\Repository\AuditLogRepository;
 use App\Shared\AuditLog\Resource\AuditLogResource;
+use App\Shared\Http\PageQueryDTO;
 use App\Task\Api\Documentation\TaskCollectionResponseSchema;
 use App\Task\Api\Documentation\TaskResponseSchema;
 use App\Task\DTO\CreateTaskDTO;
@@ -55,12 +57,11 @@ final class TaskController extends AbstractController
 
     #[Route('', name: 'get_all', methods: ['GET'])]
     #[OA\Get(summary: 'Get all tasks (paginated)')]
-    #[OA\Parameter(name: 'page', in: 'query', schema: new OA\Schema(properties: [new OA\Property(property: 'number', type: 'integer', default: 1, minimum: 1, example: 1), new OA\Property(property: 'size', type: 'integer', default: 20, maximum: 100, minimum: 1, example: 20)], type: 'object'), style: 'deepObject', explode: true, )]
-    #[OA\Parameter(name: 'filter', in: 'query', schema: new OA\Schema(properties: [new OA\Property(property: 'status', ref: new Model(type: TaskStatus::class), nullable: true), new OA\Property(property: 'due_from', type: 'string', format: 'date', example: '2026-04-01', nullable: true), new OA\Property(property: 'due_to', type: 'string', format: 'date', example: '2026-04-30', nullable: true)], type: 'object'), style: 'deepObject', explode: true, )]
+    #[OA\Parameter(name: 'page', in: 'query', schema: new OA\Schema(properties: [new OA\Property(property: 'number', type: 'integer', default: 1, maximum: PageQueryDTO::MAX_NUMBER, minimum: 1, example: 1), new OA\Property(property: 'size', type: 'integer', default: 20, maximum: 100, minimum: 1, example: 20)], type: 'object'), style: 'deepObject', explode: true, )]
+    #[OA\Parameter(name: 'filter', in: 'query', schema: new OA\Schema(properties: [new OA\Property(property: 'status', ref: new Model(type: TaskStatus::class), nullable: true), new OA\Property(property: 'due_from', type: 'string', format: 'date', example: '2026-04-01', nullable: true), new OA\Property(property: 'due_to', type: 'string', format: 'date', example: '2026-04-30', nullable: true), new OA\Property(property: 'search', description: 'Full-text search across task title and description. When provided, results are ranked by relevance.', type: 'string', maxLength: 100, example: 'milk', nullable: true)], type: 'object'), style: 'deepObject', explode: true, )]
     #[OA\Parameter(name: 'sort', in: 'query', schema: new OA\Schema(type: 'string', default: TaskSortField::CREATED_AT->value, enum: [TaskSortField::CREATED_AT->value, TaskSortField::STATUS->value, TaskSortField::DUE_DATE->value]))]
     #[OA\Parameter(name: 'direction', in: 'query', schema: new OA\Schema(type: 'string', default: 'desc', enum: ['asc', 'desc']))]
-    #[OA\Parameter(name: 'search', description: 'Full-text search across task title and description. When provided, results are ranked by relevance.', in: 'query', schema: new OA\Schema(type: 'string', maxLength: 100, example: 'milk', nullable: true), )]
-    #[OA\Response(response: 200, description: 'Paginated list of tasks', content: new OA\JsonContent(ref: new Model(type: TaskCollectionResponseSchema::class)))]
+    #[OA\Response(response: 200, description: 'Paginated list of tasks', content: new JsonApiContent(ref: new Model(type: TaskCollectionResponseSchema::class)))]
     #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
     public function getAll(
         #[MapQueryString(validationFailedStatusCode: Response::HTTP_UNPROCESSABLE_ENTITY)]
@@ -87,22 +88,26 @@ final class TaskController extends AbstractController
     #[Route('', name: 'create', methods: ['POST'])]
     #[OA\Post(summary: 'Create a task')]
     #[OA\RequestBody(required: true, content: new OA\JsonContent(ref: new Model(type: CreateTaskDTO::class)))]
-    #[OA\Response(response: 201, description: 'Task created', content: new OA\JsonContent(ref: new Model(type: TaskResponseSchema::class)))]
+    #[OA\Response(response: 201, description: 'Task created', headers: [new OA\Header(header: 'Location', description: 'URL of the created task', schema: new OA\Schema(type: 'string'))], content: new JsonApiContent(ref: new Model(type: TaskResponseSchema::class)))]
+    #[OA\Response(response: 415, description: 'Body is not sent as application/json')]
     #[OA\Response(ref: '#/components/responses/ValidationError', response: 422)]
     #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
-    public function create(#[MapRequestPayload] CreateTaskDTO $dto): JsonResponse
+    public function create(#[MapRequestPayload(acceptFormat: 'json')] CreateTaskDTO $dto): JsonResponse
     {
         /** @var User $user */
         $user = $this->getUser();
         $task = $this->createTask->handle($dto, $user);
 
-        return JsonApiResponse::one(TaskResource::toItem($task), Response::HTTP_CREATED);
+        return JsonApiResponse::created(
+            TaskResource::toItem($task),
+            $this->generateUrl('api_task_get', ['id' => $task->getId()->toRfc4122()]),
+        );
     }
 
     #[Route('/{id}', name: 'get', requirements: ['id' => Requirement::UUID_V7], methods: ['GET'])]
     #[OA\Get(summary: 'Get a task')]
     #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))]
-    #[OA\Response(response: 200, description: 'Task details', content: new OA\JsonContent(ref: new Model(type: TaskResponseSchema::class)))]
+    #[OA\Response(response: 200, description: 'Task details', content: new JsonApiContent(ref: new Model(type: TaskResponseSchema::class)))]
     #[OA\Response(response: 404, description: 'Task not found')]
     #[OA\Response(response: 403, description: 'Access denied')]
     #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
@@ -115,7 +120,7 @@ final class TaskController extends AbstractController
     #[Route('/{id}/audit-logs', name: 'get_audit_logs', requirements: ['id' => Requirement::UUID_V7], methods: ['GET'])]
     #[OA\Get(summary: 'Get task audit log history')]
     #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))]
-    #[OA\Response(response: 200, description: 'Task audit log history', content: new OA\JsonContent(ref: new Model(type: AuditLogCollectionResponseSchema::class)))]
+    #[OA\Response(response: 200, description: 'Task audit log history', content: new JsonApiContent(ref: new Model(type: AuditLogCollectionResponseSchema::class)))]
     #[OA\Response(response: 404, description: 'Task not found')]
     #[OA\Response(response: 403, description: 'Access denied')]
     #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
@@ -141,13 +146,14 @@ final class TaskController extends AbstractController
     #[OA\Put(summary: 'Update a task')]
     #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))]
     #[OA\RequestBody(required: true, content: new OA\JsonContent(ref: new Model(type: UpdateTaskDTO::class)))]
-    #[OA\Response(response: 200, description: 'Task updated', content: new OA\JsonContent(ref: new Model(type: TaskResponseSchema::class)))]
+    #[OA\Response(response: 200, description: 'Task updated', content: new JsonApiContent(ref: new Model(type: TaskResponseSchema::class)))]
     #[OA\Response(response: 404, description: 'Task not found')]
     #[OA\Response(response: 403, description: 'Access denied')]
+    #[OA\Response(response: 415, description: 'Body is not sent as application/json')]
     #[OA\Response(ref: '#/components/responses/ValidationError', response: 422)]
     #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
     #[IsGranted(TaskVoter::ACCESS, 'task')]
-    public function update(#[MapRequestPayload] UpdateTaskDTO $dto, Task $task): JsonResponse
+    public function update(#[MapRequestPayload(acceptFormat: 'json')] UpdateTaskDTO $dto, Task $task): JsonResponse
     {
         /** @var User $user */
         $user = $this->getUser();

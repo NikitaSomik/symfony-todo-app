@@ -161,6 +161,24 @@ final class TaskControllerTest extends ApiTestCase
     }
 
     #[Test]
+    public function getAllWhenSortFieldIsNotSupportedShouldReturn422(): void
+    {
+        $response = $this->get('/api/v1/tasks?sort=title');
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSame(['parameter' => 'sort'], $this->json($response)['errors'][0]['source']);
+    }
+
+    #[Test]
+    public function getAllWhenSearchTermIsTooLongShouldReturn422(): void
+    {
+        $response = $this->get('/api/v1/tasks?filter[search]='.str_repeat('a', 101));
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSame(['parameter' => 'filter[search]'], $this->json($response)['errors'][0]['source']);
+    }
+
+    #[Test]
     public function getAllShouldFilterByDueDateRange(): void
     {
         TaskFactory::createOne(['user' => $this->user, 'title' => 'Before range', 'dueDate' => new \DateTimeImmutable('2026-03-31')]);
@@ -182,7 +200,7 @@ final class TaskControllerTest extends ApiTestCase
         TaskFactory::createOne(['user' => $this->user, 'title' => 'Workout', 'description' => 'Drink milk after gym']);
         TaskFactory::createOne(['user' => $this->user, 'title' => 'Read book', 'description' => 'Evening routine']);
 
-        $response = $this->get('/api/v1/tasks?search=milk');
+        $response = $this->get('/api/v1/tasks?filter[search]=milk');
         $data = $this->jsonData($response);
 
         self::assertResponseIsSuccessful();
@@ -203,7 +221,7 @@ final class TaskControllerTest extends ApiTestCase
             'description' => 'Compare search options later',
         ]);
 
-        $response = $this->get('/api/v1/tasks?search=postgresql search');
+        $response = $this->get('/api/v1/tasks?filter[search]=postgresql search');
         $data = $this->jsonData($response);
 
         self::assertResponseIsSuccessful();
@@ -217,7 +235,7 @@ final class TaskControllerTest extends ApiTestCase
         TaskFactory::createOne(['user' => $this->user, 'title' => 'Milk plan', 'description' => 'Weekly groceries']);
         TaskFactory::createOne(['user' => $this->user, 'title' => 'Workout', 'description' => 'Drink milk after gym']);
 
-        $response = $this->get('/api/v1/tasks?search=milk');
+        $response = $this->get('/api/v1/tasks?filter[search]=milk');
         $data = $this->jsonData($response);
 
         self::assertResponseIsSuccessful();
@@ -232,7 +250,7 @@ final class TaskControllerTest extends ApiTestCase
         TaskFactory::createOne(['user' => $this->user, 'title' => 'Buy milk', 'description' => null]);
         TaskFactory::createOne(['user' => $this->user, 'title' => 'Buy bread', 'description' => null]);
 
-        $response = $this->get('/api/v1/tasks?search=milk');
+        $response = $this->get('/api/v1/tasks?filter[search]=milk');
         $data = $this->jsonData($response);
 
         self::assertResponseIsSuccessful();
@@ -255,7 +273,7 @@ final class TaskControllerTest extends ApiTestCase
             'status' => TaskStatus::TODO,
         ]);
 
-        $response = $this->get('/api/v1/tasks?search=milk&filter[status]=completed');
+        $response = $this->get('/api/v1/tasks?filter[search]=milk&filter[status]=completed');
         $data = $this->jsonData($response);
 
         self::assertResponseIsSuccessful();
@@ -271,7 +289,7 @@ final class TaskControllerTest extends ApiTestCase
         TaskFactory::createOne(['user' => $this->user, 'title' => 'Milk plan B']);
         TaskFactory::createOne(['user' => $this->user, 'title' => 'Milk plan C']);
 
-        $response = $this->get('/api/v1/tasks?search=milk&page[number]=2&page[size]=2');
+        $response = $this->get('/api/v1/tasks?filter[search]=milk&page[number]=2&page[size]=2');
         $json = $this->json($response);
 
         self::assertResponseIsSuccessful();
@@ -280,9 +298,9 @@ final class TaskControllerTest extends ApiTestCase
         self::assertSame(2, $json['meta']['page']['size']);
         self::assertSame(3, $json['meta']['page']['total']);
         self::assertSame(2, $json['meta']['page']['last']);
-        self::assertSame('/api/v1/tasks?search=milk&page[number]=1&page[size]=2', $json['links']['first']);
-        self::assertSame('/api/v1/tasks?search=milk&page[number]=2&page[size]=2', $json['links']['last']);
-        self::assertSame('/api/v1/tasks?search=milk&page[number]=1&page[size]=2', $json['links']['prev']);
+        self::assertSame('/api/v1/tasks?filter[search]=milk&page[number]=1&page[size]=2', $json['links']['first']);
+        self::assertSame('/api/v1/tasks?filter[search]=milk&page[number]=2&page[size]=2', $json['links']['last']);
+        self::assertSame('/api/v1/tasks?filter[search]=milk&page[number]=1&page[size]=2', $json['links']['prev']);
         self::assertNull($json['links']['next']);
     }
 
@@ -292,6 +310,17 @@ final class TaskControllerTest extends ApiTestCase
         $this->post($this->route('api_task_create'), ['title' => 'Buy milk']);
 
         self::assertResponseStatusCodeSame(201);
+    }
+
+    #[Test]
+    public function createShouldPointToTheNewTaskWithTheLocationHeader(): void
+    {
+        $response = $this->post($this->route('api_task_create'), ['title' => 'Buy milk']);
+
+        self::assertSame(
+            $this->route('api_task_get', ['id' => $this->jsonData($response)['id']]),
+            $response->headers->get('Location'),
+        );
     }
 
     #[Test]
@@ -799,6 +828,22 @@ final class TaskControllerTest extends ApiTestCase
         self::assertSame('updated', $data[1]['attributes']['action']);
         self::assertSame('Updated task title for "Buy almond milk"', $data[1]['attributes']['message']);
         self::assertSame('Buy almond milk', $data[1]['attributes']['attribute_changes']['new']['title']);
+    }
+
+    #[Test]
+    public function getAuditLogsShouldLinkTheUserAndTheTaskAsRelationships(): void
+    {
+        $taskId = $this->jsonData($this->post($this->route('api_task_create'), ['title' => 'Buy milk']))['id'];
+
+        $entry = $this->jsonData($this->get($this->route('api_task_get_audit_logs', ['id' => $taskId])))[0];
+
+        self::assertSame([
+            'user' => ['data' => ['type' => 'users', 'id' => (string) $this->user->getId()]],
+            'entity' => ['data' => ['type' => 'tasks', 'id' => $taskId]],
+        ], $entry['relationships']);
+        self::assertArrayNotHasKey('user_id', $entry['attributes']);
+        self::assertArrayNotHasKey('entity_id', $entry['attributes']);
+        self::assertArrayNotHasKey('entity_type', $entry['attributes']);
     }
 
     #[Test]

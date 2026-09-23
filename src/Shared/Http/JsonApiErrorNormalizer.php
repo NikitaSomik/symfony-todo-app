@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Shared\Http;
 
 use App\Shared\Api\JsonApiError;
+use App\Shared\Api\JsonApiResponse;
 use Symfony\Component\ErrorHandler\Exception\FlattenException;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
@@ -14,7 +15,7 @@ use Symfony\Component\Validator\Exception\ValidationFailedException;
 final class JsonApiErrorNormalizer implements NormalizerInterface
 {
     /**
-     * @return array{errors: list<array{status: string, detail: string, source?: array{pointer: string}|array{parameter: string}}>}
+     * @return array{jsonapi: array{version: string}, errors: list<array{status: string, detail: string, source?: array{pointer: string}|array{parameter: string}|array{header: string}}>}
      */
     public function normalize(mixed $data, ?string $format = null, array $context = []): array
     {
@@ -25,6 +26,14 @@ final class JsonApiErrorNormalizer implements NormalizerInterface
 
         if (null !== $validationException) {
             return $this->toPayload($this->violationErrors($validationException, $data->getStatusCode()));
+        }
+
+        if ($throwable instanceof HttpExceptionInterface && Response::HTTP_UNSUPPORTED_MEDIA_TYPE === $throwable->getStatusCode()) {
+            return $this->toPayload([JsonApiError::forHeader(
+                (string) Response::HTTP_UNSUPPORTED_MEDIA_TYPE,
+                'The request body must be sent as application/json.',
+                'Content-Type',
+            )]);
         }
 
         if ($throwable instanceof HttpExceptionInterface) {
@@ -109,11 +118,11 @@ final class JsonApiErrorNormalizer implements NormalizerInterface
     /**
      * @param list<JsonApiError> $errors
      *
-     * @return array{errors: list<array{status: string, detail: string, source?: array{pointer: string}|array{parameter: string}}>}
+     * @return array{jsonapi: array{version: string}, errors: list<array{status: string, detail: string, source?: array{pointer: string}|array{parameter: string}|array{header: string}}>}
      */
     private function toPayload(array $errors): array
     {
-        return ['errors' => array_map(static fn (JsonApiError $error): array => $error->toArray(), $errors)];
+        return ['jsonapi' => JsonApiResponse::JSONAPI, 'errors' => array_map(static fn (JsonApiError $error): array => $error->toArray(), $errors)];
     }
 
     private function detailForStatus(int $status): string

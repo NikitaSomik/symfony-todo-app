@@ -22,9 +22,9 @@ final class ErrorFormatNegotiationTest extends ApiTestCase
         $response = $this->accepting($accept)->get('/api/v1/does-not-exist');
 
         self::assertResponseStatusCodeSame(404);
-        self::assertResponseHeaderSame('Content-Type', 'application/json');
+        self::assertResponseHeaderSame('Content-Type', 'application/vnd.api+json');
         self::assertSame(
-            ['errors' => [['status' => '404', 'detail' => 'Not Found.']]],
+            ['jsonapi' => ['version' => '1.1'], 'errors' => [['status' => '404', 'detail' => 'Not Found.']]],
             $this->json($response),
         );
     }
