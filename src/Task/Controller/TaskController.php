@@ -86,7 +86,7 @@ final class TaskController extends AbstractController
     #[Route('', name: 'create', methods: ['POST'])]
     #[OA\Post(summary: 'Create a task')]
     #[OA\RequestBody(required: true, content: new OA\JsonContent(ref: new Model(type: CreateTaskDTO::class)))]
-    #[OA\Response(response: 201, description: 'Task created', content: new OA\JsonContent(ref: new Model(type: TaskResponseSchema::class)))]
+    #[OA\Response(response: 201, description: 'Task created', headers: [new OA\Header(header: 'Location', description: 'URL of the created task', schema: new OA\Schema(type: 'string'))], content: new OA\JsonContent(ref: new Model(type: TaskResponseSchema::class)))]
     #[OA\Response(ref: '#/components/responses/ValidationError', response: 422)]
     #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
     public function create(#[MapRequestPayload] CreateTaskDTO $dto): JsonResponse
@@ -95,7 +95,10 @@ final class TaskController extends AbstractController
         $user = $this->getUser();
         $task = $this->createTask->handle($dto, $user);
 
-        return JsonApiResponse::one(TaskResource::toItem($task), Response::HTTP_CREATED);
+        return JsonApiResponse::created(
+            TaskResource::toItem($task),
+            $this->generateUrl('api_task_get', ['id' => $task->getId()->toRfc4122()]),
+        );
     }
 
     #[Route('/{id}', name: 'get', requirements: ['id' => Requirement::UUID_V7], methods: ['GET'])]

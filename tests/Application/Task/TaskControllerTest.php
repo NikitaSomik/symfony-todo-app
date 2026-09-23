@@ -333,6 +333,17 @@ final class TaskControllerTest extends ApiTestCase
     }
 
     #[Test]
+    public function createShouldPointToTheNewTaskWithTheLocationHeader(): void
+    {
+        $response = $this->post($this->route('api_task_create'), ['title' => 'Buy milk']);
+
+        self::assertSame(
+            $this->route('api_task_get', ['id' => $this->jsonData($response)['id']]),
+            $response->headers->get('Location'),
+        );
+    }
+
+    #[Test]
     public function createWhenValidDataShouldReturnTask(): void
     {
         $response = $this->post($this->route('api_task_create'), ['title' => 'Buy milk']);
