@@ -16,10 +16,12 @@ when@dev:
                     UnauthorizedError:
                         description: Unauthorized — valid access_token cookie required
                         content:
-                            application/json:
+                            application/vnd.api+json:
                                 schema:
                                     type: object
                                     properties:
+                                        jsonapi:
+                                            $ref: '#/components/schemas/JsonApiObjectSchema'
                                         errors:
                                             type: array
                                             items:
@@ -32,12 +34,14 @@ when@dev:
                                                         type: string
                                                         example: Unauthorized.
                     ValidationError:
-                        description: Validation error
+                        description: 'Validation error: a value in the request document or a query parameter is invalid'
                         content:
-                            application/json:
+                            application/vnd.api+json:
                                 schema:
                                     type: object
                                     properties:
+                                        jsonapi:
+                                            $ref: '#/components/schemas/JsonApiObjectSchema'
                                         errors:
                                             type: array
                                             items:
@@ -51,14 +55,17 @@ when@dev:
                                                         example: This value is not a valid email address.
                                                     source:
                                                         type: object
-                                                        description: 'One of: "pointer" for a value in the request body, "parameter" for a query parameter.'
+                                                        description: 'One of: "pointer" for a value in the request document, "parameter" for a query parameter, "header" for a request header.'
                                                         properties:
                                                             pointer:
                                                                 type: string
-                                                                example: /email
+                                                                example: /data/attributes/email
                                                             parameter:
                                                                 type: string
                                                                 example: filter[due_to]
+                                                            header:
+                                                                type: string
+                                                                example: Content-Type
             security:
                 - cookieAuth: []
         areas:

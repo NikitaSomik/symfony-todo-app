@@ -16,9 +16,9 @@
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "application/vnd.api+json": {
                             "schema": {
-                                "$ref": "#/components/schemas/RegisterDTO"
+                                "$ref": "#/components/schemas/RegisterRequestSchema"
                             }
                         }
                     }
@@ -27,18 +27,30 @@
                     "201": {
                         "description": "User registered",
                         "content": {
-                            "application/json": {
+                            "application/vnd.api+json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/UserResponseSchema"
                                 }
                             }
                         }
                     },
+                    "400": {
+                        "description": "Malformed JSON:API document"
+                    },
+                    "403": {
+                        "description": "Client-generated id is not supported"
+                    },
+                    "415": {
+                        "description": "Body is not sent as application/vnd.api+json"
+                    },
                     "422": {
                         "$ref": "#/components/responses/ValidationError"
                     },
                     "409": {
-                        "description": "Email already taken"
+                        "description": "Email already taken, or the resource type does not match the endpoint"
+                    },
+                    "429": {
+                        "description": "Too many registration attempts"
                     }
                 },
                 "security": []
@@ -167,7 +179,7 @@
                     "200": {
                         "description": "Current user",
                         "content": {
-                            "application/json": {
+                            "application/vnd.api+json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/UserResponseSchema"
                                 }
@@ -200,6 +212,7 @@
                                     "type": "integer",
                                     "example": 1,
                                     "default": 1,
+                                    "maximum": 10000,
                                     "minimum": 1
                                 },
                                 "size": {
@@ -240,6 +253,13 @@
                                     "format": "date",
                                     "example": "2026-04-30",
                                     "nullable": true
+                                },
+                                "search": {
+                                    "description": "Full-text search across task title and description. When provided, results are ranked by relevance.",
+                                    "type": "string",
+                                    "example": "milk",
+                                    "nullable": true,
+                                    "maxLength": 100
                                 }
                             },
                             "type": "object"
@@ -248,40 +268,12 @@
                     {
                         "name": "sort",
                         "in": "query",
+                        "description": "Comma-separated sort fields, applied in order; a \"-\" prefix sorts that field in descending order.",
                         "required": false,
                         "schema": {
                             "type": "string",
-                            "default": "created_at",
-                            "enum": [
-                                "created_at",
-                                "status",
-                                "due_date"
-                            ]
-                        }
-                    },
-                    {
-                        "name": "direction",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "default": "desc",
-                            "enum": [
-                                "asc",
-                                "desc"
-                            ]
-                        }
-                    },
-                    {
-                        "name": "search",
-                        "in": "query",
-                        "description": "Full-text search across task title and description. When provided, results are ranked by relevance.",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "example": "milk",
-                            "nullable": true,
-                            "maxLength": 100
+                            "example": "-status,due_date",
+                            "default": "-created_at"
                         }
                     }
                 ],
@@ -289,7 +281,7 @@
                     "200": {
                         "description": "Paginated list of tasks",
                         "content": {
-                            "application/json": {
+                            "application/vnd.api+json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/TaskCollectionResponseSchema"
                                 }
@@ -310,9 +302,9 @@
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "application/vnd.api+json": {
                             "schema": {
-                                "$ref": "#/components/schemas/CreateTaskDTO"
+                                "$ref": "#/components/schemas/CreateTaskRequestSchema"
                             }
                         }
                     }
@@ -320,13 +312,33 @@
                 "responses": {
                     "201": {
                         "description": "Task created",
+                        "headers": {
+                            "Location": {
+                                "description": "URL of the created task",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
                         "content": {
-                            "application/json": {
+                            "application/vnd.api+json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/TaskResponseSchema"
                                 }
                             }
                         }
+                    },
+                    "400": {
+                        "description": "Malformed JSON:API document"
+                    },
+                    "403": {
+                        "description": "Client-generated id is not supported"
+                    },
+                    "409": {
+                        "description": "Resource type does not match the endpoint"
+                    },
+                    "415": {
+                        "description": "Body is not sent as application/vnd.api+json"
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationError"
@@ -360,7 +372,7 @@
                     "200": {
                         "description": "Task details",
                         "content": {
-                            "application/json": {
+                            "application/vnd.api+json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/TaskResponseSchema"
                                 }
@@ -372,59 +384,6 @@
                     },
                     "403": {
                         "description": "Access denied"
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/UnauthorizedError"
-                    }
-                }
-            },
-            "put": {
-                "tags": [
-                    "Tasks"
-                ],
-                "summary": "Update a task",
-                "operationId": "put_api_task_update",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "format": "uuid",
-                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/UpdateTaskDTO"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Task updated",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/TaskResponseSchema"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Task not found"
-                    },
-                    "403": {
-                        "description": "Access denied"
-                    },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationError"
                     },
                     "401": {
                         "$ref": "#/components/responses/UnauthorizedError"
@@ -463,6 +422,69 @@
                         "$ref": "#/components/responses/UnauthorizedError"
                     }
                 }
+            },
+            "patch": {
+                "tags": [
+                    "Tasks"
+                ],
+                "summary": "Update a task",
+                "description": "Attributes left out of the document keep their current values.",
+                "operationId": "patch_api_task_update",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/vnd.api+json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateTaskRequestSchema"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Task updated",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TaskResponseSchema"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Malformed JSON:API document"
+                    },
+                    "409": {
+                        "description": "Resource type or id does not match the endpoint"
+                    },
+                    "415": {
+                        "description": "Body is not sent as application/vnd.api+json"
+                    },
+                    "404": {
+                        "description": "Task not found"
+                    },
+                    "403": {
+                        "description": "Access denied"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    }
+                }
             }
         },
         "/api/v1/tasks/{id}/audit-logs": {
@@ -488,7 +510,7 @@
                     "200": {
                         "description": "Task audit log history",
                         "content": {
-                            "application/json": {
+                            "application/vnd.api+json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/AuditLogCollectionResponseSchema"
                                 }
@@ -510,32 +532,12 @@
     },
     "components": {
         "schemas": {
-            "RegisterDTO": {
-                "required": [
-                    "email",
-                    "password"
-                ],
-                "properties": {
-                    "email": {
-                        "type": "string",
-                        "format": "email",
-                        "example": "user@example.com",
-                        "maxLength": 180
-                    },
-                    "password": {
-                        "type": "string",
-                        "example": "secret123",
-                        "maxLength": 100,
-                        "minLength": 8
-                    }
-                },
-                "type": "object"
-            },
             "PageQueryDTO": {
                 "properties": {
                     "number": {
                         "type": "integer",
                         "default": 1,
+                        "maximum": 10000,
                         "minimum": 1
                     },
                     "size": {
@@ -569,6 +571,12 @@
                         "type": "string",
                         "nullable": true,
                         "default": null
+                    },
+                    "search": {
+                        "type": "string",
+                        "nullable": true,
+                        "default": null,
+                        "maxLength": 100
                     }
                 },
                 "type": "object"
@@ -580,116 +588,70 @@
                     },
                     "sort": {
                         "type": "string",
-                        "default": "created_at",
-                        "enum": [
-                            "created_at",
-                            "status",
-                            "due_date"
-                        ]
-                    },
-                    "direction": {
-                        "type": "string",
-                        "default": "desc",
-                        "enum": [
-                            "asc",
-                            "desc"
-                        ]
+                        "default": "-created_at"
                     },
                     "filter": {
                         "$ref": "#/components/schemas/TaskFilterDTO"
-                    },
-                    "search": {
-                        "type": "string",
-                        "nullable": true,
-                        "default": null,
-                        "maxLength": 100
                     }
                 },
                 "type": "object"
             },
-            "TaskStatus": {
-                "type": "string",
-                "enum": [
-                    "todo",
-                    "in_progress",
-                    "completed",
-                    "cancelled"
-                ]
-            },
-            "CreateTaskDTO": {
+            "RegisterDTO": {
                 "required": [
-                    "title"
+                    "email",
+                    "password"
                 ],
                 "properties": {
-                    "title": {
+                    "email": {
                         "type": "string",
-                        "example": "Buy milk",
-                        "maxLength": 255
+                        "format": "email",
+                        "example": "user@example.com",
+                        "maxLength": 180
                     },
-                    "description": {
+                    "password": {
                         "type": "string",
-                        "example": "2 liters",
-                        "nullable": true,
-                        "default": null,
-                        "maxLength": 2000,
-                        "minLength": 3
-                    },
-                    "status": {
-                        "$ref": "#/components/schemas/TaskStatus"
-                    },
-                    "cancellation_reason": {
-                        "type": "string",
-                        "example": "Task is no longer relevant",
-                        "nullable": true,
-                        "default": null,
-                        "maxLength": 500,
-                        "minLength": 3
-                    },
-                    "due_date": {
-                        "type": "string",
-                        "format": "date",
-                        "example": "2026-04-01",
-                        "nullable": true,
-                        "default": null
+                        "example": "secret123",
+                        "maxLength": 100,
+                        "minLength": 8
                     }
                 },
                 "type": "object"
             },
-            "UpdateTaskDTO": {
+            "RegisterRequestSchema": {
                 "required": [
-                    "title"
+                    "data"
                 ],
                 "properties": {
-                    "title": {
+                    "data": {
+                        "required": [
+                            "type",
+                            "attributes"
+                        ],
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "enum": [
+                                    "users"
+                                ]
+                            },
+                            "attributes": {
+                                "$ref": "#/components/schemas/RegisterDTO"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "JsonApiObjectSchema": {
+                "description": "The top-level \"jsonapi\" member every document carries.",
+                "required": [
+                    "version"
+                ],
+                "properties": {
+                    "version": {
                         "type": "string",
-                        "example": "Buy milk",
-                        "maxLength": 255
-                    },
-                    "description": {
-                        "type": "string",
-                        "example": "2 liters",
-                        "nullable": true,
-                        "default": null,
-                        "maxLength": 2000,
-                        "minLength": 3
-                    },
-                    "status": {
-                        "$ref": "#/components/schemas/TaskStatus"
-                    },
-                    "cancellation_reason": {
-                        "type": "string",
-                        "example": "Task is no longer needed",
-                        "nullable": true,
-                        "default": null,
-                        "maxLength": 500,
-                        "minLength": 3
-                    },
-                    "due_date": {
-                        "type": "string",
-                        "format": "date",
-                        "example": "2026-04-01",
-                        "nullable": true,
-                        "default": null
+                        "example": "1.1"
                     }
                 },
                 "type": "object"
@@ -727,14 +689,27 @@
             },
             "UserResponseSchema": {
                 "required": [
+                    "jsonapi",
                     "data"
                 ],
                 "properties": {
+                    "jsonapi": {
+                        "$ref": "#/components/schemas/JsonApiObjectSchema"
+                    },
                     "data": {
                         "$ref": "#/components/schemas/UserResource"
                     }
                 },
                 "type": "object"
+            },
+            "TaskStatus": {
+                "type": "string",
+                "enum": [
+                    "todo",
+                    "in_progress",
+                    "completed",
+                    "cancelled"
+                ]
             },
             "PaginationLinksSchema": {
                 "required": [
@@ -857,11 +832,15 @@
             },
             "TaskCollectionResponseSchema": {
                 "required": [
+                    "jsonapi",
                     "links",
                     "data",
                     "meta"
                 ],
                 "properties": {
+                    "jsonapi": {
+                        "$ref": "#/components/schemas/JsonApiObjectSchema"
+                    },
                     "links": {
                         "$ref": "#/components/schemas/PaginationLinksSchema"
                     },
@@ -877,13 +856,153 @@
                 },
                 "type": "object"
             },
-            "TaskResponseSchema": {
+            "CreateTaskDTO": {
+                "required": [
+                    "title"
+                ],
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "example": "Buy milk",
+                        "maxLength": 255
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "2 liters",
+                        "nullable": true,
+                        "default": null,
+                        "maxLength": 2000,
+                        "minLength": 3
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/TaskStatus"
+                    },
+                    "cancellation_reason": {
+                        "type": "string",
+                        "example": "Task is no longer relevant",
+                        "nullable": true,
+                        "default": null,
+                        "maxLength": 500,
+                        "minLength": 3
+                    },
+                    "due_date": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-04-01",
+                        "nullable": true,
+                        "default": null
+                    }
+                },
+                "type": "object"
+            },
+            "CreateTaskRequestSchema": {
                 "required": [
                     "data"
                 ],
                 "properties": {
                     "data": {
+                        "required": [
+                            "type",
+                            "attributes"
+                        ],
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "enum": [
+                                    "tasks"
+                                ]
+                            },
+                            "attributes": {
+                                "$ref": "#/components/schemas/CreateTaskDTO"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "TaskResponseSchema": {
+                "required": [
+                    "jsonapi",
+                    "data"
+                ],
+                "properties": {
+                    "jsonapi": {
+                        "$ref": "#/components/schemas/JsonApiObjectSchema"
+                    },
+                    "data": {
                         "$ref": "#/components/schemas/TaskResource"
+                    }
+                },
+                "type": "object"
+            },
+            "UpdateTaskDTO": {
+                "description": "Attributes to change; any attribute left out keeps its current value.",
+                "required": [
+                    "title"
+                ],
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "example": "Buy milk",
+                        "maxLength": 255
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "2 liters",
+                        "nullable": true,
+                        "default": null,
+                        "maxLength": 2000,
+                        "minLength": 3
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/TaskStatus"
+                    },
+                    "cancellation_reason": {
+                        "type": "string",
+                        "example": "Task is no longer needed",
+                        "nullable": true,
+                        "default": null,
+                        "maxLength": 500,
+                        "minLength": 3
+                    },
+                    "due_date": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-04-01",
+                        "nullable": true,
+                        "default": null
+                    }
+                },
+                "type": "object"
+            },
+            "UpdateTaskRequestSchema": {
+                "required": [
+                    "data"
+                ],
+                "properties": {
+                    "data": {
+                        "required": [
+                            "type",
+                            "id"
+                        ],
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "enum": [
+                                    "tasks"
+                                ]
+                            },
+                            "id": {
+                                "description": "Must match the id in the URL",
+                                "type": "string",
+                                "format": "uuid"
+                            },
+                            "attributes": {
+                                "$ref": "#/components/schemas/UpdateTaskDTO"
+                            }
+                        },
+                        "type": "object"
                     }
                 },
                 "type": "object"
@@ -996,10 +1115,14 @@
             },
             "AuditLogCollectionResponseSchema": {
                 "required": [
+                    "jsonapi",
                     "links",
                     "data"
                 ],
                 "properties": {
+                    "jsonapi": {
+                        "$ref": "#/components/schemas/JsonApiObjectSchema"
+                    },
                     "links": {
                         "$ref": "#/components/schemas/CollectionLinksSchema"
                     },
@@ -1017,9 +1140,12 @@
             "UnauthorizedError": {
                 "description": "Unauthorized \u2014 valid access_token cookie required",
                 "content": {
-                    "application/json": {
+                    "application/vnd.api+json": {
                         "schema": {
                             "properties": {
+                                "jsonapi": {
+                                    "$ref": "#/components/schemas/JsonApiObjectSchema"
+                                },
                                 "errors": {
                                     "type": "array",
                                     "items": {
@@ -1028,7 +1154,7 @@
                                                 "type": "string",
                                                 "example": "401"
                                             },
-                                            "message": {
+                                            "detail": {
                                                 "type": "string",
                                                 "example": "Unauthorized."
                                             }
@@ -1043,11 +1169,14 @@
                 }
             },
             "ValidationError": {
-                "description": "Validation error",
+                "description": "Validation error: a value in the request document or a query parameter is invalid",
                 "content": {
-                    "application/json": {
+                    "application/vnd.api+json": {
                         "schema": {
                             "properties": {
+                                "jsonapi": {
+                                    "$ref": "#/components/schemas/JsonApiObjectSchema"
+                                },
                                 "errors": {
                                     "type": "array",
                                     "items": {
@@ -1056,11 +1185,27 @@
                                                 "type": "string",
                                                 "example": "422"
                                             },
-                                            "field": {
-                                                "type": "string"
+                                            "detail": {
+                                                "type": "string",
+                                                "example": "This value is not a valid email address."
                                             },
-                                            "message": {
-                                                "type": "string"
+                                            "source": {
+                                                "description": "One of: \"pointer\" for a value in the request document, \"parameter\" for a query parameter, \"header\" for a request header.",
+                                                "properties": {
+                                                    "pointer": {
+                                                        "type": "string",
+                                                        "example": "/data/attributes/email"
+                                                    },
+                                                    "parameter": {
+                                                        "type": "string",
+                                                        "example": "filter[due_to]"
+                                                    },
+                                                    "header": {
+                                                        "type": "string",
+                                                        "example": "Content-Type"
+                                                    }
+                                                },
+                                                "type": "object"
                                             }
                                         },
                                         "type": "object"
