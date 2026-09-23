@@ -46,6 +46,13 @@ abstract class ApiTestCase extends WebTestCase
         return $this;
     }
 
+    protected function withHeader(string $name, string $value): static
+    {
+        $this->client->setServerParameter('HTTP_'.strtoupper(str_replace('-', '_', $name)), $value);
+
+        return $this;
+    }
+
     protected function actingAs(User $user): static
     {
         $jwtManager = static::getContainer()->get(JWTTokenManagerInterface::class);
