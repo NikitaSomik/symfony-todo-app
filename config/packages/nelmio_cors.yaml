@@ -4,6 +4,8 @@ nelmio_cors:
         allow_origin: ['%env(CORS_ALLOW_ORIGIN)%']
         allow_methods: ['GET', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE']
         allow_headers: ['Content-Type']
+        # Lets browser code read the id to quote it in a bug report.
+        expose_headers: ['X-Request-Id']
         allow_credentials: true
         max_age: 3600
     paths:
