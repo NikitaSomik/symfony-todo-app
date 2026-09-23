@@ -917,7 +917,8 @@
                 "required": [
                     "type",
                     "id",
-                    "attributes"
+                    "attributes",
+                    "relationships"
                 ],
                 "properties": {
                     "type": {
@@ -930,23 +931,6 @@
                     },
                     "attributes": {
                         "properties": {
-                            "entity_type": {
-                                "type": "string",
-                                "example": "task",
-                                "enum": [
-                                    "task"
-                                ]
-                            },
-                            "entity_id": {
-                                "type": "string",
-                                "format": "uuid",
-                                "example": "0195a6b4-6f15-7d4b-b2c1-05b2a3d6e7f8"
-                            },
-                            "user_id": {
-                                "type": "integer",
-                                "example": 7,
-                                "nullable": true
-                            },
                             "action": {
                                 "type": "string",
                                 "example": "updated",
@@ -1000,6 +984,50 @@
                             "created_at": {
                                 "type": "string",
                                 "format": "date-time"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "relationships": {
+                        "properties": {
+                            "user": {
+                                "description": "Who made the change; null when the user no longer exists",
+                                "properties": {
+                                    "data": {
+                                        "properties": {
+                                            "type": {
+                                                "type": "string",
+                                                "example": "users"
+                                            },
+                                            "id": {
+                                                "type": "string",
+                                                "example": "7"
+                                            }
+                                        },
+                                        "type": "object",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "entity": {
+                                "description": "The audited resource",
+                                "properties": {
+                                    "data": {
+                                        "properties": {
+                                            "type": {
+                                                "type": "string",
+                                                "example": "tasks"
+                                            },
+                                            "id": {
+                                                "type": "string",
+                                                "example": "0195a6b4-6f15-7d4b-b2c1-05b2a3d6e7f8"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
                             }
                         },
                         "type": "object"

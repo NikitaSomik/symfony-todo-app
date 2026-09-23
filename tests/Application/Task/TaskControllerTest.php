@@ -851,6 +851,22 @@ final class TaskControllerTest extends ApiTestCase
     }
 
     #[Test]
+    public function getAuditLogsShouldLinkTheUserAndTheTaskAsRelationships(): void
+    {
+        $taskId = $this->jsonData($this->post($this->route('api_task_create'), ['title' => 'Buy milk']))['id'];
+
+        $entry = $this->jsonData($this->get($this->route('api_task_get_audit_logs', ['id' => $taskId])))[0];
+
+        self::assertSame([
+            'user' => ['data' => ['type' => 'users', 'id' => (string) $this->user->getId()]],
+            'entity' => ['data' => ['type' => 'tasks', 'id' => $taskId]],
+        ], $entry['relationships']);
+        self::assertArrayNotHasKey('user_id', $entry['attributes']);
+        self::assertArrayNotHasKey('entity_id', $entry['attributes']);
+        self::assertArrayNotHasKey('entity_type', $entry['attributes']);
+    }
+
+    #[Test]
     public function deleteWhenTaskExistsShouldCreateDeletedAuditLogEntry(): void
     {
         $task = TaskFactory::createOne([
