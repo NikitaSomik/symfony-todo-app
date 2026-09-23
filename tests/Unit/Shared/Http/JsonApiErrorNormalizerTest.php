@@ -6,7 +6,6 @@ namespace App\Tests\Unit\Shared\Http;
 
 use App\Shared\Http\ClientFacingException;
 use App\Shared\Http\JsonApiErrorNormalizer;
-use App\Shared\Http\QueryPayload;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\ErrorHandler\Exception\FlattenException;
@@ -59,28 +58,9 @@ final class JsonApiErrorNormalizerTest extends TestCase
     }
 
     #[Test]
-    public function bodyViolationsShouldBecomeJsonPointers(): void
-    {
-        $validation = new ValidationFailedException(new \stdClass(), new ConstraintViolationList([
-            new ConstraintViolation('This value is not a valid email address.', null, [], null, 'email', 'not-an-email'),
-            new ConstraintViolation('This value is too short.', null, [], null, 'page.limit', '0'),
-        ]));
-
-        self::assertSame(
-            ['jsonapi' => ['version' => '1.1'], 'errors' => [
-                ['status' => '422', 'detail' => 'This value is not a valid email address.', 'source' => ['pointer' => '/email']],
-                ['status' => '422', 'detail' => 'This value is too short.', 'source' => ['pointer' => '/page/limit']],
-            ]],
-            $this->normalize(new HttpException(422, 'Validation failed', $validation)),
-        );
-    }
-
-    #[Test]
     public function queryViolationsShouldBecomeParameterNames(): void
     {
-        $query = new class implements QueryPayload {};
-
-        $validation = new ValidationFailedException($query, new ConstraintViolationList([
+        $validation = new ValidationFailedException(new \stdClass(), new ConstraintViolationList([
             new ConstraintViolation('This value is not a valid date.', null, [], null, 'filter.due_to', 'not-a-date'),
             new ConstraintViolation('This value is not a valid choice.', null, [], null, 'sort', 'nope'),
         ]));

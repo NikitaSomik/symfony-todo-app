@@ -56,22 +56,23 @@ final class JsonApiErrorNormalizer implements NormalizerInterface
     }
 
     /**
+     * Request bodies are read by #[MapJsonApiResource], which reports its own errors with pointers
+     * into the document. A ValidationFailedException therefore comes from #[MapQueryString], and every
+     * violation in it names a query parameter.
+     *
      * @return list<JsonApiError>
      */
     private function violationErrors(ValidationFailedException $exception, int $status): array
     {
-        $fromQuery = $exception->getValue() instanceof QueryPayload;
         $errors = [];
 
         foreach ($exception->getViolations() as $violation) {
             $path = $violation->getPropertyPath();
             $detail = (string) $violation->getMessage();
 
-            $errors[] = match (true) {
-                '' === $path => JsonApiError::of((string) $status, $detail),
-                $fromQuery => JsonApiError::forParameter((string) $status, $detail, PropertyPath::toParameterName($path)),
-                default => JsonApiError::forPointer((string) $status, $detail, PropertyPath::toJsonPointer($path)),
-            };
+            $errors[] = '' === $path
+                ? JsonApiError::of((string) $status, $detail)
+                : JsonApiError::forParameter((string) $status, $detail, PropertyPath::toParameterName($path));
         }
 
         return $errors;
