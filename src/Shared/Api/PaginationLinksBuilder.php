@@ -18,7 +18,8 @@ final class PaginationLinksBuilder
         return [
             'first' => $this->buildUrl($request, 1, $pageSize),
             'last' => $this->buildUrl($request, $lastPage, $pageSize),
-            'prev' => $pageNumber > 1 ? $this->buildUrl($request, $pageNumber - 1, $pageSize) : null,
+            // Past the last page, the previous page with results is the last one, not the empty one before.
+            'prev' => $pageNumber > 1 ? $this->buildUrl($request, min($pageNumber - 1, $lastPage), $pageSize) : null,
             'next' => $pageNumber < $lastPage ? $this->buildUrl($request, $pageNumber + 1, $pageSize) : null,
         ];
     }

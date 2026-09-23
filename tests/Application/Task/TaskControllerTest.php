@@ -179,6 +179,19 @@ final class TaskControllerTest extends ApiTestCase
     }
 
     #[Test]
+    public function getAllPastTheLastPageShouldPointBackToTheLastPage(): void
+    {
+        TaskFactory::createMany(3, ['user' => $this->user]);
+
+        $json = $this->json($this->get('/api/v1/tasks?page[number]=5&page[size]=2'));
+
+        self::assertSame([], $json['data']);
+        self::assertSame('/api/v1/tasks?page[number]=2&page[size]=2', $json['links']['prev']);
+        self::assertSame('/api/v1/tasks?page[number]=2&page[size]=2', $json['links']['last']);
+        self::assertNull($json['links']['next']);
+    }
+
+    #[Test]
     public function getAllWhenSortFieldIsNotSupportedShouldReturn422(): void
     {
         $response = $this->get('/api/v1/tasks?sort=title');
