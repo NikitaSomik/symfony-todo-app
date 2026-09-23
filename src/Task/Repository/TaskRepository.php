@@ -46,7 +46,7 @@ class TaskRepository extends ServiceEntityRepository
             new TaskStatusSpecification($query->filter->status),
             new TaskDueRangeSpecification($query->filter->dueFrom(), $query->filter->dueTo()),
             new TaskSearchRankSpecification($search),
-            new TaskSortSpecification($query->sorts()),
+            new TaskSortSpecification($query->sort()),
         ]);
 
         if (null !== $search) {

@@ -262,12 +262,28 @@
                     {
                         "name": "sort",
                         "in": "query",
-                        "description": "Comma-separated sort fields, applied in order; a \"-\" prefix sorts that field in descending order.",
                         "required": false,
                         "schema": {
                             "type": "string",
-                            "example": "-status,due_date",
-                            "default": "-created_at"
+                            "default": "created_at",
+                            "enum": [
+                                "created_at",
+                                "status",
+                                "due_date"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "direction",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "desc",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
                         }
                     }
                 ],
@@ -587,7 +603,20 @@
                     },
                     "sort": {
                         "type": "string",
-                        "default": "-created_at"
+                        "default": "created_at",
+                        "enum": [
+                            "created_at",
+                            "status",
+                            "due_date"
+                        ]
+                    },
+                    "direction": {
+                        "type": "string",
+                        "default": "desc",
+                        "enum": [
+                            "asc",
+                            "desc"
+                        ]
                     },
                     "filter": {
                         "$ref": "#/components/schemas/TaskFilterDTO"

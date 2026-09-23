@@ -17,7 +17,6 @@ use App\Tests\ApiTestCase;
 use App\Tests\Support\AuditLogFailureToggle;
 use Doctrine\Persistence\ManagerRegistry;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\Attributes\TestWith;
 use Symfony\Component\Uid\Uuid;
 
 final class TaskControllerTest extends ApiTestCase
@@ -152,7 +151,7 @@ final class TaskControllerTest extends ApiTestCase
         TaskFactory::createOne(['user' => $this->user, 'title' => 'Later', 'dueDate' => new \DateTimeImmutable('2026-04-02')]);
         TaskFactory::createOne(['user' => $this->user, 'title' => 'Sooner', 'dueDate' => new \DateTimeImmutable('2026-04-01')]);
 
-        $response = $this->get('/api/v1/tasks?sort=due_date');
+        $response = $this->get('/api/v1/tasks?sort=due_date&direction=asc');
         $data = $this->jsonData($response);
 
         self::assertResponseIsSuccessful();
@@ -162,28 +161,9 @@ final class TaskControllerTest extends ApiTestCase
     }
 
     #[Test]
-    public function getAllShouldSortByEveryRequestedFieldInOrder(): void
+    public function getAllWhenSortFieldIsNotSupportedShouldReturn422(): void
     {
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Todo later', 'status' => TaskStatus::TODO, 'dueDate' => new \DateTimeImmutable('2026-04-02')]);
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Completed', 'status' => TaskStatus::COMPLETED, 'dueDate' => new \DateTimeImmutable('2026-04-03')]);
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Todo sooner', 'status' => TaskStatus::TODO, 'dueDate' => new \DateTimeImmutable('2026-04-01')]);
-
-        $response = $this->get('/api/v1/tasks?sort=-status,due_date');
-
-        self::assertResponseIsSuccessful();
-        self::assertSame(
-            ['Todo sooner', 'Todo later', 'Completed'],
-            array_map(static fn (array $task): string => $task['attributes']['title'], $this->jsonData($response)),
-        );
-    }
-
-    #[Test]
-    #[TestWith(['title'])]
-    #[TestWith(['-title'])]
-    #[TestWith(['status,'])]
-    public function getAllWhenSortFieldIsNotSupportedShouldReturn422(string $sort): void
-    {
-        $response = $this->get('/api/v1/tasks?sort='.$sort);
+        $response = $this->get('/api/v1/tasks?sort=title');
 
         self::assertResponseStatusCodeSame(422);
         self::assertSame(['parameter' => 'sort'], $this->json($response)['errors'][0]['source']);
