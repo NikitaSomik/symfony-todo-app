@@ -18,45 +18,23 @@ final class QueryParameterTest extends ApiTestCase
         $this->actingAs(UserFactory::createOne());
     }
 
+    /**
+     * Unknown parameters are left to the standard #[MapQueryString] mapping, which ignores them.
+     * JSON:API asks for a 400 here; the API deliberately does not.
+     */
     #[Test]
-    #[TestWith(['foo=1', 'foo'])]
-    #[TestWith(['include=user', 'include'])]
-    #[TestWith(['fields[tasks]=title', 'fields'])]
-    #[TestWith(['filter[foo]=1', 'filter[foo]'])]
-    #[TestWith(['page[offset]=10', 'page[offset]'])]
-    #[TestWith(['filter=abc', 'filter'])]
-    #[TestWith(['page=5', 'page'])]
-    #[TestWith(['search=milk', 'search'])]
-    #[TestWith(['direction=asc', 'direction'])]
-    public function unknownParameterShouldBeRejectedWith400(string $query, string $parameter): void
+    #[TestWith(['foo=1'])]
+    #[TestWith(['include=user'])]
+    #[TestWith(['filter[foo]=1'])]
+    public function unknownParameterShouldBeIgnored(string $query): void
     {
-        $response = $this->get('/api/v1/tasks?'.$query);
+        $this->get('/api/v1/tasks?'.$query);
 
-        self::assertResponseStatusCodeSame(400);
-        self::assertSame(
-            [[
-                'status' => '400',
-                'detail' => sprintf('The "%s" query parameter is not supported.', $parameter),
-                'source' => ['parameter' => $parameter],
-            ]],
-            $this->json($response)['errors'],
-        );
+        self::assertResponseIsSuccessful();
     }
 
     #[Test]
-    public function everyUnknownParameterShouldBeReported(): void
-    {
-        $response = $this->get('/api/v1/tasks?filter[bar]=2&filter[status]=todo&foo=1&page[baz]=3');
-
-        self::assertResponseStatusCodeSame(400);
-        self::assertSame(
-            ['filter[bar]', 'foo', 'page[baz]'],
-            array_map(static fn (array $error): string => $error['source']['parameter'], $this->json($response)['errors']),
-        );
-    }
-
-    #[Test]
-    public function knownParameterWithAnInvalidValueShouldStillBeA422(): void
+    public function knownParameterWithAnInvalidValueShouldBeA422(): void
     {
         $response = $this->get('/api/v1/tasks?filter[status]=wrong');
 

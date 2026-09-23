@@ -181,11 +181,11 @@ final class TaskControllerTest extends ApiTestCase
     #[TestWith(['title'])]
     #[TestWith(['-title'])]
     #[TestWith(['status,'])]
-    public function getAllWhenSortFieldIsNotSupportedShouldReturn400(string $sort): void
+    public function getAllWhenSortFieldIsNotSupportedShouldReturn422(string $sort): void
     {
         $response = $this->get('/api/v1/tasks?sort='.$sort);
 
-        self::assertResponseStatusCodeSame(400);
+        self::assertResponseStatusCodeSame(422);
         self::assertSame(['parameter' => 'sort'], $this->json($response)['errors'][0]['source']);
     }
 

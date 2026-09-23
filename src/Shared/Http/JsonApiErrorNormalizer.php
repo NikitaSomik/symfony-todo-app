@@ -28,10 +28,6 @@ final class JsonApiErrorNormalizer implements NormalizerInterface
             return $this->toPayload($this->violationErrors($validationException, $data->getStatusCode()));
         }
 
-        if ($throwable instanceof JsonApiRequestException) {
-            return $this->toPayload($throwable->errors);
-        }
-
         if ($throwable instanceof HttpExceptionInterface && Response::HTTP_UNSUPPORTED_MEDIA_TYPE === $throwable->getStatusCode()) {
             return $this->toPayload([JsonApiError::forHeader(
                 (string) Response::HTTP_UNSUPPORTED_MEDIA_TYPE,
