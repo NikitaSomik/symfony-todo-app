@@ -136,9 +136,30 @@ Phase 5: CQRS (where justified)
 - [x] `TRUSTED_PROXIES` so IP-based limits see the real client behind a proxy
 - [x] `app:auth:purge-expired-refresh-tokens` command
 - [ ] **Refresh token reuse detection (RFC 9700)** — mark tokens used instead of deleting them, group them into families, revoke the whole family when a used token is presented again. Also removes the concurrent-refresh race
-- [ ] Rate limit `POST /api/v1/auth/register`
-- [ ] Normalise emails (lowercase) on registration and lookup
+- [x] Rate limit `POST /api/v1/auth/register`
+- [x] Normalise emails (lowercase) on registration and lookup — an `Email` value object owns the canonical form
 - [ ] Identify the user in the JWT by immutable id instead of email
+
+---
+
+## API Error Handling & Observability ✅ (follow-ups pending)
+
+> How the API reports a failure, and how a failure in production is traced back to the request that caused it.
+
+- [x] One error envelope for every failure — validation, domain conflicts, authentication, 500s
+- [x] Domain exceptions mapped to statuses in `framework.exceptions`, so modules stay free of HTTP concerns
+- [x] `ClientFacingException` marker — only a marked message reaches the client, anything else becomes a neutral status text
+- [x] Log level declared per exception class, so an expected `409` no longer flushes the whole production log buffer
+- [x] `passthru_level: warning` — a lone warning is written without dumping the buffer
+- [x] Errors rendered by a serializer normalizer instead of a `kernel.exception` subscriber, as the Symfony docs recommend
+- [x] Request format forced to JSON under `/api/`, so a client that sends no usable `Accept` header is not answered with an HTML page
+- [x] Error objects follow the JSON:API specification — `detail`, `source.pointer` for body fields, `source.parameter` for query parameters
+- [x] Correlation id: return `X-Request-Id` on every response, reuse an incoming one when it comes from a trusted proxy, and stamp it into every log record via a Monolog processor (needs `expose_headers` in the CORS config)
+- [x] Answer `415` instead of a misleading `422` when `Content-Type` is missing — `acceptFormat: 'json'` on the payload mapping
+- [x] Add `user_id` to the log processor
+- [x] Check whether the password reaches the log context when the buffer is flushed — it does not, a test proves it
+- [ ] Granular rate limits on the remaining sensitive endpoints
+- [ ] ADRs for the decisions taken: a normalizer over a subscriber, JSON:API over Problem Details, `403` on someone else's resource given UUIDv7 ids, `422` for an invalid query filter
 
 ---
 
