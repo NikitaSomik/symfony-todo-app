@@ -20,6 +20,7 @@ Modular Symfony 8 API with Docker, PostgreSQL 18, JWT authentication, integratio
 ## Quick Start
 
 ```sh
+echo "JWT_SECRET=$(openssl rand -hex 32)" >> .env.local
 make build
 make up
 make migrate
