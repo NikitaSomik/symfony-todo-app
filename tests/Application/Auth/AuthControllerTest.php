@@ -135,6 +135,20 @@ final class AuthControllerTest extends ApiTestCase
     }
 
     #[Test]
+    public function loginShouldNotReturnAccessTokenInBody(): void
+    {
+        UserFactory::createOne(['email' => 'user@example.com']);
+
+        $response = $this->post($this->route('api_auth_login'), [
+            'email' => 'user@example.com',
+            'password' => 'password',
+        ]);
+
+        self::assertResponseStatusCodeSame(204);
+        self::assertSame('', $response->getContent());
+    }
+
+    #[Test]
     public function loginWhenInvalidPasswordShouldReturn401(): void
     {
         UserFactory::createOne(['email' => 'user@example.com']);
