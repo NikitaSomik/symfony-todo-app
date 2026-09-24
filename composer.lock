@@ -1316,16 +1316,16 @@
         },
         {
             "name": "martin-georgiev/postgresql-for-doctrine",
-            "version": "v4.8.0",
+            "version": "v4.8.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/martin-georgiev/postgresql-for-doctrine.git",
-                "reference": "fad9274011f21e8fab5cab5149c01222919d583a"
+                "reference": "0cd0283b09ae47a3a34a6c6a8589654430755a58"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/martin-georgiev/postgresql-for-doctrine/zipball/fad9274011f21e8fab5cab5149c01222919d583a",
-                "reference": "fad9274011f21e8fab5cab5149c01222919d583a",
+                "url": "https://api.github.com/repos/martin-georgiev/postgresql-for-doctrine/zipball/0cd0283b09ae47a3a34a6c6a8589654430755a58",
+                "reference": "0cd0283b09ae47a3a34a6c6a8589654430755a58",
                 "shasum": ""
             },
             "require": {
@@ -1429,7 +1429,7 @@
             ],
             "support": {
                 "issues": "https://github.com/martin-georgiev/postgresql-for-doctrine/issues",
-                "source": "https://github.com/martin-georgiev/postgresql-for-doctrine/tree/v4.8.0"
+                "source": "https://github.com/martin-georgiev/postgresql-for-doctrine/tree/v4.8.1"
             },
             "funding": [
                 {
@@ -1441,7 +1441,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-09-15T12:56:37+00:00"
+            "time": "2026-09-21T10:37:52+00:00"
         },
         {
             "name": "monolog/monolog",
