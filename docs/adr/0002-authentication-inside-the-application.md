@@ -2,7 +2,7 @@
 
 - Status: accepted
 - Date: 2026-03-03
-- Implemented in: #5, extended in #6, #21, #22, #23, #37
+- Implemented in: #5
 
 ## Context
 
@@ -12,7 +12,7 @@ tell which user a request comes from. The one client is a first-party browser ap
 Authentication can be owned by the application, on top of Symfony Security, or delegated to
 an identity provider speaking OAuth 2.0 / OpenID Connect — self-hosted like Keycloak, or a
 hosted service like Auth0. The provider then runs login and stores credentials, and the API
-only validates the tokens it issues.
+only validates the tokens the provider issues.
 
 ## Decision
 
@@ -39,21 +39,19 @@ still open.
   own identity provider. Users keep no password with us and log in once for every
   application that trusts the same provider. The API accepts identities it does not own,
   over OpenID Connect or SAML, either directly or through Keycloak or Auth0 as a broker.
-- **OAuth 2.0 / OpenID Connect as the protocol.** Either provider above would speak it;
-  the API would then only validate tokens issued elsewhere. Its delegation flows start to
-  matter once third-party applications need to act on a user's behalf.
 
 ## Consequences
 
 - Every security-sensitive piece is ours to get right and to keep right: password hashing,
   login and registration throttling, token storage, revocation. The later records and PRs
   are that cost being paid.
-- Features a provider gives for free do not exist here: password reset, email
+- Features a provider has out of the box do not exist here: password reset, email
   verification, multi-factor authentication, social login, single sign-on.
 - Revisit when one of those becomes a requirement — above all SSO across several
-  applications, MFA, or customers bringing their own identity provider. Moving to OpenID
-  Connect would replace login and token issuing; the API would validate the provider's
-  tokens against its published keys, which also retires
+  applications, MFA, customers bringing their own identity provider, or third-party
+  applications that need to act on a user's behalf, which is what OAuth 2.0 delegation
+  exists for. Moving to OpenID Connect would replace login and token issuing; the API
+  would validate the provider's tokens against its published keys, which also retires
   [0003](0003-jwt-signed-with-hs256.md).
 - The move stays cheap to start: tokens are validated in one place, by Lexik behind the
   Symfony firewall, and no other module knows how a user was authenticated.

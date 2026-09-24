@@ -29,5 +29,5 @@ Statuses:
 | [0001](0001-feature-based-modular-monolith.md) | Organise the code as a feature-based modular monolith | accepted | 2026-02-27 |
 | [0002](0002-authentication-inside-the-application.md) | Build authentication inside the application instead of using an identity provider | accepted | 2026-03-03 |
 | [0003](0003-jwt-signed-with-hs256.md) | Sign access tokens with HS256 and a shared secret | accepted | 2026-03-03 |
-| [0004](0004-access-token-in-httponly-cookie.md) | Carry the access token in an HttpOnly cookie, not the `Authorization` header | accepted | 2026-03-24 |
+| [0004](0004-access-token-in-httponly-cookie.md) | Carry the access token in an HttpOnly cookie, not the `Authorization` header | accepted | 2026-03-03 |
 | [0005](0005-revocable-sessions.md) | Make sessions revocable: short access tokens, rotating refresh tokens, a logout blocklist | accepted | 2026-03-24 |

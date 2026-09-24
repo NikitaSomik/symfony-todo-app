@@ -23,11 +23,13 @@ every few minutes.
   have expired — before #17 an expired access token made logout revoke nothing.
 - **Logout also blocklists the presented access token** until it expires: Lexik's
   `blocklist_token` stores its `jti` in Redis and checks every request against it.
-- Logout clears both cookies and sends `Clear-Site-Data: "cookies"`.
-- `app:auth:purge-expired-refresh-tokens` deletes expired refresh tokens.
 
 ## Alternatives considered
 
+- **`gesdinet/jwt-refresh-token-bundle`**, the usual Symfony choice. Its rotation deletes the
+  old token and saves the new one in two separate flushes, outside a transaction, so a
+  failure between them leaves the user with no session. Here both happen in one
+  transaction: a failure rolls back and the old token still works.
 - **Plain refresh tokens in the database** — the original design, replaced in #21. A leaked
   table, backup or replica would hand out live sessions.
 - **A password hash (bcrypt, Argon2) for refresh tokens.** Deliberately slow, so it would
@@ -46,5 +48,10 @@ every few minutes.
   user does, the attacker gets the new pair; the user's next refresh fails and they log
   in again, while the attacker's chain continues. The user's next logout ends it, because
   logout revokes every session. Detecting the reuse of a spent token and revoking the whole
-  token family (RFC 9700) is planned — see the roadmap. It also removes the race in which
-  two tabs refresh with the same token and one of them is logged out.
+  token family (RFC 9700) is planned — see the roadmap.
+- **Two concurrent refreshes with the same token can both succeed.** When both requests
+  find the token before either deletes it, one session forks into two live refresh tokens. Reuse
+  detection has to claim a token atomically, or it will read this race as theft and log
+  the user out.
+- `gesdinet/jwt-refresh-token-bundle` 3.0 (August 2026) added token families, reuse
+  detection and hashed storage. Weigh it again before building reuse detection here.

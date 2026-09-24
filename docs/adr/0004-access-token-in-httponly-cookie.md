@@ -1,15 +1,16 @@
 # 0004. Carry the access token in an HttpOnly cookie, not the `Authorization` header
 
 - Status: accepted
-- Date: 2026-03-24
-- Implemented in: #6, refined in #22
+- Date: 2026-03-03
+- Implemented in: #5, refined in #6 and #22
 
 ## Context
 
-At first the login response returned the JWT in its body, and the client sent it back in
-the `Authorization: Bearer` header. The client is a browser application, so the token had
-to live in storage that JavaScript can read. Any XSS on the page could then read the token
-and send it elsewhere, where it stays usable until it expires.
+The first working version, built during #5, returned the JWT in the login response body,
+and the client sent it back in the `Authorization: Bearer` header. The client is a browser
+application, so the token had to live in storage that JavaScript can read. Any XSS on the
+page could then read the token and send it elsewhere, where it stays usable until it
+expires. The token moved into a cookie before #5 was merged.
 
 ## Decision
 
@@ -21,6 +22,9 @@ The access token travels only in a cookie.
   it only to the endpoints that use it.
 - Lexik reads the token from the cookie alone; the `Authorization` header extractor is
   disabled.
+- The token never appears in a response body. Lexik drops it from the login response once
+  it sets the cookie (`remove_token_from_body_when_cookies_used`, on by default), and
+  refresh answers with an empty body.
 - CORS allows credentials, for the configured origin only.
 - The auth endpoints (`/api/v1/auth`) run in their own firewall without the JWT
   authenticator (#22).
@@ -45,5 +49,5 @@ The access token travels only in a cookie.
   separate `auth` firewall fixed it; logout still blocklists a valid access token, because
   Lexik's logout listener reads the cookie from the request itself.
 - Non-browser clients — a mobile app, a CLI — would have to manage cookies. Supporting them
-  means re-enabling the header extractor, and deciding how those clients get CSRF-free
-  guarantees of their own.
+  properly means a second transport: the header extractor re-enabled, and the token handed
+  to those clients in a response body, which the browser flow must never receive.

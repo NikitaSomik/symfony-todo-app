@@ -23,16 +23,16 @@ are no key files and no passphrase.
 - **RS256.** Its advantage is the split between the signer and the verifiers: a service
   holding only the public key can check a token but cannot forge one. With a single
   application there is nobody to split from, so RS256 would add a key pair to generate,
-  store, protect with a passphrase and rotate, for no gain.
+  store, protect and rotate, for no gain.
 
 ## Consequences
 
 - Whoever knows the secret can mint a token for any user. The secret must exist only in
   the application's environment, never in the repository or the logs.
 - A weak secret fails closed. `lcobucci/jwt`, which Lexik signs with, refuses an HMAC key
-  shorter than 256 bits, on signing and on verification alike. Verified with the 48-bit
-  placeholder in the committed `.env`: encoding throws `InvalidKeyProvided`. The failure
-  surfaces late, though: the application boots normally and only the first login fails. A
+  shorter than 256 bits, on signing and on verification alike — verified with a 48-bit key,
+  which makes encoding throw `InvalidKeyProvided`. The failure surfaces late, though: the
+  application boots normally and fails only when it first issues a token, at login. A
   startup check in `prod` would move the failure to the deploy.
 - Rotating the secret invalidates every access token at once. That costs one silent
   refresh per user: access tokens live 15 minutes, and refresh tokens are opaque database
