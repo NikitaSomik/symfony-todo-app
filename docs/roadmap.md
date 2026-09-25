@@ -159,6 +159,8 @@ Phase 5: CQRS (where justified)
 - [x] Add `user_id` to the log processor
 - [x] Check whether the password reaches the log context when the buffer is flushed — it does not, a test proves it
 - [ ] Granular rate limits on the remaining sensitive endpoints
+- [ ] A stable machine-readable `code` on every error object (JSON:API `code` member), so clients branch on the code instead of the status or the text
+- [ ] Metrics for authentication failures (failed logins and refreshes), with an alert on a spike — a sign of guessing or leaked tokens
 - [ ] ADRs for the decisions taken: a normalizer over a subscriber, JSON:API over Problem Details, `403` on someone else's resource given UUIDv7 ids, `422` for an invalid query filter
 
 ---
