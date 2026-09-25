@@ -10,7 +10,7 @@ A decision that was later revised is not deleted. It is marked as superseded and
 the record that replaced it, so the history of how the design got here stays readable. A
 decision withdrawn without a replacement is marked as deprecated.
 
-Records 0001–0005 were written retroactively, in September 2026, from the code, the git
+Records 0001–0009 were written retroactively, in September 2026, from the code, the git
 history and working notes. Their "Alternatives considered" sections list only the options
 that were actually weighed — as the history, the notes or the author's own account show.
 
@@ -31,3 +31,7 @@ Statuses:
 | [0003](0003-jwt-signed-with-hs256.md) | Sign access tokens with HS256 and a shared secret | accepted | 2026-03-03 |
 | [0004](0004-access-token-in-httponly-cookie.md) | Carry the access token in an HttpOnly cookie, not the `Authorization` header | accepted | 2026-03-03 |
 | [0005](0005-revocable-sessions.md) | Make sessions revocable: short access tokens, rotating refresh tokens, a logout blocklist | accepted | 2026-03-24 |
+| [0006](0006-errors-rendered-by-exception-subscriber.md) | Render API errors in a `kernel.exception` subscriber | superseded by [0007](0007-exception-mapping-and-error-normalizer.md) | 2026-03-26 |
+| [0007](0007-exception-mapping-and-error-normalizer.md) | Declare how each exception is answered in configuration, and render errors with a normalizer | accepted | 2026-09-21 |
+| [0008](0008-json-api-responses-plain-json-requests.md) | Follow JSON:API for responses and query parameters, keep request bodies plain JSON | accepted | 2026-09-23 |
+| [0009](0009-production-logging.md) | Log in production per request: buffer quietly, write on failure, tag every record | accepted | 2026-09-23 |
