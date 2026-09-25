@@ -19,8 +19,8 @@ useful if it can be tied to the request — and the user — it came from.
 - **Warnings pass through** (`passthru_level: warning`, #39). A warning is written
   immediately even when the request ends without an error; `debug` and `info` stay in the
   buffer as context.
-- **Every record carries `request_id`**, and a record of an authenticated request carries
-  `user_id` — never the email (#46). The id is returned in the `X-Request-Id` header on
+- **Every record written while handling a request carries `request_id`**, and a record of
+  an authenticated request carries `user_id` — never the email (#46). The id is returned in the `X-Request-Id` header on
   every response, error responses included, and CORS exposes it to browser code.
 - **The id is generated here** — a UUIDv7 — unless the request comes from a trusted proxy
   and carries an `X-Request-Id` made only of letters, digits, `.`, `_` and `-`, at most

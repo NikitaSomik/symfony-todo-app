@@ -39,6 +39,11 @@ client that sends no usable `Accept` header still gets JSON rather than an HTML 
 - **Keep the expected `409` out of the logs with `excluded_http_codes`.** Tried in #38 and
   replaced before merging: it silences a status code for every exception that maps to it,
   while `log_level` states the intent for one exception class.
+- **Symfony's `#[WithHttpStatus]` and `#[WithLogLevel]` attributes on the exception class.**
+  Weighed later with a prototype on `InvalidRefreshTokenException`: the response and the
+  log record are identical. Lost because the attributes put HTTP knowledge into a domain
+  exception — the same trade-off as Spring's `@ResponseStatus` — and would leave two places
+  to look for a status.
 
 ## Consequences
 
@@ -47,7 +52,7 @@ client that sends no usable `Accept` header still gets JSON rather than an HTML 
 - Symfony's error pipeline runs unchanged: logging, the `FlattenException`, the renderer.
   A mistake in the normalizer shows up as a wrong response body — the first test run
   catches it — instead of as a missing log record.
-- The normalizer must outrank Symfony's `ProblemNormalizer` (priority `-890`). If it did
-  not, errors would silently switch to Problem Details.
+- The normalizer must outrank Symfony's `ProblemNormalizer` (priority `-890`); registered
+  with the default priority, it does. Otherwise errors would come out as Problem Details.
 - The first `framework.exceptions` entry whose class matches by `instanceof` wins, so the
   order of the entries matters.

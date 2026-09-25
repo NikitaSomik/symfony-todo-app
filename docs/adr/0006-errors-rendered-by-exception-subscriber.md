@@ -23,10 +23,10 @@ decided each status: `EmailAlreadyTakenException` became `409`, a validation fai
   `Auth\Exception\EmailAlreadyTakenException`. Every new domain exception would have added
   another import and another branch to shared code.
 - **A 500 was answered but not logged.** `setResponse()` stops the event's propagation.
-  Registered at the default priority, the subscriber ran before
-  `ErrorListener::logKernelException()`, so an unexpected exception produced a response
-  and no log record. #29 moved the subscriber below `0`, which made the correctness of
-  logging depend on a priority number.
+  Registered at priority `0`, the same as `ErrorListener::logKernelException()`, the
+  subscriber ran first, so an unexpected exception produced a response and no log record.
+  #29 moved the subscriber below `0`, which made the correctness of logging depend on a
+  priority number.
 - **The framework's own rendering was switched off.** Setting the response also cancelled
   `ErrorListener::onKernelException()`, so everything Symfony does when it renders an
   error had to be reimplemented by hand.

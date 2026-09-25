@@ -31,7 +31,7 @@ with `first`/`last`/`prev`/`next` links; error objects with `status`, `detail` a
 | The specification asks for | What the API does | Why |
 |---|---|---|
 | Request bodies as resource documents | Plain JSON through `#[MapRequestPayload]` | Reading documents needs a custom body resolver |
-| `PATCH` with partial updates | `PUT` with full replacement | Status changes are moving to dedicated commands, which leaves `PUT` three plain fields |
+| `PATCH` with partial updates | `PUT` with full replacement | Status changes are planned as dedicated commands, which will leave `PUT` only plain fields to replace |
 | `400` for an unknown query parameter | Ignored by `#[MapQueryString]` | The framework default was preferred to custom checks |
 | `sort=-created_at` syntax | `sort` and `direction`, `422` for an invalid value | See below |
 
