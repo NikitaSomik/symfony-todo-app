@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Auth;
 
+use App\Auth\Exception\InvalidRefreshTokenException;
 use App\Auth\RefreshToken\RandomRefreshTokenGenerator;
 use App\Auth\RefreshToken\RefreshTokenHash;
 use App\Auth\Repository\RefreshTokenRepository;
@@ -11,6 +12,9 @@ use App\Fixtures\Auth\RefreshTokenFactory;
 use App\Fixtures\Auth\UserFactory;
 use App\Tests\ApiTestCase;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
+use Monolog\Handler\TestHandler;
+use Monolog\Level;
+use Monolog\LogRecord;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\HttpFoundation\Cookie;
 
@@ -452,6 +456,23 @@ final class AuthControllerTest extends ApiTestCase
         self::assertResponseStatusCodeSame(401);
         self::assertSame('401', $this->json($response)['errors'][0]['status']);
         self::assertSame('Unauthorized.', $this->json($response)['errors'][0]['detail']);
+    }
+
+    #[Test]
+    public function refreshWhenInvalidTokenShouldBeLoggedAtInfo(): void
+    {
+        $this->setCookie('refresh_token', 'invalid-token-value');
+        $this->post($this->route('api_auth_refresh'));
+
+        /** @var TestHandler $logs */
+        $logs = static::getContainer()->get('monolog.handler.test_records');
+        $failures = array_values(array_filter(
+            $logs->getRecords(),
+            static fn (LogRecord $record): bool => ($record->context['exception'] ?? null)?->getPrevious() instanceof InvalidRefreshTokenException,
+        ));
+
+        self::assertCount(1, $failures);
+        self::assertSame(Level::Info, $failures[0]->level);
     }
 
     #[Test]

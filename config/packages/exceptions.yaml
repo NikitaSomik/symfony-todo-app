@@ -5,3 +5,6 @@ framework:
         App\Auth\Exception\EmailAlreadyTakenException:
             status_code: 409
             log_level: info
+        App\Auth\Exception\InvalidRefreshTokenException:
+            status_code: 401
+            log_level: info

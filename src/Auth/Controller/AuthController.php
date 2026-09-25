@@ -12,7 +12,6 @@ use App\Auth\Resource\UserResource;
 use App\Auth\Service\RefreshAccessToken;
 use App\Auth\Service\RegisterUser;
 use App\Shared\Api\Documentation\JsonApiContent;
-use App\Shared\Api\JsonApiError;
 use App\Shared\Api\JsonApiResponse;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
@@ -70,17 +69,13 @@ final class AuthController extends AbstractController
     #[OA\Response(response: 401, description: 'Invalid or expired refresh token')]
     public function refresh(Request $request): Response
     {
-        $refreshTokenValue = $request->cookies->get('refresh_token');
+        $refreshTokenValue = $request->cookies->get(JwtCookieFactory::REFRESH_COOKIE);
 
         if (null === $refreshTokenValue || strlen($refreshTokenValue) < 3 || strlen($refreshTokenValue) > 255) {
-            return $this->unauthorizedResponse();
+            throw new InvalidRefreshTokenException();
         }
 
-        try {
-            ['jwt' => $jwt, 'refreshToken' => $newRefreshToken] = $this->refreshAccessToken->handle($refreshTokenValue);
-        } catch (InvalidRefreshTokenException) {
-            return $this->unauthorizedResponse();
-        }
+        ['jwt' => $jwt, 'refreshToken' => $newRefreshToken] = $this->refreshAccessToken->handle($refreshTokenValue);
 
         $response = JsonApiResponse::noContent();
         $response->headers->setCookie($this->cookieFactory->createJwtCookie($jwt));
@@ -136,13 +131,5 @@ final class AuthController extends AbstractController
         // The route exists for Symfony routing (security.yaml json_login check_path) and OpenAPI docs.
         // On success, AuthenticationSuccessListener issues refresh token and sets cookies.
         throw new \LogicException('Intercepted by the JWT firewall.');
-    }
-
-    private function unauthorizedResponse(): Response
-    {
-        return JsonApiResponse::error(
-            [JsonApiError::of((string) Response::HTTP_UNAUTHORIZED, 'Unauthorized.')],
-            Response::HTTP_UNAUTHORIZED,
-        );
     }
 }
