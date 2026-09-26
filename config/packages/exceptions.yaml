@@ -8,3 +8,11 @@ framework:
         App\Auth\Exception\InvalidRefreshTokenException:
             status_code: 401
             log_level: info
+        # Client errors raised by Symfony itself keep their status. They are the client's to
+        # fix, not incidents: without this they are logged as errors and flush the prod buffer.
+        Symfony\Component\HttpKernel\Exception\BadRequestHttpException: { log_level: info }
+        Symfony\Component\HttpKernel\Exception\NotFoundHttpException: { log_level: info }
+        Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException: { log_level: info }
+        Symfony\Component\HttpKernel\Exception\UnsupportedMediaTypeHttpException: { log_level: info }
+        Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException: { log_level: info }
+        Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException: { log_level: info }
