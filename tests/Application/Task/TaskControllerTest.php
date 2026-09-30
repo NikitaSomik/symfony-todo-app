@@ -509,6 +509,18 @@ final class TaskControllerTest extends ApiTestCase
     }
 
     #[Test]
+    public function getWhenTaskBelongsToAnotherUserShouldAnswerLikeAMissingTask(): void
+    {
+        $otherUser = UserFactory::createOne();
+        $task = TaskFactory::createOne(['user' => $otherUser]);
+
+        $missing = $this->json($this->get($this->route('api_task_get', ['id' => $this->missingTaskId()])));
+        $foreign = $this->json($this->get($this->route('api_task_get', ['id' => $this->taskId($task)])));
+
+        self::assertSame($missing, $foreign);
+    }
+
+    #[Test]
     public function updateWhenValidDataShouldReturnUpdatedTask(): void
     {
         $task = TaskFactory::createOne(['user' => $this->user]);
@@ -737,6 +749,17 @@ final class TaskControllerTest extends ApiTestCase
     }
 
     #[Test]
+    public function updateWhenTaskBelongsToAnotherUserAndBodyIsInvalidShouldReturn404(): void
+    {
+        $otherUser = UserFactory::createOne();
+        $task = TaskFactory::createOne(['user' => $otherUser]);
+
+        $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), ['title' => '']);
+
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    #[Test]
     public function deleteWhenTaskExistsShouldReturn204(): void
     {
         $task = TaskFactory::createOne(['user' => $this->user]);
@@ -859,6 +882,17 @@ final class TaskControllerTest extends ApiTestCase
         self::assertSame('updated', $data[1]['attributes']['action']);
         self::assertSame('Updated task title for "Buy almond milk"', $data[1]['attributes']['message']);
         self::assertSame('Buy almond milk', $data[1]['attributes']['attribute_changes']['new']['title']);
+    }
+
+    #[Test]
+    public function getAuditLogsWhenTaskBelongsToAnotherUserShouldReturn404(): void
+    {
+        $otherUser = UserFactory::createOne();
+        $task = TaskFactory::createOne(['user' => $otherUser]);
+
+        $this->get($this->route('api_task_get_audit_logs', ['id' => $this->taskId($task)]));
+
+        self::assertResponseStatusCodeSame(404);
     }
 
     #[Test]

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Logging;
 
+use App\Fixtures\Auth\UserFactory;
+use App\Fixtures\Task\TaskFactory;
 use App\Tests\ApiTestCase;
 use Monolog\Handler\TestHandler;
 use Monolog\Level;
@@ -52,6 +54,18 @@ final class ClientErrorLoggingTest extends ApiTestCase
         $this->post($this->route('api_auth_register'), ['email' => 'one-too-many@example.com', 'password' => 'secret123']);
 
         self::assertResponseStatusCodeSame(429);
+        $this->assertLoggedAtInfo();
+    }
+
+    #[Test]
+    public function someoneElsesTaskShouldBeLoggedAtInfo(): void
+    {
+        $task = TaskFactory::createOne(['user' => UserFactory::createOne()]);
+        $this->actingAs(UserFactory::createOne());
+
+        $this->get($this->route('api_task_get', ['id' => $task->getId()->toRfc4122()]));
+
+        self::assertResponseStatusCodeSame(404);
         $this->assertLoggedAtInfo();
     }
 
