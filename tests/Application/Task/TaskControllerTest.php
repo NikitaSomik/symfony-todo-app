@@ -18,6 +18,7 @@ use App\Tests\Support\AuditLogFailureToggle;
 use Doctrine\Persistence\ManagerRegistry;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;
 
 final class TaskControllerTest extends ApiTestCase
@@ -48,6 +49,12 @@ final class TaskControllerTest extends ApiTestCase
     private function taskId(Task $task): string
     {
         return $task->getId()->toRfc4122();
+    }
+
+    /** @return list<string> */
+    private function titles(Response $response): array
+    {
+        return array_map(static fn (array $task): string => $task['attributes']['title'], $this->jsonData($response));
     }
 
     private function missingTaskId(): string
@@ -345,7 +352,7 @@ final class TaskControllerTest extends ApiTestCase
         TaskFactory::createOne(['user' => $this->user, 'title' => 'Buy milk']);
 
         $response = $this->get('/api/v1/tasks?filter[search]='.urlencode($search));
-        $titles = array_map(static fn (array $task): string => $task['attributes']['title'], $this->jsonData($response));
+        $titles = $this->titles($response);
 
         self::assertResponseIsSuccessful();
         self::assertSame($expectedTitles, $titles);
@@ -377,7 +384,7 @@ final class TaskControllerTest extends ApiTestCase
         TaskFactory::createOne(['user' => $this->user, 'title' => 'Sell milk', 'description' => 'Then buy more']);
 
         $response = $this->get('/api/v1/tasks?filter[search]='.urlencode($search));
-        $titles = array_map(static fn (array $task): string => $task['attributes']['title'], $this->jsonData($response));
+        $titles = $this->titles($response);
         sort($titles);
 
         self::assertResponseIsSuccessful();
@@ -406,7 +413,7 @@ final class TaskControllerTest extends ApiTestCase
         TaskFactory::createOne(['user' => $this->user, 'title' => 'Workout', 'description' => 'Drink milk after gym', 'dueDate' => new \DateTimeImmutable('2026-04-01')]);
 
         $response = $this->get('/api/v1/tasks?filter[search]=milk&sort=due_date&direction=asc');
-        $titles = array_map(static fn (array $task): string => $task['attributes']['title'], $this->jsonData($response));
+        $titles = $this->titles($response);
 
         self::assertResponseIsSuccessful();
         self::assertSame(['Workout', 'Milk plan'], $titles);
@@ -422,7 +429,7 @@ final class TaskControllerTest extends ApiTestCase
         TaskFactory::createOne(['user' => $this->user, 'title' => 'Workout', 'description' => 'Drink milk after gym', 'status' => TaskStatus::TODO]);
 
         $response = $this->get('/api/v1/tasks?filter[search]=milk&sort=status');
-        $titles = array_map(static fn (array $task): string => $task['attributes']['title'], $this->jsonData($response));
+        $titles = $this->titles($response);
 
         self::assertResponseIsSuccessful();
         self::assertSame(['Milk plan', 'Workout'], $titles);
@@ -435,7 +442,7 @@ final class TaskControllerTest extends ApiTestCase
         TaskFactory::createOne(['user' => $this->user, 'title' => 'Workout', 'description' => 'Drink milk after gym']);
 
         $response = $this->get('/api/v1/tasks?filter[search]=milk&direction=asc');
-        $titles = array_map(static fn (array $task): string => $task['attributes']['title'], $this->jsonData($response));
+        $titles = $this->titles($response);
 
         self::assertResponseIsSuccessful();
         self::assertSame(['Workout', 'Milk plan'], $titles);
