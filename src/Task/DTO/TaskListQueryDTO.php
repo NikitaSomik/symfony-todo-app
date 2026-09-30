@@ -6,7 +6,6 @@ namespace App\Task\DTO;
 
 use App\Shared\Http\PageQueryDTO;
 use App\Shared\Http\QueryPayload;
-use App\Shared\Query\Sort;
 use App\Shared\Query\SortDirection;
 use App\Task\Enum\TaskSortField;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -17,7 +16,7 @@ readonly class TaskListQueryDTO implements QueryPayload
         #[Assert\Valid]
         public PageQueryDTO $page = new PageQueryDTO(),
 
-        /** Null orders a search by relevance and anything else by creation time; see sort(). */
+        /** Null: a search is ordered by relevance, a plain list by creation time. */
         #[Assert\Choice(callback: [TaskSortField::class, 'values'])]
         public ?string $sort = null,
 
@@ -29,17 +28,10 @@ readonly class TaskListQueryDTO implements QueryPayload
     ) {
     }
 
-    /**
-     * The sort field the client chose, or the default one. Null when tasks are ordered by relevance:
-     * a search without an explicit sort ranks the best matches first, as search engines do by default.
-     */
-    public function sort(): ?Sort
+    /** The field the client chose to sort by; null when it chose none. */
+    public function sortField(): ?TaskSortField
     {
-        if (null === $this->sort && null !== $this->filter->searchQuery()) {
-            return null;
-        }
-
-        return new Sort($this->sort ?? TaskSortField::CREATED_AT->value, $this->direction());
+        return null === $this->sort ? null : TaskSortField::from($this->sort);
     }
 
     public function direction(): SortDirection
