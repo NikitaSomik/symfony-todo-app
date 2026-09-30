@@ -57,6 +57,19 @@ final class TaskControllerTest extends ApiTestCase
         return array_map(static fn (array $task): string => $task['attributes']['title'], $this->jsonData($response));
     }
 
+    /**
+     * Most relevant first: "Milk run" (title and description), "Milk plan" (title), "Workout" (description).
+     * Created in none of the orders a sort by relevance produces.
+     *
+     * @param array<string, mixed> $attributes
+     */
+    private function createTasksOfDifferentRelevanceToMilk(array $attributes = []): void
+    {
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Milk plan', 'description' => 'Weekly groceries', ...$attributes]);
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Workout', 'description' => 'Drink milk after gym', ...$attributes]);
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Milk run', 'description' => 'Get milk for the week', ...$attributes]);
+    }
+
     private function missingTaskId(): string
     {
         return Uuid::v7()->toRfc4122();
@@ -152,20 +165,49 @@ final class TaskControllerTest extends ApiTestCase
         self::assertSame('completed', $data[0]['attributes']['status']);
     }
 
+    /**
+     * The tests on order create their tasks so that neither the creation order nor its reverse matches
+     * the expected one: a sort that falls back to the id, the last sort key, then fails.
+     */
+    #[Test]
+    #[TestWith(['', ['Newest', 'Middle', 'Oldest']])]
+    #[TestWith(['?direction=asc', ['Oldest', 'Middle', 'Newest']])]
+    public function getAllWithoutSortShouldOrderByCreationTime(string $query, array $expectedTitles): void
+    {
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Middle', 'createdAt' => new \DateTimeImmutable('2026-04-01 10:01:00')]);
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Newest', 'createdAt' => new \DateTimeImmutable('2026-04-01 10:02:00')]);
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Oldest', 'createdAt' => new \DateTimeImmutable('2026-04-01 10:00:00')]);
+
+        $response = $this->get('/api/v1/tasks'.$query);
+
+        self::assertResponseIsSuccessful();
+        self::assertSame($expectedTitles, $this->titles($response));
+    }
+
+    #[Test]
+    public function getAllShouldSortByStatus(): void
+    {
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'In progress', 'status' => TaskStatus::IN_PROGRESS]);
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Todo', 'status' => TaskStatus::TODO]);
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Completed', 'status' => TaskStatus::COMPLETED]);
+
+        $response = $this->get('/api/v1/tasks?sort=status&direction=asc');
+
+        self::assertResponseIsSuccessful();
+        self::assertSame(['Completed', 'In progress', 'Todo'], $this->titles($response));
+    }
+
     #[Test]
     public function getAllShouldSortByDueDateAscendingWithNullsLast(): void
     {
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'No deadline', 'dueDate' => null]);
         TaskFactory::createOne(['user' => $this->user, 'title' => 'Later', 'dueDate' => new \DateTimeImmutable('2026-04-02')]);
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'No deadline', 'dueDate' => null]);
         TaskFactory::createOne(['user' => $this->user, 'title' => 'Sooner', 'dueDate' => new \DateTimeImmutable('2026-04-01')]);
 
         $response = $this->get('/api/v1/tasks?sort=due_date&direction=asc');
-        $data = $this->jsonData($response);
 
         self::assertResponseIsSuccessful();
-        self::assertSame('Sooner', $data[0]['attributes']['title']);
-        self::assertSame('Later', $data[1]['attributes']['title']);
-        self::assertSame('No deadline', $data[2]['attributes']['title']);
+        self::assertSame(['Sooner', 'Later', 'No deadline'], $this->titles($response));
     }
 
     /**
@@ -409,43 +451,36 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function getAllWhenSearchingShouldSortByTheChosenField(): void
     {
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Milk plan', 'dueDate' => new \DateTimeImmutable('2026-04-02')]);
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Milk plan', 'description' => null, 'dueDate' => new \DateTimeImmutable('2026-04-02')]);
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Milk shake', 'description' => null, 'dueDate' => new \DateTimeImmutable('2026-04-03')]);
         TaskFactory::createOne(['user' => $this->user, 'title' => 'Workout', 'description' => 'Drink milk after gym', 'dueDate' => new \DateTimeImmutable('2026-04-01')]);
 
         $response = $this->get('/api/v1/tasks?filter[search]=milk&sort=due_date&direction=asc');
-        $titles = $this->titles($response);
 
         self::assertResponseIsSuccessful();
-        self::assertSame(['Workout', 'Milk plan'], $titles);
+        self::assertSame(['Workout', 'Milk plan', 'Milk shake'], $this->titles($response));
     }
 
-    /**
-     * The more relevant task is created first, so the id alone, the last sort key, would put it second.
-     */
     #[Test]
     public function getAllWhenSearchingShouldBreakSortTiesByRelevance(): void
     {
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Milk plan', 'status' => TaskStatus::TODO]);
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Workout', 'description' => 'Drink milk after gym', 'status' => TaskStatus::TODO]);
+        $this->createTasksOfDifferentRelevanceToMilk(['status' => TaskStatus::TODO]);
 
         $response = $this->get('/api/v1/tasks?filter[search]=milk&sort=status');
-        $titles = $this->titles($response);
 
         self::assertResponseIsSuccessful();
-        self::assertSame(['Milk plan', 'Workout'], $titles);
+        self::assertSame(['Milk run', 'Milk plan', 'Workout'], $this->titles($response));
     }
 
     #[Test]
     public function getAllWhenSearchingWithoutSortShouldApplyDirectionToRelevance(): void
     {
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Milk plan', 'description' => 'Weekly groceries']);
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Workout', 'description' => 'Drink milk after gym']);
+        $this->createTasksOfDifferentRelevanceToMilk();
 
         $response = $this->get('/api/v1/tasks?filter[search]=milk&direction=asc');
-        $titles = $this->titles($response);
 
         self::assertResponseIsSuccessful();
-        self::assertSame(['Workout', 'Milk plan'], $titles);
+        self::assertSame(['Workout', 'Milk plan', 'Milk run'], $this->titles($response));
     }
 
     #[Test]

@@ -10,6 +10,8 @@ use App\Task\Enum\TaskStatus;
 use Symfony\Component\Uid\Uuid;
 use Zenstruck\Foundry\Persistence\PersistentObjectFactory;
 
+use function Zenstruck\Foundry\set;
+
 /**
  * @extends PersistentObjectFactory<Task>
  */
@@ -28,6 +30,7 @@ final class TaskFactory extends PersistentObjectFactory
             'dueDate' => null,
             'status' => TaskStatus::TODO,
             'cancellationReason' => null,
+            'createdAt' => new \DateTimeImmutable(),
             'user' => UserFactory::new(),
         ];
     }
@@ -65,6 +68,8 @@ final class TaskFactory extends PersistentObjectFactory
 
             $task->setDueDate($attributes['dueDate']);
             $task->setUser($attributes['user']);
+            // Task sets its creation time itself and has no setter; tests need to control it.
+            set($task, 'createdAt', $attributes['createdAt']);
 
             return $task;
         });
