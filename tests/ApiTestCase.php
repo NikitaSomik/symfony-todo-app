@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests;
 
 use App\Auth\Entity\User;
+use Doctrine\Bundle\DoctrineBundle\DataCollector\DoctrineDataCollector;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -74,6 +75,25 @@ abstract class ApiTestCase extends WebTestCase
         $this->client->getCookieJar()->set(new Cookie($name, $value, path: $path));
 
         return $this;
+    }
+
+    /** Collects the profile of the next request only; read it with executedSql(). */
+    protected function withProfiler(): static
+    {
+        $this->client->enableProfiler();
+        // Fixtures run in the same kernel before the first request; keep their queries out of the profile.
+        static::getContainer()->get('doctrine.debug_data_holder')->reset();
+
+        return $this;
+    }
+
+    /** @return list<string> SQL of the last profiled request, in execution order */
+    protected function executedSql(): array
+    {
+        $collector = $this->client->getProfile()->getCollector('db');
+        \assert($collector instanceof DoctrineDataCollector);
+
+        return array_column($collector->getQueries()['default'] ?? [], 'sql');
     }
 
     protected function get(string $uri): Response
