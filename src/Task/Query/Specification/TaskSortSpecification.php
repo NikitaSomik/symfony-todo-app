@@ -18,12 +18,16 @@ final readonly class TaskSortSpecification implements QueryBuilderSpecification
     ];
 
     public function __construct(
-        private Sort $sort,
+        private ?Sort $sort,
     ) {
     }
 
     public function apply(QueryBuilder $queryBuilder): void
     {
+        if (null === $this->sort) {
+            return;
+        }
+
         if (TaskSortField::DUE_DATE->value === $this->sort->field) {
             $queryBuilder
                 ->addOrderBy('CASE WHEN t.dueDate IS NULL THEN 1 ELSE 0 END', 'ASC')

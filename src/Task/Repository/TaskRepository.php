@@ -6,6 +6,7 @@ namespace App\Task\Repository;
 
 use App\Auth\Entity\User;
 use App\Shared\Persistence\Doctrine\SpecificationApplier;
+use App\Shared\Query\SortDirection;
 use App\Task\DTO\TaskListQueryDTO;
 use App\Task\Entity\Task;
 use App\Task\Query\Specification\TaskDueRangeSpecification;
@@ -34,6 +35,7 @@ class TaskRepository extends ServiceEntityRepository
     public function findForUserList(User $user, TaskListQueryDTO $query): array
     {
         $search = $query->filter->searchQuery();
+        $sort = $query->sort();
 
         $queryBuilder = $this->createQueryBuilder('t')
             ->where('t.user = :user')
@@ -45,11 +47,13 @@ class TaskRepository extends ServiceEntityRepository
             new TaskSearchSpecification($search),
             new TaskStatusSpecification($query->filter->status),
             new TaskDueRangeSpecification($query->filter->dueFrom(), $query->filter->dueTo()),
-            new TaskSearchRankSpecification($search),
-            new TaskSortSpecification($query->sort()),
+            // The chosen field comes first; relevance then breaks its ties, best match first. Without
+            // a chosen field relevance is the sort itself, in the requested direction.
+            new TaskSortSpecification($sort),
+            new TaskSearchRankSpecification($search, null === $sort ? $query->direction() : SortDirection::DESC),
         ]);
 
-        // The last sort key: tasks that tie on relevance and on the sort field keep one fixed order across pages.
+        // The last sort key: tasks that tie on the sort field and on relevance keep one fixed order across pages.
         $queryBuilder->addOrderBy('t.id', 'DESC');
 
         return $queryBuilder

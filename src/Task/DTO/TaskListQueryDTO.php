@@ -17,8 +17,9 @@ readonly class TaskListQueryDTO implements QueryPayload
         #[Assert\Valid]
         public PageQueryDTO $page = new PageQueryDTO(),
 
+        /** Null orders a search by relevance and anything else by creation time; see sort(). */
         #[Assert\Choice(callback: [TaskSortField::class, 'values'])]
-        public string $sort = TaskSortField::CREATED_AT->value,
+        public ?string $sort = null,
 
         #[Assert\Choice(choices: ['asc', 'desc'])]
         public string $direction = 'desc',
@@ -28,8 +29,21 @@ readonly class TaskListQueryDTO implements QueryPayload
     ) {
     }
 
-    public function sort(): Sort
+    /**
+     * The sort field the client chose, or the default one. Null when tasks are ordered by relevance:
+     * a search without an explicit sort ranks the best matches first, as search engines do by default.
+     */
+    public function sort(): ?Sort
     {
-        return new Sort($this->sort, SortDirection::from($this->direction));
+        if (null === $this->sort && null !== $this->filter->searchQuery()) {
+            return null;
+        }
+
+        return new Sort($this->sort ?? TaskSortField::CREATED_AT->value, $this->direction());
+    }
+
+    public function direction(): SortDirection
+    {
+        return SortDirection::from($this->direction);
     }
 }
