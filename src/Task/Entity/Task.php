@@ -57,16 +57,20 @@ class Task
     private \DateTimeImmutable $updatedAt;
 
     /**
-     * Maintained by PostgreSQL, never written from PHP: it is mapped only so that schema
-     * comparison knows about it and does not offer to drop the full-text search column.
+     * Maintained by PostgreSQL, never written from PHP: it is mapped so that DQL search can use it
+     * and schema comparison does not offer to drop the full-text search column.
      * The expression must stay in sync with the one created in Version20260326230945.
+     *
+     * Not marked as generated on purpose: Doctrine would read the column back after every write
+     * without updating its snapshot, so the task would look changed and the next flush would send
+     * an extra UPDATE (doctrine/orm#12017). The property therefore goes stale after a write, which is
+     * fine: PHP never reads it, and DQL reads the column from the database.
      */
     #[ORM\Column(
         type: 'tsvector',
         nullable: true,
         insertable: false,
         updatable: false,
-        generated: 'ALWAYS',
         columnDefinition: "tsvector GENERATED ALWAYS AS (setweight(to_tsvector('english', coalesce(title, '')), 'A') || setweight(to_tsvector('english', coalesce(description, '')), 'B')) STORED",
     )]
     private ?string $searchVector = null;
