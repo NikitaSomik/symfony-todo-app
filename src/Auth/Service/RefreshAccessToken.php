@@ -36,7 +36,6 @@ final class RefreshAccessToken
             $this->em->remove($refreshToken);
 
             $newRefreshToken = $this->issueRefreshToken->handle($user);
-            $this->em->flush();
 
             return [
                 'jwt' => $this->jwtManager->create($user),

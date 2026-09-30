@@ -23,7 +23,6 @@ final class DeleteTask
         $this->em->wrapInTransaction(function () use ($task, $user): void {
             $this->eventDispatcher->dispatch(TaskDeleted::from(task: $task, actor: $user));
             $this->em->remove($task);
-            $this->em->flush();
         });
     }
 }
