@@ -498,14 +498,14 @@ final class TaskControllerTest extends ApiTestCase
     }
 
     #[Test]
-    public function getWhenTaskBelongsToAnotherUserShouldReturn403(): void
+    public function getWhenTaskBelongsToAnotherUserShouldReturn404(): void
     {
         $otherUser = UserFactory::createOne();
         $task = TaskFactory::createOne(['user' => $otherUser]);
 
         $this->get($this->route('api_task_get', ['id' => $this->taskId($task)]));
 
-        self::assertResponseStatusCodeSame(403);
+        self::assertResponseStatusCodeSame(404);
     }
 
     #[Test]
@@ -726,14 +726,14 @@ final class TaskControllerTest extends ApiTestCase
     }
 
     #[Test]
-    public function updateWhenTaskBelongsToAnotherUserShouldReturn403(): void
+    public function updateWhenTaskBelongsToAnotherUserShouldReturn404(): void
     {
         $otherUser = UserFactory::createOne();
         $task = TaskFactory::createOne(['user' => $otherUser]);
 
         $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), ['title' => 'Hacked']);
 
-        self::assertResponseStatusCodeSame(403);
+        self::assertResponseStatusCodeSame(404);
     }
 
     #[Test]
@@ -767,14 +767,14 @@ final class TaskControllerTest extends ApiTestCase
     }
 
     #[Test]
-    public function deleteWhenTaskBelongsToAnotherUserShouldReturn403(): void
+    public function deleteWhenTaskBelongsToAnotherUserShouldReturn404(): void
     {
         $otherUser = UserFactory::createOne();
         $task = TaskFactory::createOne(['user' => $otherUser]);
 
         $this->delete($this->route('api_task_delete', ['id' => $this->taskId($task)]));
 
-        self::assertResponseStatusCodeSame(403);
+        self::assertResponseStatusCodeSame(404);
     }
 
     #[Test]

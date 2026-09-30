@@ -383,9 +383,6 @@
                     "404": {
                         "description": "Task not found"
                     },
-                    "403": {
-                        "description": "Access denied"
-                    },
                     "401": {
                         "$ref": "#/components/responses/UnauthorizedError"
                     }
@@ -433,9 +430,6 @@
                     "404": {
                         "description": "Task not found"
                     },
-                    "403": {
-                        "description": "Access denied"
-                    },
                     "415": {
                         "description": "Body is not sent as application/json"
                     },
@@ -471,9 +465,6 @@
                     },
                     "404": {
                         "description": "Task not found"
-                    },
-                    "403": {
-                        "description": "Access denied"
                     },
                     "401": {
                         "$ref": "#/components/responses/UnauthorizedError"
@@ -513,9 +504,6 @@
                     },
                     "404": {
                         "description": "Task not found"
-                    },
-                    "403": {
-                        "description": "Access denied"
                     },
                     "401": {
                         "$ref": "#/components/responses/UnauthorizedError"
