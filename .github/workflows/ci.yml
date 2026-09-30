@@ -66,6 +66,14 @@ jobs:
       - name: Warm up cache
         run: php bin/console cache:warmup
 
+      # Checks the arguments of every service definition against the constructor types, so a
+      # wrong service wired by hand fails here, not with a TypeError the first time it is built.
+      # Prod is linted too: no test builds its container.
+      - name: Lint service container
+        run: |
+          php bin/console lint:container
+          php bin/console lint:container --env=prod
+
       - name: Run PHPStan
         run: vendor/bin/phpstan analyse --no-progress
 
