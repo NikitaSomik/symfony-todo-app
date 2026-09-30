@@ -54,7 +54,8 @@ class TaskRepository extends ServiceEntityRepository
         ]);
 
         // The last sort key: tasks that tie on the sort field and on relevance keep one fixed order across pages.
-        $queryBuilder->addOrderBy('t.id', 'DESC');
+        // It follows the requested direction: UUIDv7 grows with creation time, so ascending lists oldest first.
+        $queryBuilder->addOrderBy('t.id', $query->direction()->uppercased());
 
         return $queryBuilder
             ->getQuery()
