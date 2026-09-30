@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Tests\Application\Error;
 
 use App\Fixtures\Auth\UserFactory;
-use App\Fixtures\Task\TaskFactory;
 use App\Tests\ApiTestCase;
 use App\Tests\Support\AuditLogFailureToggle;
 use PHPUnit\Framework\Attributes\Test;
@@ -49,15 +48,6 @@ final class ErrorRequestIdTest extends ApiTestCase
         $this->setCookie('refresh_token', 'invalid-token-value');
 
         $this->assertRequestIdHeader($this->post($this->route('api_auth_refresh')), 401);
-    }
-
-    #[Test]
-    public function forbiddenResourceShouldCarryTheRequestId(): void
-    {
-        $task = TaskFactory::createOne(['user' => UserFactory::createOne()]);
-        $this->actingAs(UserFactory::createOne());
-
-        $this->assertRequestIdHeader($this->get($this->route('api_task_get', ['id' => $task->getId()->toRfc4122()])), 403);
     }
 
     #[Test]

@@ -25,7 +25,7 @@ use App\Task\Enum\TaskSortField;
 use App\Task\Enum\TaskStatus;
 use App\Task\Repository\TaskRepository;
 use App\Task\Resource\TaskResource;
-use App\Task\Security\TaskVoter;
+use App\Task\Security\OwnedTaskValueResolver;
 use App\Task\Service\CreateTask;
 use App\Task\Service\DeleteTask;
 use App\Task\Service\UpdateTask;
@@ -37,9 +37,9 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapQueryString;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
+use Symfony\Component\HttpKernel\Attribute\ValueResolver;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
-use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/api/v1/tasks', name: 'api_task_', format: 'json')]
 #[OA\Tag(name: 'Tasks')]
@@ -109,10 +109,8 @@ final class TaskController extends AbstractController
     #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))]
     #[OA\Response(response: 200, description: 'Task details', content: new JsonApiContent(ref: new Model(type: TaskResponseSchema::class)))]
     #[OA\Response(response: 404, description: 'Task not found')]
-    #[OA\Response(response: 403, description: 'Access denied')]
     #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
-    #[IsGranted(TaskVoter::ACCESS, 'task')]
-    public function get(Task $task): JsonResponse
+    public function get(#[ValueResolver(OwnedTaskValueResolver::class)] Task $task): JsonResponse
     {
         return JsonApiResponse::one(TaskResource::toItem($task));
     }
@@ -122,10 +120,8 @@ final class TaskController extends AbstractController
     #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))]
     #[OA\Response(response: 200, description: 'Task audit log history', content: new JsonApiContent(ref: new Model(type: AuditLogCollectionResponseSchema::class)))]
     #[OA\Response(response: 404, description: 'Task not found')]
-    #[OA\Response(response: 403, description: 'Access denied')]
     #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
-    #[IsGranted(TaskVoter::ACCESS, 'task')]
-    public function getAuditLogs(Task $task): JsonResponse
+    public function getAuditLogs(#[ValueResolver(OwnedTaskValueResolver::class)] Task $task): JsonResponse
     {
         $taskId = $task->getId()->toRfc4122();
 
@@ -148,12 +144,10 @@ final class TaskController extends AbstractController
     #[OA\RequestBody(required: true, content: new OA\JsonContent(ref: new Model(type: UpdateTaskDTO::class)))]
     #[OA\Response(response: 200, description: 'Task updated', content: new JsonApiContent(ref: new Model(type: TaskResponseSchema::class)))]
     #[OA\Response(response: 404, description: 'Task not found')]
-    #[OA\Response(response: 403, description: 'Access denied')]
     #[OA\Response(response: 415, description: 'Body is not sent as application/json')]
     #[OA\Response(ref: '#/components/responses/ValidationError', response: 422)]
     #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
-    #[IsGranted(TaskVoter::ACCESS, 'task')]
-    public function update(#[MapRequestPayload(acceptFormat: 'json')] UpdateTaskDTO $dto, Task $task): JsonResponse
+    public function update(#[MapRequestPayload(acceptFormat: 'json')] UpdateTaskDTO $dto, #[ValueResolver(OwnedTaskValueResolver::class)] Task $task): JsonResponse
     {
         /** @var User $user */
         $user = $this->getUser();
@@ -167,10 +161,8 @@ final class TaskController extends AbstractController
     #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))]
     #[OA\Response(response: 204, description: 'Task deleted')]
     #[OA\Response(response: 404, description: 'Task not found')]
-    #[OA\Response(response: 403, description: 'Access denied')]
     #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
-    #[IsGranted(TaskVoter::ACCESS, 'task')]
-    public function delete(Task $task): Response
+    public function delete(#[ValueResolver(OwnedTaskValueResolver::class)] Task $task): Response
     {
         /** @var User $user */
         $user = $this->getUser();
