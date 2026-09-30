@@ -42,8 +42,6 @@ final class CreateTask
 
             $this->eventDispatcher->dispatch(TaskCreated::from(task: $task, actor: $user));
 
-            $this->em->flush();
-
             return $task;
         });
     }

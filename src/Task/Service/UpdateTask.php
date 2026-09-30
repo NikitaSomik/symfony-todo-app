@@ -51,8 +51,6 @@ final class UpdateTask
                 previousState: $previousState,
             ));
 
-            $this->em->flush();
-
             return $task;
         });
     }
