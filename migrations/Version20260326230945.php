@@ -23,8 +23,8 @@ final class Version20260326230945 extends AbstractMigration
             ALTER TABLE tasks
             ADD COLUMN search_vector tsvector
             GENERATED ALWAYS AS (
-                setweight(to_tsvector('simple', coalesce(title, '')), 'A') ||
-                setweight(to_tsvector('simple', coalesce(description, '')), 'B')
+                setweight(to_tsvector('english', coalesce(title, '')), 'A') ||
+                setweight(to_tsvector('english', coalesce(description, '')), 'B')
             ) STORED
         SQL);
         $this->addSql('CREATE INDEX idx_tasks_search_vector ON tasks USING GIN (search_vector)');

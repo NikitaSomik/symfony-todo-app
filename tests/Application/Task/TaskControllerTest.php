@@ -17,6 +17,7 @@ use App\Tests\ApiTestCase;
 use App\Tests\Support\AuditLogFailureToggle;
 use Doctrine\Persistence\ManagerRegistry;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use Symfony\Component\Uid\Uuid;
 
 final class TaskControllerTest extends ApiTestCase
@@ -258,6 +259,121 @@ final class TaskControllerTest extends ApiTestCase
         self::assertResponseIsSuccessful();
         self::assertCount(2, $data);
         self::assertSame('Review PostgreSQL full-text search', $data[0]['attributes']['title']);
+    }
+
+    #[Test]
+    #[TestWith(['task', 'Review tasks'])]
+    #[TestWith(['review', 'Reviewed the budget'])]
+    #[TestWith(['run', 'Running shoes'])]
+    #[TestWith(['deploy', 'Deployment checklist'])]
+    public function getAllShouldFindOtherFormsOfTheSearchedWord(string $search, string $title): void
+    {
+        TaskFactory::createOne(['user' => $this->user, 'title' => $title]);
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Buy bread']);
+
+        $response = $this->get('/api/v1/tasks?filter[search]='.$search);
+        $data = $this->jsonData($response);
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $data);
+        self::assertSame($title, $data[0]['attributes']['title']);
+    }
+
+    #[Test]
+    public function getAllShouldIgnoreStopWordsInTheSearchTerm(): void
+    {
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Call bank']);
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Call mom']);
+
+        $response = $this->get('/api/v1/tasks?filter[search]=call the bank');
+        $data = $this->jsonData($response);
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $data);
+        self::assertSame('Call bank', $data[0]['attributes']['title']);
+    }
+
+    #[Test]
+    public function getAllWhenNoTaskMatchesTheSearchShouldReturnEmptyArray(): void
+    {
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Buy milk']);
+
+        $response = $this->get('/api/v1/tasks?filter[search]=coffee');
+
+        self::assertResponseIsSuccessful();
+        self::assertSame([], $this->jsonData($response));
+    }
+
+    #[Test]
+    public function getAllShouldNotFindOtherUsersTasks(): void
+    {
+        TaskFactory::createOne(['user' => UserFactory::createOne(), 'title' => 'Buy milk']);
+
+        $response = $this->get('/api/v1/tasks?filter[search]=milk');
+
+        self::assertResponseIsSuccessful();
+        self::assertSame([], $this->jsonData($response));
+    }
+
+    #[Test]
+    public function getAllWhenSearchTermIsBlankShouldNotFilter(): void
+    {
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Buy milk']);
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Read book']);
+
+        $response = $this->get('/api/v1/tasks?filter[search]='.urlencode('   '));
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(2, $this->jsonData($response));
+    }
+
+    #[Test]
+    #[TestWith(['!@#&|:*()', []])]
+    #[TestWith(['"unclosed', []])]
+    #[TestWith(['milk & | ! bread', []])]
+    #[TestWith(['milk & | !', ['Buy milk']])]
+    public function getAllWhenSearchTermHasQuerySyntaxCharactersShouldNotFail(string $search, array $expectedTitles): void
+    {
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Buy milk']);
+
+        $response = $this->get('/api/v1/tasks?filter[search]='.urlencode($search));
+        $titles = array_map(static fn (array $task): string => $task['attributes']['title'], $this->jsonData($response));
+
+        self::assertResponseIsSuccessful();
+        self::assertSame($expectedTitles, $titles);
+    }
+
+    #[Test]
+    #[TestWith(['the'])]
+    #[TestWith(['to do'])]
+    public function getAllWhenSearchTermHasOnlyStopWordsShouldFindNothing(string $search): void
+    {
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Things to do in the morning']);
+
+        $response = $this->get('/api/v1/tasks?filter[search]='.$search);
+        $json = $this->json($response);
+
+        self::assertResponseIsSuccessful();
+        self::assertSame([], $json['data']);
+        self::assertSame(0, $json['meta']['page']['total']);
+    }
+
+    #[Test]
+    #[TestWith(['milk -sell', ['Buy milk']])]
+    #[TestWith(['bread or sell', ['Buy bread', 'Sell milk']])]
+    #[TestWith(['"buy milk"', ['Buy milk']])]
+    public function getAllShouldSupportWebSearchSyntax(string $search, array $expectedTitles): void
+    {
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Buy milk']);
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Buy bread']);
+        TaskFactory::createOne(['user' => $this->user, 'title' => 'Sell milk', 'description' => 'Then buy more']);
+
+        $response = $this->get('/api/v1/tasks?filter[search]='.urlencode($search));
+        $titles = array_map(static fn (array $task): string => $task['attributes']['title'], $this->jsonData($response));
+        sort($titles);
+
+        self::assertResponseIsSuccessful();
+        self::assertSame($expectedTitles, $titles);
     }
 
     #[Test]

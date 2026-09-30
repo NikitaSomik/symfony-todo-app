@@ -29,7 +29,7 @@ class Task
     public const string FIELD_UPDATED_AT = 'updated_at';
 
     /** Dictionary of the generated search_vector column below; queries must use the same one. */
-    public const string SEARCH_CONFIG = 'simple';
+    public const string SEARCH_CONFIG = 'english';
 
     #[ORM\Id]
     #[ORM\Column(type: UuidType::NAME, unique: true)]
@@ -67,7 +67,7 @@ class Task
         insertable: false,
         updatable: false,
         generated: 'ALWAYS',
-        columnDefinition: "tsvector GENERATED ALWAYS AS (setweight(to_tsvector('simple', coalesce(title, '')), 'A') || setweight(to_tsvector('simple', coalesce(description, '')), 'B')) STORED",
+        columnDefinition: "tsvector GENERATED ALWAYS AS (setweight(to_tsvector('english', coalesce(title, '')), 'A') || setweight(to_tsvector('english', coalesce(description, '')), 'B')) STORED",
     )]
     private ?string $searchVector = null;
 
