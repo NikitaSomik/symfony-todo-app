@@ -8,7 +8,6 @@ use App\Auth\Entity\User;
 use App\Task\AuditLog\TaskState;
 use App\Task\Entity\Task;
 use App\Task\Entity\TaskStatusChange;
-use App\Task\Enum\TaskStatus;
 use App\Task\Event\TaskStatusChanged;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Clock\ClockInterface;
@@ -30,7 +29,7 @@ final readonly class RecordTaskStatusChange
 
     public function handle(Task $task, TaskState $previousState, User $actor): void
     {
-        $from = TaskStatus::from($previousState->status);
+        $from = $previousState->status;
         $to = $task->getStatus();
 
         $this->em->persist(new TaskStatusChange($task, $from, $to, $this->clock->now()));
