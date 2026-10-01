@@ -4,10 +4,6 @@ declare(strict_types=1);
 
 namespace App\Task\ValueObject;
 
-/**
- * Why a task was cancelled, in the user's own words. A reason that says nothing is not a reason:
- * the value is trimmed and has to keep a usable length.
- */
 final readonly class CancellationReason
 {
     public const int MIN_LENGTH = 3;

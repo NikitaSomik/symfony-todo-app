@@ -18,7 +18,6 @@ enum TaskStatus: string
         return array_column(self::cases(), 'value');
     }
 
-    /** The task lifecycle. Completed and cancelled are final: nothing leads out of them. */
     public function canTransitionTo(self $to): bool
     {
         return in_array($to, match ($this) {

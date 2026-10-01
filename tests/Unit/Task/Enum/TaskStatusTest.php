@@ -10,9 +10,6 @@ use PHPUnit\Framework\TestCase;
 
 final class TaskStatusTest extends TestCase
 {
-    /**
-     * The whole lifecycle in one place: every pair of statuses that is not listed here must be refused.
-     */
     private const array ALLOWED = [
         ['todo', 'in_progress'],
         ['todo', 'cancelled'],

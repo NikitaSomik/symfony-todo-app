@@ -12,7 +12,6 @@ use App\Task\Event\TaskUpdated;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
-/** Changes what a task says. Its status moves only through the transition services. */
 final class UpdateTaskDetails
 {
     public function __construct(

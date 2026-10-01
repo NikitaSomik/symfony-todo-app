@@ -154,10 +154,6 @@ class Task
         return $this->cancellationReason;
     }
 
-    /**
-     * The only way the status changes: every public transition above goes through the lifecycle
-     * that TaskStatus defines.
-     */
     private function transitionTo(TaskStatus $to): void
     {
         if (!$this->status->canTransitionTo($to)) {

@@ -25,10 +25,6 @@ use Symfony\Component\HttpKernel\Attribute\ValueResolver;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
 
-/**
- * Moves a task through its lifecycle: todo → in_progress → in_review → completed, with cancelled
- * reachable from every status that is not final.
- */
 #[Route('/api/v1/tasks/{id}', name: 'api_task_', requirements: ['id' => Requirement::UUID_V7], methods: ['POST'], format: 'json')]
 #[OA\Tag(name: 'Task lifecycle')]
 #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))]
