@@ -45,6 +45,11 @@ final class TaskFactory extends PersistentObjectFactory
         return $this->with(['status' => TaskStatus::IN_PROGRESS]);
     }
 
+    public function inReview(): static
+    {
+        return $this->with(['status' => TaskStatus::IN_REVIEW]);
+    }
+
     public function cancelled(?string $reason = 'Task cancelled by fixture'): static
     {
         return $this->with([
@@ -60,15 +65,12 @@ final class TaskFactory extends PersistentObjectFactory
             $task = new Task(Uuid::v7());
             $task->setTitle($attributes['title']);
             $task->setDescription($attributes['description']);
-            $task->changeStatus($attributes['status']);
-
-            if (TaskStatus::CANCELLED === $attributes['status'] && null !== $attributes['cancellationReason']) {
-                $task->setCancellationReason($attributes['cancellationReason']);
-            }
-
             $task->setDueDate($attributes['dueDate']);
             $task->setUser($attributes['user']);
-            // Task sets its creation time itself and has no setter; tests need to control it.
+            // A task reaches a status only through its lifecycle and sets its creation time itself;
+            // tests need a task in any of those states without replaying how it got there.
+            set($task, 'status', $attributes['status']);
+            set($task, 'cancellationReason', $attributes['cancellationReason']);
             set($task, 'createdAt', $attributes['createdAt']);
 
             return $task;

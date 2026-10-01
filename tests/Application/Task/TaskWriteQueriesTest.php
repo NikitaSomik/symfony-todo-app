@@ -69,4 +69,16 @@ final class TaskWriteQueriesTest extends ApiTestCase
         self::assertSame(['UPDATE tasks SET title = ?, updated_at = ? WHERE id = ?'], $this->sqlOnTasks());
         $this->assertNoPendingTaskUpdates();
     }
+
+    #[Test]
+    public function transitionShouldUpdateTaskOnce(): void
+    {
+        $task = TaskFactory::createOne(['user' => $this->user]);
+
+        $this->withProfiler()->post($this->route('api_task_start', ['id' => $task->getId()->toRfc4122()]));
+
+        self::assertResponseIsSuccessful();
+        self::assertSame(['UPDATE tasks SET status = ?, updated_at = ? WHERE id = ?'], $this->sqlOnTasks());
+        $this->assertNoPendingTaskUpdates();
+    }
 }

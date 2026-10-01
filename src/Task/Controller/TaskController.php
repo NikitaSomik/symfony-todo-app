@@ -19,7 +19,7 @@ use App\Task\Api\Documentation\TaskCollectionResponseSchema;
 use App\Task\Api\Documentation\TaskResponseSchema;
 use App\Task\DTO\CreateTaskDTO;
 use App\Task\DTO\TaskListQueryDTO;
-use App\Task\DTO\UpdateTaskDTO;
+use App\Task\DTO\UpdateTaskDetailsDTO;
 use App\Task\Entity\Task;
 use App\Task\Enum\TaskSortField;
 use App\Task\Enum\TaskStatus;
@@ -28,7 +28,7 @@ use App\Task\Resource\TaskResource;
 use App\Task\Security\OwnedTaskValueResolver;
 use App\Task\Service\CreateTask;
 use App\Task\Service\DeleteTask;
-use App\Task\Service\UpdateTask;
+use App\Task\Service\UpdateTaskDetails;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -49,7 +49,7 @@ final class TaskController extends AbstractController
         private readonly TaskRepository $taskRepository,
         private readonly AuditLogRepository $auditLogRepository,
         private readonly CreateTask $createTask,
-        private readonly UpdateTask $updateTask,
+        private readonly UpdateTaskDetails $updateTaskDetails,
         private readonly DeleteTask $deleteTask,
         private readonly PaginationLinksBuilder $paginationLinksBuilder,
     ) {
@@ -86,7 +86,7 @@ final class TaskController extends AbstractController
     }
 
     #[Route('', name: 'create', methods: ['POST'])]
-    #[OA\Post(summary: 'Create a task')]
+    #[OA\Post(summary: 'Create a task', description: 'A new task always starts in `todo`.')]
     #[OA\RequestBody(required: true, content: new OA\JsonContent(ref: new Model(type: CreateTaskDTO::class)))]
     #[OA\Response(response: 201, description: 'Task created', headers: [new OA\Header(header: 'Location', description: 'URL of the created task', schema: new OA\Schema(type: 'string'))], content: new JsonApiContent(ref: new Model(type: TaskResponseSchema::class)))]
     #[OA\Response(response: 415, description: 'Body is not sent as application/json')]
@@ -139,19 +139,19 @@ final class TaskController extends AbstractController
     }
 
     #[Route('/{id}', name: 'update', requirements: ['id' => Requirement::UUID_V7], methods: ['PUT'])]
-    #[OA\Put(summary: 'Update a task')]
+    #[OA\Put(summary: 'Update the title, description and due date of a task', description: 'The status is not part of the body: a task moves through its lifecycle with the transition endpoints.')]
     #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))]
-    #[OA\RequestBody(required: true, content: new OA\JsonContent(ref: new Model(type: UpdateTaskDTO::class)))]
+    #[OA\RequestBody(required: true, content: new OA\JsonContent(ref: new Model(type: UpdateTaskDetailsDTO::class)))]
     #[OA\Response(response: 200, description: 'Task updated', content: new JsonApiContent(ref: new Model(type: TaskResponseSchema::class)))]
     #[OA\Response(response: 404, description: 'Task not found')]
     #[OA\Response(response: 415, description: 'Body is not sent as application/json')]
     #[OA\Response(ref: '#/components/responses/ValidationError', response: 422)]
     #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
-    public function update(#[MapRequestPayload(acceptFormat: 'json')] UpdateTaskDTO $dto, #[ValueResolver(OwnedTaskValueResolver::class)] Task $task): JsonResponse
+    public function update(#[MapRequestPayload(acceptFormat: 'json')] UpdateTaskDetailsDTO $dto, #[ValueResolver(OwnedTaskValueResolver::class)] Task $task): JsonResponse
     {
         /** @var User $user */
         $user = $this->getUser();
-        $task = $this->updateTask->handle($task, $dto, $user);
+        $task = $this->updateTaskDetails->handle($task, $dto, $user);
 
         return JsonApiResponse::one(TaskResource::toItem($task));
     }

@@ -586,14 +586,13 @@ final class TaskControllerTest extends ApiTestCase
         $response = $this->post($this->route('api_task_create'), [
             'title' => 'Buy milk',
             'description' => '2 liters',
-            'status' => 'in_progress',
             'due_date' => '2026-04-01',
         ]);
 
         self::assertSame([
             'title' => 'Buy milk',
             'description' => '2 liters',
-            'status' => 'in_progress',
+            'status' => 'todo',
             'due_date' => '2026-04-01',
         ], array_intersect_key($this->jsonAttributes($response), array_flip(['title', 'description', 'status', 'due_date'])));
     }
@@ -607,35 +606,7 @@ final class TaskControllerTest extends ApiTestCase
     }
 
     #[Test]
-    public function createWhenStatusIsInvalidShouldReturn422(): void
-    {
-        $this->post($this->route('api_task_create'), ['title' => 'Test', 'status' => 'invalid']);
-
-        self::assertResponseStatusCodeSame(422);
-    }
-
-    #[Test]
-    public function createWhenCancelledWithoutCancellationReasonShouldReturn422(): void
-    {
-        $this->post($this->route('api_task_create'), ['title' => 'Test', 'status' => 'cancelled']);
-
-        self::assertResponseStatusCodeSame(422);
-    }
-
-    #[Test]
-    public function createWhenCancellationReasonIsProvidedForNonCancelledStatusShouldReturn422(): void
-    {
-        $this->post($this->route('api_task_create'), [
-            'title' => 'Test',
-            'status' => 'todo',
-            'cancellation_reason' => 'No longer needed',
-        ]);
-
-        self::assertResponseStatusCodeSame(422);
-    }
-
-    #[Test]
-    public function createWhenCancelledShouldReturnTaskWithCancellationReason(): void
+    public function createShouldStartInTodoWhateverStatusTheBodyAsksFor(): void
     {
         $response = $this->post($this->route('api_task_create'), [
             'title' => 'Deprecated task',
@@ -643,9 +614,10 @@ final class TaskControllerTest extends ApiTestCase
             'cancellation_reason' => 'No longer needed',
         ]);
 
+        self::assertResponseStatusCodeSame(201);
         self::assertSame([
-            'status' => 'cancelled',
-            'cancellation_reason' => 'No longer needed',
+            'status' => 'todo',
+            'cancellation_reason' => null,
         ], array_intersect_key($this->jsonAttributes($response), array_flip(['status', 'cancellation_reason'])));
     }
 
@@ -735,7 +707,6 @@ final class TaskControllerTest extends ApiTestCase
 
         $response = $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), [
             'title' => 'Updated title',
-            'status' => 'completed',
             'due_date' => '2026-04-03',
         ]);
         $data = $this->jsonData($response);
@@ -744,48 +715,22 @@ final class TaskControllerTest extends ApiTestCase
         self::assertResponseIsSuccessful();
         self::assertSame((string) $task->getId(), $data['id']);
         self::assertSame('Updated title', $attributes['title']);
-        self::assertSame('completed', $attributes['status']);
         self::assertSame('2026-04-03', $attributes['due_date']);
     }
 
     #[Test]
-    public function updateWhenStatusChangesShouldCreateStatusHistoryRow(): void
+    public function updateShouldLeaveTheStatusAloneWhateverStatusTheBodyAsksFor(): void
     {
-        $task = TaskFactory::createOne(['user' => $this->user, 'status' => TaskStatus::TODO]);
+        $task = TaskFactory::new()->inProgress()->create(['user' => $this->user]);
 
-        $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), [
-            'title' => $task->getTitle(),
-            'description' => $task->getDescription(),
-            'status' => TaskStatus::COMPLETED->value,
-            'due_date' => $task->getDueDate()?->format('Y-m-d'),
-        ]);
-
-        self::assertResponseIsSuccessful();
-
-        $statusChanges = $this->statusChangesForTask($task);
-
-        self::assertCount(1, $statusChanges);
-        self::assertSame(TaskStatus::TODO, $statusChanges[0]->getFromStatus());
-        self::assertSame(TaskStatus::COMPLETED, $statusChanges[0]->getToStatus());
-    }
-
-    #[Test]
-    public function updateWhenStatusDoesNotChangeShouldNotCreateStatusHistoryRow(): void
-    {
-        $task = TaskFactory::createOne(['user' => $this->user, 'status' => TaskStatus::TODO]);
-
-        $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), [
+        $response = $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), [
             'title' => 'Renamed task',
-            'description' => $task->getDescription(),
-            'status' => TaskStatus::TODO->value,
-            'due_date' => $task->getDueDate()?->format('Y-m-d'),
+            'status' => TaskStatus::COMPLETED->value,
         ]);
 
         self::assertResponseIsSuccessful();
-
-        $statusChanges = $this->statusChangesForTask($task);
-
-        self::assertCount(0, $statusChanges);
+        self::assertSame('in_progress', $this->jsonAttributes($response)['status']);
+        self::assertSame([], $this->statusChangesForTask($task));
     }
 
     #[Test]
@@ -832,78 +777,6 @@ final class TaskControllerTest extends ApiTestCase
         ]);
 
         self::assertResponseStatusCodeSame(422);
-    }
-
-    #[Test]
-    public function updateWhenCancelledShouldPersistCancellationReason(): void
-    {
-        $task = TaskFactory::createOne(['user' => $this->user]);
-
-        $response = $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), [
-            'title' => 'Updated title',
-            'status' => 'cancelled',
-            'cancellation_reason' => 'Work is no longer required',
-        ]);
-
-        self::assertSame([
-            'status' => 'cancelled',
-            'cancellation_reason' => 'Work is no longer required',
-        ], array_intersect_key($this->jsonAttributes($response), array_flip(['status', 'cancellation_reason'])));
-    }
-
-    #[Test]
-    public function updateWhenMovingAwayFromCancelledShouldClearCancellationReason(): void
-    {
-        $task = TaskFactory::new()->cancelled('Outdated')->create(['user' => $this->user]);
-
-        $response = $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), [
-            'title' => 'Updated title',
-            'status' => 'completed',
-        ]);
-
-        self::assertSame('completed', $this->jsonAttributes($response)['status']);
-        self::assertNull($this->jsonAttributes($response)['cancellation_reason']);
-    }
-
-    #[Test]
-    public function updateWhenMovingAwayFromCancelledShouldCreateStatusHistoryRow(): void
-    {
-        $task = TaskFactory::new()->cancelled('Outdated')->create(['user' => $this->user]);
-
-        $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), [
-            'title' => $task->getTitle(),
-            'description' => $task->getDescription(),
-            'status' => TaskStatus::TODO->value,
-            'due_date' => $task->getDueDate()?->format('Y-m-d'),
-        ]);
-
-        self::assertResponseIsSuccessful();
-
-        $statusChanges = $this->statusChangesForTask($task);
-
-        self::assertCount(1, $statusChanges);
-        self::assertSame(TaskStatus::CANCELLED, $statusChanges[0]->getFromStatus());
-        self::assertSame(TaskStatus::TODO, $statusChanges[0]->getToStatus());
-    }
-
-    #[Test]
-    public function updateWhenOnlyCancellationReasonChangesShouldNotCreateStatusHistoryRow(): void
-    {
-        $task = TaskFactory::new()->cancelled('Outdated')->create(['user' => $this->user]);
-
-        $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), [
-            'title' => $task->getTitle(),
-            'description' => $task->getDescription(),
-            'status' => TaskStatus::CANCELLED->value,
-            'cancellation_reason' => 'No longer relevant',
-            'due_date' => $task->getDueDate()?->format('Y-m-d'),
-        ]);
-
-        self::assertResponseIsSuccessful();
-
-        $statusChanges = $this->statusChangesForTask($task);
-
-        self::assertCount(0, $statusChanges);
     }
 
     #[Test]
@@ -1037,7 +910,6 @@ final class TaskControllerTest extends ApiTestCase
         $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), [
             'title' => 'Buy almond milk',
             'description' => null,
-            'status' => TaskStatus::COMPLETED->value,
             'due_date' => '2026-04-03',
         ]);
 
@@ -1045,7 +917,7 @@ final class TaskControllerTest extends ApiTestCase
 
         $auditLogs = $this->auditLogsForTask($task);
 
-        self::assertCount(3, $auditLogs);
+        self::assertCount(2, $auditLogs);
 
         self::assertSame('updated', $auditLogs[0]->getAction()->value);
         self::assertSame('Updated task title for "Buy almond milk"', $auditLogs[0]->getMessage());
@@ -1054,16 +926,10 @@ final class TaskControllerTest extends ApiTestCase
         self::assertCount(1, $auditLogs[0]->getAttributeChanges()['old']);
 
         self::assertSame('updated', $auditLogs[1]->getAction()->value);
-        self::assertSame('Updated task status for "Buy almond milk"', $auditLogs[1]->getMessage());
-        self::assertSame('todo', $auditLogs[1]->getAttributeChanges()['old']['status']);
-        self::assertSame('completed', $auditLogs[1]->getAttributeChanges()['new']['status']);
+        self::assertSame('Updated task due date for "Buy almond milk"', $auditLogs[1]->getMessage());
+        self::assertSame(null, $auditLogs[1]->getAttributeChanges()['old']['due_date']);
+        self::assertSame('2026-04-03', $auditLogs[1]->getAttributeChanges()['new']['due_date']);
         self::assertCount(1, $auditLogs[1]->getAttributeChanges()['old']);
-
-        self::assertSame('updated', $auditLogs[2]->getAction()->value);
-        self::assertSame('Updated task due date for "Buy almond milk"', $auditLogs[2]->getMessage());
-        self::assertSame(null, $auditLogs[2]->getAttributeChanges()['old']['due_date']);
-        self::assertSame('2026-04-03', $auditLogs[2]->getAttributeChanges()['new']['due_date']);
-        self::assertCount(1, $auditLogs[2]->getAttributeChanges()['old']);
     }
 
     #[Test]
@@ -1075,7 +941,6 @@ final class TaskControllerTest extends ApiTestCase
         $this->put($this->route('api_task_update', ['id' => $taskId]), [
             'title' => 'Buy almond milk',
             'description' => null,
-            'status' => TaskStatus::TODO->value,
             'due_date' => null,
         ]);
 
@@ -1174,7 +1039,6 @@ final class TaskControllerTest extends ApiTestCase
         $response = $this->put($this->route('api_task_update', ['id' => $taskId]), [
             'title' => 'Buy almond milk',
             'description' => null,
-            'status' => TaskStatus::COMPLETED->value,
             'due_date' => '2026-04-03',
         ]);
 

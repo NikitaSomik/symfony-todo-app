@@ -6,7 +6,9 @@ namespace App\Task\Entity;
 
 use App\Auth\Entity\User;
 use App\Task\Enum\TaskStatus;
+use App\Task\Exception\TaskTransitionNotAllowedException;
 use App\Task\Repository\TaskRepository;
+use App\Task\ValueObject\CancellationReason;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UuidType;
@@ -44,7 +46,7 @@ class Task
     #[ORM\Column(length: 20, enumType: TaskStatus::class)]
     private TaskStatus $status = TaskStatus::TODO;
 
-    #[ORM\Column(length: 500, nullable: true)]
+    #[ORM\Column(length: CancellationReason::MAX_LENGTH, nullable: true)]
     private ?string $cancellationReason = null;
 
     #[ORM\Column(type: Types::DATE_IMMUTABLE, nullable: true)]
@@ -126,13 +128,25 @@ class Task
         return $this->status;
     }
 
-    public function changeStatus(TaskStatus $status): void
+    public function start(): void
     {
-        if (TaskStatus::CANCELLED !== $status) {
-            $this->cancellationReason = null;
-        }
+        $this->transitionTo(TaskStatus::IN_PROGRESS);
+    }
 
-        $this->status = $status;
+    public function submitForReview(): void
+    {
+        $this->transitionTo(TaskStatus::IN_REVIEW);
+    }
+
+    public function complete(): void
+    {
+        $this->transitionTo(TaskStatus::COMPLETED);
+    }
+
+    public function cancel(CancellationReason $reason): void
+    {
+        $this->transitionTo(TaskStatus::CANCELLED);
+        $this->cancellationReason = $reason->value;
     }
 
     public function getCancellationReason(): ?string
@@ -140,13 +154,17 @@ class Task
         return $this->cancellationReason;
     }
 
-    public function setCancellationReason(string $reason): void
+    /**
+     * The only way the status changes: every public transition above goes through the lifecycle
+     * that TaskStatus defines.
+     */
+    private function transitionTo(TaskStatus $to): void
     {
-        if (TaskStatus::CANCELLED !== $this->status) {
-            throw new \LogicException('Cancellation reason can only be set when task is cancelled.');
+        if (!$this->status->canTransitionTo($to)) {
+            throw new TaskTransitionNotAllowedException($this->status, $to);
         }
 
-        $this->cancellationReason = $reason;
+        $this->status = $to;
     }
 
     public function getCreatedAt(): \DateTimeImmutable
