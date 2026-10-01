@@ -161,7 +161,7 @@ Phase 5: CQRS (where justified)
 - [ ] Granular rate limits on the remaining sensitive endpoints
 - [ ] A stable machine-readable `code` on every error object (JSON:API `code` member), so clients branch on the code instead of the status or the text
 - [ ] Metrics for authentication failures (failed logins and refreshes), with an alert on a spike — a sign of guessing or leaked tokens
-- [ ] ADRs for the decisions taken: a normalizer over a subscriber, JSON:API over Problem Details, `403` on someone else's resource given UUIDv7 ids, `422` for an invalid query filter
+- [ ] ADRs for the decisions taken: a normalizer over a subscriber, JSON:API over Problem Details, `404` on someone else's task, `422` for an invalid query filter
 
 ---
 
