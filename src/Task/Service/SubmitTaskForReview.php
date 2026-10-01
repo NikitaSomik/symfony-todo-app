@@ -7,13 +7,17 @@ namespace App\Task\Service;
 use App\Auth\Entity\User;
 use App\Task\AuditLog\TaskState;
 use App\Task\Entity\Task;
+use App\Task\Event\TaskStatusChanged;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Clock\ClockInterface;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 final readonly class SubmitTaskForReview
 {
     public function __construct(
         private EntityManagerInterface $em,
-        private RecordTaskStatusChange $recordStatusChange,
+        private ClockInterface $clock,
+        private EventDispatcherInterface $eventDispatcher,
     ) {
     }
 
@@ -22,8 +26,8 @@ final readonly class SubmitTaskForReview
         return $this->em->wrapInTransaction(function () use ($task, $user): Task {
             $previousState = TaskState::fromTask($task);
 
-            $task->submitForReview();
-            $this->recordStatusChange->handle($task, $previousState, $user);
+            $task->submitForReview($this->clock->now());
+            $this->eventDispatcher->dispatch(TaskStatusChanged::from($task, $user, $previousState));
 
             return $task;
         });

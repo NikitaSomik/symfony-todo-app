@@ -32,9 +32,12 @@ cancelled cancelled   cancelled
   that changes.
 - **A refused transition answers `409`**, mapped in `framework.exceptions` and logged at
   `info` ([0007](0007-exception-mapping-and-error-normalizer.md)).
-- **Every transition leaves the same trace.** `RecordTaskStatusChange` adds the
-  `task_status_changes` row and dispatches `TaskStatusChanged`, which the audit log
-  listens to — all in the transaction of the service that called it
+- **The history is part of the transition.** `Task` adds the `task_status_changes` row
+  itself, in the same method that changes the status, so a status cannot change without
+  leaving one. The collection is write-only: it has no getter, and the history is read
+  through its repository.
+- **The service announces it.** After the transition the service dispatches
+  `TaskStatusChanged`, which the audit log listens to — in its own transaction
   ([0012](0012-synchronous-audit-log-one-transaction.md)).
 - **Editing is only editing.** `PUT /tasks/{id}` takes the title, the description and the
   due date (`UpdateTaskDetails`). `POST /tasks` always creates a task in `todo`.
@@ -61,6 +64,9 @@ cancelled cancelled   cancelled
 - **Transition rules in the services.** Each service would check the current status
   itself; the lifecycle would be spread over four classes and could be bypassed by the
   next one.
+- **A shared service that writes the history row after the transition.** The first
+  version of this change. The row then depends on every caller remembering the second
+  step; inside the entity it cannot be forgotten.
 
 ## Consequences
 
@@ -71,6 +77,13 @@ cancelled cancelled   cancelled
   transaction; a refused one changes nothing.
 - The lifecycle is tested without the framework: the table in `TaskStatusTest`, the
   entity in `TaskTest`.
+- The transition methods take the time as an argument, because an entity cannot ask a
+  clock. A transition does not load the history that is already there — a test counts the
+  SQL.
+- The event is still the service's job: a new transition service that forgets to dispatch
+  `TaskStatusChanged` leaves no audit entry. Creating, updating and deleting a task work
+  the same way. Letting the task collect its own events is the step to take together with
+  Messenger (roadmap).
 - Fixtures put a task into a status by reflection, the same way they set its creation
   time. Production code has no such door, but a bulk DQL `UPDATE` would bypass the rules.
 - A cancelled task cannot be reopened and a completed one cannot be cancelled. Changing

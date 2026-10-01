@@ -19,7 +19,7 @@ final class TaskStatusChange
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(targetEntity: Task::class)]
+    #[ORM\ManyToOne(targetEntity: Task::class, inversedBy: 'statusChanges')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private Task $task;
 

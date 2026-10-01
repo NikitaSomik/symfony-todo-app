@@ -24,14 +24,15 @@ final class TaskTest extends TestCase
     public function taskShouldMoveThroughItsLifecycleToCompleted(): void
     {
         $task = new Task(Uuid::v7());
+        $at = new \DateTimeImmutable('2026-04-01 10:00:00');
 
-        $task->start();
+        $task->start($at);
         self::assertSame(TaskStatus::IN_PROGRESS, $task->getStatus());
 
-        $task->submitForReview();
+        $task->submitForReview($at);
         self::assertSame(TaskStatus::IN_REVIEW, $task->getStatus());
 
-        $task->complete();
+        $task->complete($at);
         self::assertSame(TaskStatus::COMPLETED, $task->getStatus());
         self::assertNull($task->getCancellationReason());
     }
@@ -40,8 +41,9 @@ final class TaskTest extends TestCase
     public function cancelShouldKeepTheReason(): void
     {
         $task = new Task(Uuid::v7());
+        $at = new \DateTimeImmutable('2026-04-01 10:00:00');
 
-        $task->cancel(new CancellationReason('No longer needed'));
+        $task->cancel(new CancellationReason('No longer needed'), $at);
 
         self::assertSame(TaskStatus::CANCELLED, $task->getStatus());
         self::assertSame('No longer needed', $task->getCancellationReason());
@@ -51,21 +53,23 @@ final class TaskTest extends TestCase
     public function completeWhenTaskIsNotInReviewShouldBeRefused(): void
     {
         $task = new Task(Uuid::v7());
+        $at = new \DateTimeImmutable('2026-04-01 10:00:00');
 
         $this->expectException(TaskTransitionNotAllowedException::class);
         $this->expectExceptionMessage('A task in status "todo" cannot move to "completed".');
 
-        $task->complete();
+        $task->complete($at);
     }
 
     #[Test]
     public function refusedTransitionShouldLeaveTheTaskUnchanged(): void
     {
         $task = new Task(Uuid::v7());
-        $task->cancel(new CancellationReason('No longer needed'));
+        $at = new \DateTimeImmutable('2026-04-01 10:00:00');
+        $task->cancel(new CancellationReason('No longer needed'), $at);
 
         try {
-            $task->cancel(new CancellationReason('Another reason'));
+            $task->cancel(new CancellationReason('Another reason'), $at);
             self::fail('A cancelled task is final.');
         } catch (TaskTransitionNotAllowedException) {
         }

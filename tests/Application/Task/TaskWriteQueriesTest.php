@@ -79,6 +79,11 @@ final class TaskWriteQueriesTest extends ApiTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSame(['UPDATE tasks SET status = ?, updated_at = ? WHERE id = ?'], $this->sqlOnTasks());
+        // The task adds the new row to its history without loading the rows that are already there.
+        self::assertSame(
+            ['INSERT INTO task_status_changes'],
+            array_values(array_unique(preg_filter('/^(\w+(?: INTO)?) .*\btask_status_changes\b.*$/s', '$1 task_status_changes', $this->executedSql()))),
+        );
         $this->assertNoPendingTaskUpdates();
     }
 }
