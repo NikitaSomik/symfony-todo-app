@@ -182,7 +182,7 @@ Phase 5: CQRS (where justified)
 
 > Real rules enforced in the Service layer — not just database operations.
 
-- [ ] **State Machine** — allowed transitions only:
+- [x] **State Machine** — allowed transitions only ([ADR 0015](adr/0015-task-lifecycle-as-explicit-transitions.md)):
   ```
   TODO → IN_PROGRESS → IN_REVIEW → COMPLETED
    ↓         ↓              ↓

@@ -6,6 +6,7 @@ namespace App\Tests\Support;
 
 use App\Task\Event\TaskCreated;
 use App\Task\Event\TaskDeleted;
+use App\Task\Event\TaskStatusChanged;
 use App\Task\Event\TaskUpdated;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -22,6 +23,7 @@ final readonly class FailAuditLogEventSubscriber implements EventSubscriberInter
             TaskCreated::class => 'onAuditLogEvent',
             TaskUpdated::class => 'onAuditLogEvent',
             TaskDeleted::class => 'onAuditLogEvent',
+            TaskStatusChanged::class => 'onAuditLogEvent',
         ];
     }
 

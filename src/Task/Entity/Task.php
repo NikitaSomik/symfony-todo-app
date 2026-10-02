@@ -6,7 +6,11 @@ namespace App\Task\Entity;
 
 use App\Auth\Entity\User;
 use App\Task\Enum\TaskStatus;
+use App\Task\Exception\TaskTransitionNotAllowedException;
 use App\Task\Repository\TaskRepository;
+use App\Task\ValueObject\CancellationReason;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UuidType;
@@ -44,7 +48,7 @@ class Task
     #[ORM\Column(length: 20, enumType: TaskStatus::class)]
     private TaskStatus $status = TaskStatus::TODO;
 
-    #[ORM\Column(length: 500, nullable: true)]
+    #[ORM\Column(length: CancellationReason::MAX_LENGTH, nullable: true)]
     private ?string $cancellationReason = null;
 
     #[ORM\Column(type: Types::DATE_IMMUTABLE, nullable: true)]
@@ -79,9 +83,19 @@ class Task
     #[ORM\JoinColumn(nullable: false)]
     private User $user;
 
+    /**
+     * Write-only on purpose: a transition adds its row here and nothing reads the collection, so
+     * the history of a task is never loaded with it. Reading goes through the repository.
+     *
+     * @var Collection<int, TaskStatusChange>
+     */
+    #[ORM\OneToMany(targetEntity: TaskStatusChange::class, mappedBy: 'task', cascade: ['persist'], fetch: 'EXTRA_LAZY')]
+    private Collection $statusChanges;
+
     public function __construct(Uuid $id)
     {
         $this->id = $id;
+        $this->statusChanges = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable();
         $this->updatedAt = new \DateTimeImmutable();
     }
@@ -126,13 +140,25 @@ class Task
         return $this->status;
     }
 
-    public function changeStatus(TaskStatus $status): void
+    public function start(\DateTimeImmutable $at): void
     {
-        if (TaskStatus::CANCELLED !== $status) {
-            $this->cancellationReason = null;
-        }
+        $this->transitionTo(TaskStatus::IN_PROGRESS, $at);
+    }
 
-        $this->status = $status;
+    public function submitForReview(\DateTimeImmutable $at): void
+    {
+        $this->transitionTo(TaskStatus::IN_REVIEW, $at);
+    }
+
+    public function complete(\DateTimeImmutable $at): void
+    {
+        $this->transitionTo(TaskStatus::COMPLETED, $at);
+    }
+
+    public function cancel(CancellationReason $reason, \DateTimeImmutable $at): void
+    {
+        $this->transitionTo(TaskStatus::CANCELLED, $at);
+        $this->cancellationReason = $reason->value;
     }
 
     public function getCancellationReason(): ?string
@@ -140,13 +166,14 @@ class Task
         return $this->cancellationReason;
     }
 
-    public function setCancellationReason(string $reason): void
+    private function transitionTo(TaskStatus $to, \DateTimeImmutable $at): void
     {
-        if (TaskStatus::CANCELLED !== $this->status) {
-            throw new \LogicException('Cancellation reason can only be set when task is cancelled.');
+        if (!$this->status->canTransitionTo($to)) {
+            throw new TaskTransitionNotAllowedException($this->status, $to);
         }
 
-        $this->cancellationReason = $reason;
+        $this->statusChanges->add(new TaskStatusChange($this, $this->status, $to, $at));
+        $this->status = $to;
     }
 
     public function getCreatedAt(): \DateTimeImmutable

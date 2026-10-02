@@ -249,7 +249,7 @@
                                     "nullable": true
                                 },
                                 "search": {
-                                    "description": "Full-text search across task title and description. When provided, results are ranked by relevance.",
+                                    "description": "Full-text search across task title and description. Without `sort`, results are ranked by relevance.",
                                     "type": "string",
                                     "example": "milk",
                                     "nullable": true,
@@ -262,10 +262,10 @@
                     {
                         "name": "sort",
                         "in": "query",
+                        "description": "Defaults to relevance when `filter[search]` is given, otherwise to `created_at`. With a search, tasks that tie on the chosen field are ranked by relevance.",
                         "required": false,
                         "schema": {
                             "type": "string",
-                            "default": "created_at",
                             "enum": [
                                 "created_at",
                                 "status",
@@ -276,6 +276,7 @@
                     {
                         "name": "direction",
                         "in": "query",
+                        "description": "Applies to the chosen sort, or to relevance when a search has no `sort`.",
                         "required": false,
                         "schema": {
                             "type": "string",
@@ -308,6 +309,7 @@
                     "Tasks"
                 ],
                 "summary": "Create a task",
+                "description": "A new task always starts in `todo`.",
                 "operationId": "post_api_task_create",
                 "requestBody": {
                     "required": true,
@@ -392,7 +394,8 @@
                 "tags": [
                     "Tasks"
                 ],
-                "summary": "Update a task",
+                "summary": "Update the title, description and due date of a task",
+                "description": "The status is not part of the body: a task moves through its lifecycle with the transition endpoints.",
                 "operationId": "put_api_task_update",
                 "parameters": [
                     {
@@ -411,7 +414,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/UpdateTaskDTO"
+                                "$ref": "#/components/schemas/UpdateTaskDetailsDTO"
                             }
                         }
                     }
@@ -510,6 +513,194 @@
                     }
                 }
             }
+        },
+        "/api/v1/tasks/{id}/start": {
+            "post": {
+                "tags": [
+                    "Task lifecycle"
+                ],
+                "summary": "Start a task",
+                "description": "`todo` \u2192 `in_progress`",
+                "operationId": "post_api_task_start",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The task in its new status",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TaskResponseSchema"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Task not found"
+                    },
+                    "409": {
+                        "description": "The task cannot make this transition from its current status"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    }
+                }
+            }
+        },
+        "/api/v1/tasks/{id}/submit-for-review": {
+            "post": {
+                "tags": [
+                    "Task lifecycle"
+                ],
+                "summary": "Submit a task for review",
+                "description": "`in_progress` \u2192 `in_review`",
+                "operationId": "post_api_task_submit_for_review",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The task in its new status",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TaskResponseSchema"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Task not found"
+                    },
+                    "409": {
+                        "description": "The task cannot make this transition from its current status"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    }
+                }
+            }
+        },
+        "/api/v1/tasks/{id}/complete": {
+            "post": {
+                "tags": [
+                    "Task lifecycle"
+                ],
+                "summary": "Complete a task",
+                "description": "`in_review` \u2192 `completed`. A completed task is final.",
+                "operationId": "post_api_task_complete",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The task in its new status",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TaskResponseSchema"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Task not found"
+                    },
+                    "409": {
+                        "description": "The task cannot make this transition from its current status"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    }
+                }
+            }
+        },
+        "/api/v1/tasks/{id}/cancel": {
+            "post": {
+                "tags": [
+                    "Task lifecycle"
+                ],
+                "summary": "Cancel a task",
+                "description": "`todo`, `in_progress` or `in_review` \u2192 `cancelled`. A cancelled task is final.",
+                "operationId": "post_api_task_cancel",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CancelTaskDTO"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "415": {
+                        "description": "Body is not sent as application/json"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "200": {
+                        "description": "The task in its new status",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TaskResponseSchema"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Task not found"
+                    },
+                    "409": {
+                        "description": "The task cannot make this transition from its current status"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -561,6 +752,7 @@
                         "enum": [
                             "todo",
                             "in_progress",
+                            "in_review",
                             "completed",
                             "cancelled"
                         ]
@@ -590,8 +782,10 @@
                         "$ref": "#/components/schemas/PageQueryDTO"
                     },
                     "sort": {
+                        "title": "Null: a search is ordered by relevance, a plain list by creation time.",
                         "type": "string",
-                        "default": "created_at",
+                        "nullable": true,
+                        "default": null,
                         "enum": [
                             "created_at",
                             "status",
@@ -612,15 +806,6 @@
                 },
                 "type": "object"
             },
-            "TaskStatus": {
-                "type": "string",
-                "enum": [
-                    "todo",
-                    "in_progress",
-                    "completed",
-                    "cancelled"
-                ]
-            },
             "CreateTaskDTO": {
                 "required": [
                     "title"
@@ -639,17 +824,6 @@
                         "maxLength": 2000,
                         "minLength": 3
                     },
-                    "status": {
-                        "$ref": "#/components/schemas/TaskStatus"
-                    },
-                    "cancellation_reason": {
-                        "type": "string",
-                        "example": "Task is no longer relevant",
-                        "nullable": true,
-                        "default": null,
-                        "maxLength": 500,
-                        "minLength": 3
-                    },
                     "due_date": {
                         "type": "string",
                         "format": "date",
@@ -660,7 +834,7 @@
                 },
                 "type": "object"
             },
-            "UpdateTaskDTO": {
+            "UpdateTaskDetailsDTO": {
                 "required": [
                     "title"
                 ],
@@ -678,23 +852,26 @@
                         "maxLength": 2000,
                         "minLength": 3
                     },
-                    "status": {
-                        "$ref": "#/components/schemas/TaskStatus"
-                    },
-                    "cancellation_reason": {
-                        "type": "string",
-                        "example": "Task is no longer needed",
-                        "nullable": true,
-                        "default": null,
-                        "maxLength": 500,
-                        "minLength": 3
-                    },
                     "due_date": {
                         "type": "string",
                         "format": "date",
                         "example": "2026-04-01",
                         "nullable": true,
                         "default": null
+                    }
+                },
+                "type": "object"
+            },
+            "CancelTaskDTO": {
+                "required": [
+                    "reason"
+                ],
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "example": "Task is no longer relevant",
+                        "maxLength": 500,
+                        "minLength": 3
                     }
                 },
                 "type": "object"
@@ -757,6 +934,16 @@
                     }
                 },
                 "type": "object"
+            },
+            "TaskStatus": {
+                "type": "string",
+                "enum": [
+                    "todo",
+                    "in_progress",
+                    "in_review",
+                    "completed",
+                    "cancelled"
+                ]
             },
             "PaginationLinksSchema": {
                 "required": [
@@ -1180,6 +1367,9 @@
         },
         {
             "name": "Tasks"
+        },
+        {
+            "name": "Task lifecycle"
         }
     ]
 }

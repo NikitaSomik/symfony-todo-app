@@ -14,7 +14,7 @@ Records 0001–0009 were written retroactively, in September 2026, from the code
 history and working notes. Their "Alternatives considered" sections list only the options
 that were actually weighed — as the history, the notes or the author's own account show.
 
-Records 0010–0013 were written the same way, in October 2026.
+Records 0010–0014 were written the same way, in October 2026.
 
 Dates come from git history, and every record links the pull request that implemented it.
 New records follow [the template](template.md).
@@ -41,3 +41,5 @@ Statuses:
 | [0011](0011-foreign-task-answers-404.md) | Answer someone else's task exactly like a missing one: `404` | accepted | 2026-09-30 |
 | [0012](0012-synchronous-audit-log-one-transaction.md) | Write the audit log synchronously, in the same transaction as the change — one flush per use case | accepted | 2026-04-07 |
 | [0013](0013-task-search-postgresql-full-text.md) | Search tasks with PostgreSQL full-text search over a stored, generated `tsvector` | accepted | 2026-03-27 |
+| [0014](0014-task-status-changed-as-part-of-an-update.md) | Change the task status as part of an update, with its invariant kept in the entity | superseded by [0015](0015-task-lifecycle-as-explicit-transitions.md) | 2026-04-02 |
+| [0015](0015-task-lifecycle-as-explicit-transitions.md) | Move a task through its lifecycle with explicit transitions, guarded by the entity | accepted | 2026-10-01 |

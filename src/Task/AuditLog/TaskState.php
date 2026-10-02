@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace App\Task\AuditLog;
 
 use App\Task\Entity\Task;
+use App\Task\Enum\TaskStatus;
 
 final readonly class TaskState
 {
     public function __construct(
         public string $title,
         public ?string $description,
-        public string $status,
+        public TaskStatus $status,
         public ?string $cancellationReason,
         public ?string $dueDate,
     ) {
@@ -22,7 +23,7 @@ final readonly class TaskState
         return new self(
             title: $task->getTitle(),
             description: $task->getDescription(),
-            status: $task->getStatus()->value,
+            status: $task->getStatus(),
             cancellationReason: $task->getCancellationReason(),
             dueDate: $task->getDueDate()?->format('Y-m-d'),
         );
@@ -36,7 +37,7 @@ final readonly class TaskState
         return [
             Task::FIELD_TITLE => $this->title,
             Task::FIELD_DESCRIPTION => $this->description,
-            Task::FIELD_STATUS => $this->status,
+            Task::FIELD_STATUS => $this->status->value,
             Task::FIELD_CANCELLATION_REASON => $this->cancellationReason,
             Task::FIELD_DUE_DATE => $this->dueDate,
         ];

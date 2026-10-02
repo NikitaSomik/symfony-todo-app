@@ -15,7 +15,7 @@ use Symfony\Component\Validator\Constraints as Assert;
         new OA\Property(property: 'due_date', type: 'string', format: 'date', example: '2026-04-01', nullable: true),
     ]
 )]
-readonly class CreateTaskDTO
+readonly class UpdateTaskDetailsDTO
 {
     public function __construct(
         #[Assert\NotBlank]
