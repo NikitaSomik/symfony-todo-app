@@ -48,14 +48,26 @@ cancelled cancelled   cancelled
 
 ## Alternatives considered
 
-- **Symfony Workflow (`state_machine`).** The framework's own tool for this, and it reads
-  the status from a backed enum out of the box. It lost on what it asks of the entity:
-  `MethodMarkingStore` writes the status through a public `setStatus()` or a public
-  property, so the task could no longer protect its own status, and the data of a
-  transition — the cancellation reason — travels in an untyped `$context` array. With
-  one service per transition already there, the component would replace a single
-  comparison in each of them. It wins where a model cannot guard itself, or where guards
-  come from several modules.
+- **Symfony Workflow (`state_machine`).** The framework's own tool for this. It was built
+  end to end on the branch `feature/task-lifecycle-workflow`, kept for reference and never
+  merged: the same transitions, the same endpoints, an identical OpenAPI document. The
+  component fits without friction — the enum in the configuration, the workflow declared
+  inside the module, the service autowired by name — and the lifecycle code is the same
+  size (347 lines against 342). It lost on what it asks of the entity:
+  - `MethodMarkingStore` writes the status through a public `setStatus()`, so the task no
+    longer protects itself. A test on the branch puts a new task straight into
+    `completed`, and cancels one without a reason.
+  - The data of a transition — the time and the cancellation reason — travels in an
+    untyped `$context` array with optional keys.
+  - `NotEnabledTransitionException` is not written for clients, so a refused transition
+    answers a bare `Conflict` instead of naming the two statuses
+    ([0007](0007-exception-mapping-and-error-normalizer.md)); bringing the message back
+    takes a wrapper in every service.
+  - The rules can no longer be tested without the container.
+
+  What it gave in return: `workflow:dump` draws the lifecycle, and guard events are there
+  for rules that other modules contribute. It wins where a model cannot guard itself, or
+  where such guards exist.
 - **One `ChangeTaskStatus` operation that takes the target status.** One class instead of
   four, but the reason becomes an optional argument that only one target needs, and the
   operations stop being named after what the user does.
