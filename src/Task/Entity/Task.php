@@ -6,7 +6,6 @@ namespace App\Task\Entity;
 
 use App\Auth\Entity\User;
 use App\Task\Enum\TaskStatus;
-use App\Task\Exception\TaskTransitionNotAllowedException;
 use App\Task\Repository\TaskRepository;
 use App\Task\ValueObject\CancellationReason;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -140,40 +139,25 @@ class Task
         return $this->status;
     }
 
-    public function start(\DateTimeImmutable $at): void
+    /**
+     * Called by the workflow's marking store, which needs a public setter. The time and the
+     * cancellation reason arrive in the transition context.
+     *
+     * @param array{at?: \DateTimeImmutable, reason?: CancellationReason} $context
+     */
+    public function setStatus(TaskStatus $status, array $context = []): void
     {
-        $this->transitionTo(TaskStatus::IN_PROGRESS, $at);
-    }
+        $this->statusChanges->add(new TaskStatusChange($this, $this->status, $status, $context['at'] ?? new \DateTimeImmutable()));
+        $this->status = $status;
 
-    public function submitForReview(\DateTimeImmutable $at): void
-    {
-        $this->transitionTo(TaskStatus::IN_REVIEW, $at);
-    }
-
-    public function complete(\DateTimeImmutable $at): void
-    {
-        $this->transitionTo(TaskStatus::COMPLETED, $at);
-    }
-
-    public function cancel(CancellationReason $reason, \DateTimeImmutable $at): void
-    {
-        $this->transitionTo(TaskStatus::CANCELLED, $at);
-        $this->cancellationReason = $reason->value;
+        if (TaskStatus::CANCELLED === $status) {
+            $this->cancellationReason = ($context['reason'] ?? null)?->value;
+        }
     }
 
     public function getCancellationReason(): ?string
     {
         return $this->cancellationReason;
-    }
-
-    private function transitionTo(TaskStatus $to, \DateTimeImmutable $at): void
-    {
-        if (!$this->status->canTransitionTo($to)) {
-            throw new TaskTransitionNotAllowedException($this->status, $to);
-        }
-
-        $this->statusChanges->add(new TaskStatusChange($this, $this->status, $to, $at));
-        $this->status = $to;
     }
 
     public function getCreatedAt(): \DateTimeImmutable

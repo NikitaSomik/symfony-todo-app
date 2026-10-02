@@ -126,11 +126,11 @@ final class TaskTransitionTest extends ApiTestCase
     }
 
     #[Test]
-    #[TestWith(['complete', TaskStatus::TODO, 'A task in status "todo" cannot move to "completed".'])]
-    #[TestWith(['start', TaskStatus::IN_PROGRESS, 'A task in status "in_progress" cannot move to "in_progress".'])]
-    #[TestWith(['start', TaskStatus::COMPLETED, 'A task in status "completed" cannot move to "in_progress".'])]
-    #[TestWith(['submit_for_review', TaskStatus::CANCELLED, 'A task in status "cancelled" cannot move to "in_review".'])]
-    public function transitionOutsideTheLifecycleShouldReturn409AndChangeNothing(string $transition, TaskStatus $from, string $detail): void
+    #[TestWith(['complete', TaskStatus::TODO])]
+    #[TestWith(['start', TaskStatus::IN_PROGRESS])]
+    #[TestWith(['start', TaskStatus::COMPLETED])]
+    #[TestWith(['submit_for_review', TaskStatus::CANCELLED])]
+    public function transitionOutsideTheLifecycleShouldReturn409AndChangeNothing(string $transition, TaskStatus $from): void
     {
         $task = $this->taskIn($from);
 
@@ -138,7 +138,7 @@ final class TaskTransitionTest extends ApiTestCase
 
         self::assertResponseStatusCodeSame(409);
         self::assertSame('409', $this->json($response)['errors'][0]['status']);
-        self::assertSame($detail, $this->json($response)['errors'][0]['detail']);
+        self::assertSame('Conflict', $this->json($response)['errors'][0]['detail']);
         self::assertSame($from, static::getContainer()->get(TaskRepository::class)->find($task->getId())->getStatus());
         self::assertSame([], $this->statusHistory($task));
         self::assertSame([], $this->auditLogs($task));

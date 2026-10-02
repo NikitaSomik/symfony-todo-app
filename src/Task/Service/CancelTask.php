@@ -12,6 +12,8 @@ use App\Task\Event\TaskStatusChanged;
 use App\Task\ValueObject\CancellationReason;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Clock\ClockInterface;
+use Symfony\Component\DependencyInjection\Attribute\Target;
+use Symfony\Component\Workflow\WorkflowInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 final readonly class CancelTask
@@ -20,6 +22,8 @@ final readonly class CancelTask
         private EntityManagerInterface $em,
         private ClockInterface $clock,
         private EventDispatcherInterface $eventDispatcher,
+        #[Target('task_lifecycle')]
+        private WorkflowInterface $taskLifecycle,
     ) {
     }
 
@@ -28,7 +32,7 @@ final readonly class CancelTask
         return $this->em->wrapInTransaction(function () use ($task, $dto, $user): Task {
             $previousState = TaskState::fromTask($task);
 
-            $task->cancel(new CancellationReason($dto->reason), $this->clock->now());
+            $this->taskLifecycle->apply($task, 'cancel', ['reason' => new CancellationReason($dto->reason), 'at' => $this->clock->now()]);
             $this->eventDispatcher->dispatch(TaskStatusChanged::from($task, $user, $previousState));
 
             return $task;

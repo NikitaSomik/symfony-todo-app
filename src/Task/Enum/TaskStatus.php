@@ -17,14 +17,4 @@ enum TaskStatus: string
     {
         return array_column(self::cases(), 'value');
     }
-
-    public function canTransitionTo(self $to): bool
-    {
-        return in_array($to, match ($this) {
-            self::TODO => [self::IN_PROGRESS, self::CANCELLED],
-            self::IN_PROGRESS => [self::IN_REVIEW, self::CANCELLED],
-            self::IN_REVIEW => [self::COMPLETED, self::CANCELLED],
-            self::COMPLETED, self::CANCELLED => [],
-        }, true);
-    }
 }

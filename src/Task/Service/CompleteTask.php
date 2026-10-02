@@ -10,6 +10,8 @@ use App\Task\Entity\Task;
 use App\Task\Event\TaskStatusChanged;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Clock\ClockInterface;
+use Symfony\Component\DependencyInjection\Attribute\Target;
+use Symfony\Component\Workflow\WorkflowInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 final readonly class CompleteTask
@@ -18,6 +20,8 @@ final readonly class CompleteTask
         private EntityManagerInterface $em,
         private ClockInterface $clock,
         private EventDispatcherInterface $eventDispatcher,
+        #[Target('task_lifecycle')]
+        private WorkflowInterface $taskLifecycle,
     ) {
     }
 
@@ -26,7 +30,7 @@ final readonly class CompleteTask
         return $this->em->wrapInTransaction(function () use ($task, $user): Task {
             $previousState = TaskState::fromTask($task);
 
-            $task->complete($this->clock->now());
+            $this->taskLifecycle->apply($task, 'complete', ['at' => $this->clock->now()]);
             $this->eventDispatcher->dispatch(TaskStatusChanged::from($task, $user, $previousState));
 
             return $task;
