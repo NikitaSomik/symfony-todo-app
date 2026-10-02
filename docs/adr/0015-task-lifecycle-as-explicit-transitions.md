@@ -37,7 +37,8 @@ cancelled cancelled   cancelled
   leaving one. The collection is write-only: it has no getter, and the history is read
   through its repository.
 - **The service announces it.** After the transition the service dispatches
-  `TaskStatusChanged`, which the audit log listens to — in its own transaction
+  `TaskStatusChanged`, which the audit log listens to. The status, the history row and
+  the audit entries are written by one flush in the service's transaction
   ([0012](0012-synchronous-audit-log-one-transaction.md)).
 - **Editing is only editing.** `PUT /tasks/{id}` takes the title, the description and the
   due date (`UpdateTaskDetails`). `POST /tasks` always creates a task in `todo`.
