@@ -6,6 +6,7 @@ namespace App\Task;
 
 use App\Task\Entity\Task;
 use App\Task\Enum\TaskStatus;
+use App\Task\Enum\TaskTransition;
 use App\Task\Identity\TaskIdGenerator;
 use App\Task\Identity\UuidV7TaskIdGenerator;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -35,10 +36,10 @@ return static function (ContainerConfigurator $di): void {
                 'initial_marking' => TaskStatus::TODO,
                 'places' => TaskStatus::class.'::*',
                 'transitions' => [
-                    'start' => ['from' => TaskStatus::TODO, 'to' => TaskStatus::IN_PROGRESS],
-                    'submit_for_review' => ['from' => TaskStatus::IN_PROGRESS, 'to' => TaskStatus::IN_REVIEW],
-                    'complete' => ['from' => TaskStatus::IN_REVIEW, 'to' => TaskStatus::COMPLETED],
-                    'cancel' => [
+                    TaskTransition::START->value => ['from' => TaskStatus::TODO, 'to' => TaskStatus::IN_PROGRESS],
+                    TaskTransition::SUBMIT_FOR_REVIEW->value => ['from' => TaskStatus::IN_PROGRESS, 'to' => TaskStatus::IN_REVIEW],
+                    TaskTransition::COMPLETE->value => ['from' => TaskStatus::IN_REVIEW, 'to' => TaskStatus::COMPLETED],
+                    TaskTransition::CANCEL->value => [
                         'from' => [TaskStatus::TODO, TaskStatus::IN_PROGRESS, TaskStatus::IN_REVIEW],
                         'to' => TaskStatus::CANCELLED,
                     ],

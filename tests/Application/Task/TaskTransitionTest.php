@@ -16,6 +16,7 @@ use App\Task\Enum\TaskStatus;
 use App\Task\Repository\TaskRepository;
 use App\Tests\ApiTestCase;
 use App\Tests\Support\AuditLogFailureToggle;
+use App\Tests\Support\WipLimitGuard;
 use Doctrine\Persistence\ManagerRegistry;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
@@ -126,11 +127,11 @@ final class TaskTransitionTest extends ApiTestCase
     }
 
     #[Test]
-    #[TestWith(['complete', TaskStatus::TODO])]
-    #[TestWith(['start', TaskStatus::IN_PROGRESS])]
-    #[TestWith(['start', TaskStatus::COMPLETED])]
-    #[TestWith(['submit_for_review', TaskStatus::CANCELLED])]
-    public function transitionOutsideTheLifecycleShouldReturn409AndChangeNothing(string $transition, TaskStatus $from): void
+    #[TestWith(['complete', TaskStatus::TODO, 'A task in status "todo" cannot move to "completed".'])]
+    #[TestWith(['start', TaskStatus::IN_PROGRESS, 'A task in status "in_progress" cannot move to "in_progress".'])]
+    #[TestWith(['start', TaskStatus::COMPLETED, 'A task in status "completed" cannot move to "in_progress".'])]
+    #[TestWith(['submit_for_review', TaskStatus::CANCELLED, 'A task in status "cancelled" cannot move to "in_review".'])]
+    public function transitionOutsideTheLifecycleShouldReturn409AndChangeNothing(string $transition, TaskStatus $from, string $detail): void
     {
         $task = $this->taskIn($from);
 
@@ -138,7 +139,7 @@ final class TaskTransitionTest extends ApiTestCase
 
         self::assertResponseStatusCodeSame(409);
         self::assertSame('409', $this->json($response)['errors'][0]['status']);
-        self::assertSame('Conflict', $this->json($response)['errors'][0]['detail']);
+        self::assertSame($detail, $this->json($response)['errors'][0]['detail']);
         self::assertSame($from, static::getContainer()->get(TaskRepository::class)->find($task->getId())->getStatus());
         self::assertSame([], $this->statusHistory($task));
         self::assertSame([], $this->auditLogs($task));
@@ -195,6 +196,31 @@ final class TaskTransitionTest extends ApiTestCase
         $this->transition($transition, $task);
 
         self::assertResponseStatusCodeSame(404);
+    }
+
+    #[Test]
+    public function guardFromOutsideTheLifecycleShouldRefuseTheTransitionInItsOwnWords(): void
+    {
+        $this->taskIn(TaskStatus::IN_PROGRESS);
+        $task = $this->taskIn(TaskStatus::TODO);
+        static::getContainer()->get(WipLimitGuard::class)->limit = 1;
+
+        $response = $this->transition('start', $task);
+
+        self::assertResponseStatusCodeSame(409);
+        self::assertSame('No more than 1 tasks can be in progress at once.', $this->json($response)['errors'][0]['detail']);
+        self::assertSame([], $this->statusHistory($task));
+    }
+
+    #[Test]
+    public function guardShouldLetTheTransitionThroughBelowTheLimit(): void
+    {
+        $task = $this->taskIn(TaskStatus::TODO);
+        static::getContainer()->get(WipLimitGuard::class)->limit = 1;
+
+        $this->transition('start', $task);
+
+        self::assertResponseIsSuccessful();
     }
 
     #[Test]
