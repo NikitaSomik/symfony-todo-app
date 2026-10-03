@@ -20,6 +20,7 @@ final class TaskAuditLog
         Task::FIELD_DESCRIPTION => 'description',
         Task::FIELD_STATUS => 'status',
         Task::FIELD_CANCELLATION_REASON => 'cancellation reason',
+        Task::FIELD_BLOCK_REASON => 'block reason',
         Task::FIELD_DUE_DATE => 'due date',
     ];
 

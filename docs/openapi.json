@@ -643,13 +643,115 @@
                 }
             }
         },
+        "/api/v1/tasks/{id}/block": {
+            "post": {
+                "tags": [
+                    "Task lifecycle"
+                ],
+                "summary": "Block a task",
+                "description": "`in_progress` \u2192 `blocked`. The reason stays with the task until it is unblocked.",
+                "operationId": "post_api_task_block",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BlockTaskDTO"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "415": {
+                        "description": "Body is not sent as application/json"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "200": {
+                        "description": "The task in its new status",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TaskResponseSchema"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Task not found"
+                    },
+                    "409": {
+                        "description": "The task cannot make this transition from its current status"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    }
+                }
+            }
+        },
+        "/api/v1/tasks/{id}/unblock": {
+            "post": {
+                "tags": [
+                    "Task lifecycle"
+                ],
+                "summary": "Unblock a task",
+                "description": "`blocked` \u2192 `in_progress`",
+                "operationId": "post_api_task_unblock",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The task in its new status",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TaskResponseSchema"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Task not found"
+                    },
+                    "409": {
+                        "description": "The task cannot make this transition from its current status"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    }
+                }
+            }
+        },
         "/api/v1/tasks/{id}/cancel": {
             "post": {
                 "tags": [
                     "Task lifecycle"
                 ],
                 "summary": "Cancel a task",
-                "description": "`todo`, `in_progress` or `in_review` \u2192 `cancelled`. A cancelled task is final.",
+                "description": "`todo`, `in_progress`, `blocked` or `in_review` \u2192 `cancelled`. A cancelled task is final.",
                 "operationId": "post_api_task_cancel",
                 "parameters": [
                     {
@@ -752,6 +854,7 @@
                         "enum": [
                             "todo",
                             "in_progress",
+                            "blocked",
                             "in_review",
                             "completed",
                             "cancelled"
@@ -862,6 +965,20 @@
                 },
                 "type": "object"
             },
+            "BlockTaskDTO": {
+                "required": [
+                    "reason"
+                ],
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "example": "Waiting for access from the client",
+                        "maxLength": 500,
+                        "minLength": 3
+                    }
+                },
+                "type": "object"
+            },
             "CancelTaskDTO": {
                 "required": [
                     "reason"
@@ -940,6 +1057,7 @@
                 "enum": [
                     "todo",
                     "in_progress",
+                    "blocked",
                     "in_review",
                     "completed",
                     "cancelled"
@@ -1005,6 +1123,12 @@
                             "cancellation_reason": {
                                 "type": "string",
                                 "example": "Task is no longer needed",
+                                "nullable": true
+                            },
+                            "block_reason": {
+                                "description": "Set while the task is blocked",
+                                "type": "string",
+                                "example": "Waiting for access from the client",
                                 "nullable": true
                             },
                             "due_date": {

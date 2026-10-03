@@ -8,14 +8,17 @@ use App\Auth\Entity\User;
 use App\Shared\Api\Documentation\JsonApiContent;
 use App\Shared\Api\JsonApiResponse;
 use App\Task\Api\Documentation\TaskResponseSchema;
+use App\Task\DTO\BlockTaskDTO;
 use App\Task\DTO\CancelTaskDTO;
 use App\Task\Entity\Task;
 use App\Task\Resource\TaskResource;
 use App\Task\Security\OwnedTaskValueResolver;
+use App\Task\Service\BlockTask;
 use App\Task\Service\CancelTask;
 use App\Task\Service\CompleteTask;
 use App\Task\Service\StartTask;
 use App\Task\Service\SubmitTaskForReview;
+use App\Task\Service\UnblockTask;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -39,6 +42,8 @@ final class TaskTransitionController extends AbstractController
         private readonly SubmitTaskForReview $submitTaskForReview,
         private readonly CompleteTask $completeTask,
         private readonly CancelTask $cancelTask,
+        private readonly BlockTask $blockTask,
+        private readonly UnblockTask $unblockTask,
     ) {
     }
 
@@ -63,8 +68,25 @@ final class TaskTransitionController extends AbstractController
         return JsonApiResponse::one(TaskResource::toItem($this->completeTask->handle($task, $this->user())));
     }
 
+    #[Route('/block', name: 'block')]
+    #[OA\Post(summary: 'Block a task', description: '`in_progress` → `blocked`. The reason stays with the task until it is unblocked.')]
+    #[OA\RequestBody(required: true, content: new OA\JsonContent(ref: new Model(type: BlockTaskDTO::class)))]
+    #[OA\Response(response: 415, description: 'Body is not sent as application/json')]
+    #[OA\Response(ref: '#/components/responses/ValidationError', response: 422)]
+    public function block(#[MapRequestPayload(acceptFormat: 'json')] BlockTaskDTO $dto, #[ValueResolver(OwnedTaskValueResolver::class)] Task $task): JsonResponse
+    {
+        return JsonApiResponse::one(TaskResource::toItem($this->blockTask->handle($task, $dto, $this->user())));
+    }
+
+    #[Route('/unblock', name: 'unblock')]
+    #[OA\Post(summary: 'Unblock a task', description: '`blocked` → `in_progress`')]
+    public function unblock(#[ValueResolver(OwnedTaskValueResolver::class)] Task $task): JsonResponse
+    {
+        return JsonApiResponse::one(TaskResource::toItem($this->unblockTask->handle($task, $this->user())));
+    }
+
     #[Route('/cancel', name: 'cancel')]
-    #[OA\Post(summary: 'Cancel a task', description: '`todo`, `in_progress` or `in_review` → `cancelled`. A cancelled task is final.')]
+    #[OA\Post(summary: 'Cancel a task', description: '`todo`, `in_progress`, `blocked` or `in_review` → `cancelled`. A cancelled task is final.')]
     #[OA\RequestBody(required: true, content: new OA\JsonContent(ref: new Model(type: CancelTaskDTO::class)))]
     #[OA\Response(response: 415, description: 'Body is not sent as application/json')]
     #[OA\Response(ref: '#/components/responses/ValidationError', response: 422)]

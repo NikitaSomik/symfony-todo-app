@@ -15,6 +15,9 @@ final class TaskStatusTest extends TestCase
         ['todo', 'cancelled'],
         ['in_progress', 'in_review'],
         ['in_progress', 'cancelled'],
+        ['in_progress', 'blocked'],
+        ['blocked', 'in_progress'],
+        ['blocked', 'cancelled'],
         ['in_review', 'completed'],
         ['in_review', 'cancelled'],
     ];

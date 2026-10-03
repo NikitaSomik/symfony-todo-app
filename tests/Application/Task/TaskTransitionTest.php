@@ -39,6 +39,7 @@ final class TaskTransitionTest extends ApiTestCase
             'title' => 'Buy milk',
             'status' => $status,
             'cancellationReason' => TaskStatus::CANCELLED === $status ? 'Outdated' : null,
+            'blockReason' => TaskStatus::BLOCKED === $status ? 'Waiting for access' : null,
         ]);
     }
 
@@ -91,6 +92,7 @@ final class TaskTransitionTest extends ApiTestCase
     #[Test]
     #[TestWith([TaskStatus::TODO])]
     #[TestWith([TaskStatus::IN_PROGRESS])]
+    #[TestWith([TaskStatus::BLOCKED])]
     #[TestWith([TaskStatus::IN_REVIEW])]
     public function cancelShouldBePossibleFromEveryStatusThatIsNotFinal(TaskStatus $from): void
     {
@@ -102,6 +104,64 @@ final class TaskTransitionTest extends ApiTestCase
         self::assertSame('cancelled', $this->jsonAttributes($response)['status']);
         self::assertSame('No longer needed', $this->jsonAttributes($response)['cancellation_reason']);
         self::assertSame([[$from->value, 'cancelled']], $this->statusHistory($task));
+    }
+
+    #[Test]
+    public function blockShouldKeepTheReasonAndLogIt(): void
+    {
+        $task = $this->taskIn(TaskStatus::IN_PROGRESS);
+
+        $response = $this->transition('block', $task, ['reason' => '  Waiting for access  ']);
+
+        self::assertResponseIsSuccessful();
+        self::assertSame('blocked', $this->jsonAttributes($response)['status']);
+        self::assertSame('Waiting for access', $this->jsonAttributes($response)['block_reason']);
+        self::assertSame([['in_progress', 'blocked']], $this->statusHistory($task));
+        self::assertSame(
+            ['Updated task status for "Buy milk"', 'Updated task block reason for "Buy milk"'],
+            array_map(static fn (AuditLog $log): string => $log->getMessage(), $this->auditLogs($task)),
+        );
+    }
+
+    #[Test]
+    public function unblockShouldReturnToWorkAndClearTheReason(): void
+    {
+        $task = $this->taskIn(TaskStatus::BLOCKED);
+
+        $response = $this->transition('unblock', $task);
+
+        self::assertResponseIsSuccessful();
+        self::assertSame('in_progress', $this->jsonAttributes($response)['status']);
+        self::assertNull($this->jsonAttributes($response)['block_reason']);
+        self::assertSame([['blocked', 'in_progress']], $this->statusHistory($task));
+        self::assertSame(
+            ['Updated task status for "Buy milk"', 'Updated task block reason for "Buy milk"'],
+            array_map(static fn (AuditLog $log): string => $log->getMessage(), $this->auditLogs($task)),
+        );
+    }
+
+    #[Test]
+    #[TestWith([TaskStatus::TODO])]
+    #[TestWith([TaskStatus::IN_REVIEW])]
+    #[TestWith([TaskStatus::BLOCKED])]
+    public function blockOutsideWorkInProgressShouldReturn409(TaskStatus $from): void
+    {
+        $this->transition('block', $this->taskIn($from), ['reason' => 'Waiting for access']);
+
+        self::assertResponseStatusCodeSame(409);
+    }
+
+    #[Test]
+    #[TestWith([['reason' => '']])]
+    #[TestWith([['reason' => '   ab   ']])]
+    public function blockWithoutAUsableReasonShouldReturn422(array $body): void
+    {
+        $task = $this->taskIn(TaskStatus::IN_PROGRESS);
+
+        $this->transition('block', $task, $body);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSame([], $this->statusHistory($task));
     }
 
     #[Test]
@@ -130,6 +190,9 @@ final class TaskTransitionTest extends ApiTestCase
     #[TestWith(['start', TaskStatus::IN_PROGRESS, 'A task in status "in_progress" cannot move to "in_progress".'])]
     #[TestWith(['start', TaskStatus::COMPLETED, 'A task in status "completed" cannot move to "in_progress".'])]
     #[TestWith(['submit_for_review', TaskStatus::CANCELLED, 'A task in status "cancelled" cannot move to "in_review".'])]
+    #[TestWith(['complete', TaskStatus::BLOCKED, 'A task in status "blocked" cannot move to "completed".'])]
+    #[TestWith(['submit_for_review', TaskStatus::BLOCKED, 'A task in status "blocked" cannot move to "in_review".'])]
+    #[TestWith(['unblock', TaskStatus::IN_PROGRESS, 'A task in status "in_progress" cannot move to "in_progress".'])]
     public function transitionOutsideTheLifecycleShouldReturn409AndChangeNothing(string $transition, TaskStatus $from, string $detail): void
     {
         $task = $this->taskIn($from);
@@ -187,6 +250,8 @@ final class TaskTransitionTest extends ApiTestCase
     #[TestWith(['submit_for_review'])]
     #[TestWith(['complete'])]
     #[TestWith(['cancel'])]
+    #[TestWith(['block'])]
+    #[TestWith(['unblock'])]
     public function transitionOfSomeoneElsesTaskShouldReturn404(string $transition): void
     {
         $task = $this->taskIn(TaskStatus::TODO, UserFactory::createOne());
