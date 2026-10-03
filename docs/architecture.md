@@ -110,17 +110,21 @@ stateDiagram-v2
     [*] --> todo: POST /tasks
     todo --> in_progress: start
     in_progress --> in_review: submit-for-review
+    in_progress --> blocked: block (reason)
+    blocked --> in_progress: unblock
     in_review --> completed: complete
     todo --> cancelled: cancel (reason)
     in_progress --> cancelled: cancel (reason)
+    blocked --> cancelled: cancel (reason)
     in_review --> cancelled: cancel (reason)
     completed --> [*]
     cancelled --> [*]
 ```
 
 The table lives in `TaskStatus::canTransitionTo()` and the `Task` entity enforces it: it
-has no status setter, only `start()`, `submitForReview()`, `complete()` and `cancel()`
-([0015](adr/0015-task-lifecycle-as-explicit-transitions.md)).
+has no status setter, only `start()`, `submitForReview()`, `complete()`, `block()`,
+`unblock()` and `cancel()` ([0015](adr/0015-task-lifecycle-as-explicit-transitions.md),
+[0016](adr/0016-blocked-is-a-status-of-work-in-progress.md)).
 
 ### What one transition does
 
