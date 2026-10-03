@@ -30,6 +30,7 @@ final class TaskFactory extends PersistentObjectFactory
             'dueDate' => null,
             'status' => TaskStatus::TODO,
             'cancellationReason' => null,
+            'blockReason' => null,
             'createdAt' => new \DateTimeImmutable(),
             'user' => UserFactory::new(),
         ];
@@ -43,6 +44,14 @@ final class TaskFactory extends PersistentObjectFactory
     public function inProgress(): static
     {
         return $this->with(['status' => TaskStatus::IN_PROGRESS]);
+    }
+
+    public function blocked(?string $reason = 'Blocked by fixture'): static
+    {
+        return $this->with([
+            'status' => TaskStatus::BLOCKED,
+            'blockReason' => $reason,
+        ]);
     }
 
     public function inReview(): static
@@ -71,6 +80,7 @@ final class TaskFactory extends PersistentObjectFactory
             // tests need a task in any of those states without replaying how it got there.
             set($task, 'status', $attributes['status']);
             set($task, 'cancellationReason', $attributes['cancellationReason']);
+            set($task, 'blockReason', $attributes['blockReason']);
             set($task, 'createdAt', $attributes['createdAt']);
 
             return $task;

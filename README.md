@@ -23,6 +23,9 @@ The rules it enforces now:
   ([0015](docs/adr/0015-task-lifecycle-as-explicit-transitions.md)).
 - **Cancelling takes an explanation.** A task cannot be dropped silently; the reason stays
   with it.
+- **Stuck work is visible.** A task in progress can be blocked, with a reason, and it does
+  not move forward until it is unblocked
+  ([0016](docs/adr/0016-blocked-is-a-status-of-work-in-progress.md)).
 - **Every change leaves a record:** who changed what, from which value to which, and when
   the status moved. The record is written together with the change, so it cannot be
   missing ([0012](docs/adr/0012-synchronous-audit-log-one-transaction.md)).
@@ -48,6 +51,7 @@ progress and deadlines with consequences.
 | Can the audit log disagree with the data? | No: it is written in the same transaction, one flush per use case | [0012](docs/adr/0012-synchronous-audit-log-one-transaction.md) |
 | Why a stored `tsvector` column for search? | Because results are ranked — measured against an expression index on a million tasks | [0013](docs/adr/0013-task-search-postgresql-full-text.md) |
 | Who decides which status may follow which? | The `Task` entity; Symfony Workflow was built on a branch and compared | [0014](docs/adr/0014-task-status-changed-as-part-of-an-update.md) → [0015](docs/adr/0015-task-lifecycle-as-explicit-transitions.md) |
+| Is a blocked task a status or a flag? | A status of work in progress, as most teams use it; Jira's flag and task links were weighed | [0016](docs/adr/0016-blocked-is-a-status-of-work-in-progress.md) |
 
 All records: [docs/adr](docs/adr/README.md). Diagrams of the containers, the modules, the
 authentication flow and a task transition: [docs/architecture.md](docs/architecture.md).
@@ -74,9 +78,12 @@ stateDiagram-v2
     [*] --> todo
     todo --> in_progress: start
     in_progress --> in_review: submit-for-review
+    in_progress --> blocked: block
+    blocked --> in_progress: unblock
     in_review --> completed: complete
     todo --> cancelled: cancel
     in_progress --> cancelled: cancel
+    blocked --> cancelled: cancel
     in_review --> cancelled: cancel
     completed --> [*]
     cancelled --> [*]

@@ -14,6 +14,7 @@ final readonly class TaskState
         public ?string $description,
         public TaskStatus $status,
         public ?string $cancellationReason,
+        public ?string $blockReason,
         public ?string $dueDate,
     ) {
     }
@@ -25,6 +26,7 @@ final readonly class TaskState
             description: $task->getDescription(),
             status: $task->getStatus(),
             cancellationReason: $task->getCancellationReason(),
+            blockReason: $task->getBlockReason(),
             dueDate: $task->getDueDate()?->format('Y-m-d'),
         );
     }
@@ -39,6 +41,7 @@ final readonly class TaskState
             Task::FIELD_DESCRIPTION => $this->description,
             Task::FIELD_STATUS => $this->status->value,
             Task::FIELD_CANCELLATION_REASON => $this->cancellationReason,
+            Task::FIELD_BLOCK_REASON => $this->blockReason,
             Task::FIELD_DUE_DATE => $this->dueDate,
         ];
     }

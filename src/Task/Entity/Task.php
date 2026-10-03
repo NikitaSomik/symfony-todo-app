@@ -8,6 +8,7 @@ use App\Auth\Entity\User;
 use App\Task\Enum\TaskStatus;
 use App\Task\Exception\TaskTransitionNotAllowedException;
 use App\Task\Repository\TaskRepository;
+use App\Task\ValueObject\BlockReason;
 use App\Task\ValueObject\CancellationReason;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -28,6 +29,7 @@ class Task
     public const string FIELD_DESCRIPTION = 'description';
     public const string FIELD_STATUS = 'status';
     public const string FIELD_CANCELLATION_REASON = 'cancellation_reason';
+    public const string FIELD_BLOCK_REASON = 'block_reason';
     public const string FIELD_DUE_DATE = 'due_date';
     public const string FIELD_CREATED_AT = 'created_at';
     public const string FIELD_UPDATED_AT = 'updated_at';
@@ -50,6 +52,9 @@ class Task
 
     #[ORM\Column(length: CancellationReason::MAX_LENGTH, nullable: true)]
     private ?string $cancellationReason = null;
+
+    #[ORM\Column(length: BlockReason::MAX_LENGTH, nullable: true)]
+    private ?string $blockReason = null;
 
     #[ORM\Column(type: Types::DATE_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $dueDate = null;
@@ -155,6 +160,17 @@ class Task
         $this->transitionTo(TaskStatus::COMPLETED, $at);
     }
 
+    public function block(BlockReason $reason, \DateTimeImmutable $at): void
+    {
+        $this->transitionTo(TaskStatus::BLOCKED, $at);
+        $this->blockReason = $reason->value;
+    }
+
+    public function unblock(\DateTimeImmutable $at): void
+    {
+        $this->transitionTo(TaskStatus::IN_PROGRESS, $at);
+    }
+
     public function cancel(CancellationReason $reason, \DateTimeImmutable $at): void
     {
         $this->transitionTo(TaskStatus::CANCELLED, $at);
@@ -166,6 +182,11 @@ class Task
         return $this->cancellationReason;
     }
 
+    public function getBlockReason(): ?string
+    {
+        return $this->blockReason;
+    }
+
     private function transitionTo(TaskStatus $to, \DateTimeImmutable $at): void
     {
         if (!$this->status->canTransitionTo($to)) {
@@ -174,6 +195,7 @@ class Task
 
         $this->statusChanges->add(new TaskStatusChange($this, $this->status, $to, $at));
         $this->status = $to;
+        $this->blockReason = null;
     }
 
     public function getCreatedAt(): \DateTimeImmutable
