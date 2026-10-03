@@ -1071,4 +1071,27 @@ final class TaskControllerTest extends ApiTestCase
         self::assertInstanceOf(Task::class, static::getContainer()->get(TaskRepository::class)->find($taskId));
         self::assertSame([], static::getContainer()->get(AuditLogRepository::class)->findForEntity(AuditLogEntityType::TASK, $taskId));
     }
+
+    #[Test]
+    #[TestWith(['todo', ['self', 'start', 'cancel']])]
+    #[TestWith(['blocked', ['self', 'unblock', 'cancel']])]
+    #[TestWith(['completed', ['self']])]
+    public function getShouldLinkOnlyTheTransitionsTheStatusAllows(string $status, array $expectedLinks): void
+    {
+        $task = TaskFactory::createOne(['user' => $this->user, 'status' => TaskStatus::from($status)]);
+
+        $response = $this->get($this->route('api_task_get', ['id' => $this->taskId($task)]));
+
+        self::assertSame($expectedLinks, array_keys($this->jsonData($response)['links']));
+    }
+
+    #[Test]
+    public function getAllShouldLinkEveryTask(): void
+    {
+        $task = TaskFactory::createOne(['user' => $this->user]);
+
+        $data = $this->jsonData($this->get('/api/v1/tasks'));
+
+        self::assertSame('/api/v1/tasks/'.$this->taskId($task).'/start', $data[0]['links']['start']);
+    }
 }

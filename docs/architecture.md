@@ -121,10 +121,11 @@ stateDiagram-v2
     cancelled --> [*]
 ```
 
-The table lives in `TaskStatus::canTransitionTo()` and the `Task` entity enforces it: it
-has no status setter, only `start()`, `submitForReview()`, `complete()`, `block()`,
-`unblock()` and `cancel()` ([0015](adr/0015-task-lifecycle-as-explicit-transitions.md),
-[0016](adr/0016-blocked-is-a-status-of-work-in-progress.md)).
+The table lives in `TaskTransition`, and the `Task` entity enforces it: it has no status
+setter, only `start()`, `submitForReview()`, `complete()`, `block()`, `unblock()` and
+`cancel()` ([0015](adr/0015-task-lifecycle-as-explicit-transitions.md),
+[0016](adr/0016-blocked-is-a-status-of-work-in-progress.md)). A task's response links the
+transitions its status allows, so a client knows which actions to offer.
 
 ### What one transition does
 

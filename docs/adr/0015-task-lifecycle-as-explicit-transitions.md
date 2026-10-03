@@ -19,8 +19,16 @@ todo → in_progress → in_review → completed
 cancelled cancelled   cancelled
 ```
 
-- **One table of transitions.** `TaskStatus::canTransitionTo()` holds the whole lifecycle.
+- **One table of transitions.** `TaskTransition` holds the whole lifecycle: each
+  transition names the statuses it starts from and the one it leads to.
   `completed` and `cancelled` are final. `in_review` is a new status.
+  A first version kept only "which status may follow which"; with two transitions
+  leading to `in_progress` ([0016](0016-blocked-is-a-status-of-work-in-progress.md)) that
+  let `unblock` start a task and `start` unblock one, so the table is keyed by transition.
+- **The task links what it allows.** A task's resource object carries a link for every
+  transition its current status allows, under the transition's name; a client shows the
+  actions it finds there instead of repeating the table. The server still checks each
+  request.
 - **The entity guards it.** `Task` has `start()`, `submitForReview()`, `complete()` and
   `cancel(CancellationReason $reason)`. There is no setter for the status: a transition
   outside the table throws `TaskTransitionNotAllowedException`. The reason is an argument

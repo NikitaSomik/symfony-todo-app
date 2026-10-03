@@ -46,6 +46,7 @@ use Symfony\Component\Routing\Requirement\Requirement;
 final class TaskController extends AbstractController
 {
     public function __construct(
+        private readonly TaskResource $taskResource,
         private readonly TaskRepository $taskRepository,
         private readonly AuditLogRepository $auditLogRepository,
         private readonly CreateTask $createTask,
@@ -76,7 +77,7 @@ final class TaskController extends AbstractController
 
         return JsonApiResponse::collection(
             new PaginatedCollection(
-                items: TaskResource::toItems($tasks),
+                items: $this->taskResource->toItems($tasks),
                 pageNumber: $query->page->number,
                 pageSize: $query->page->size,
                 total: $total,
@@ -99,7 +100,7 @@ final class TaskController extends AbstractController
         $task = $this->createTask->handle($dto, $user);
 
         return JsonApiResponse::created(
-            TaskResource::toItem($task),
+            $this->taskResource->toItem($task),
             $this->generateUrl('api_task_get', ['id' => $task->getId()->toRfc4122()]),
         );
     }
@@ -112,7 +113,7 @@ final class TaskController extends AbstractController
     #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
     public function get(#[ValueResolver(OwnedTaskValueResolver::class)] Task $task): JsonResponse
     {
-        return JsonApiResponse::one(TaskResource::toItem($task));
+        return JsonApiResponse::one($this->taskResource->toItem($task));
     }
 
     #[Route('/{id}/audit-logs', name: 'get_audit_logs', requirements: ['id' => Requirement::UUID_V7], methods: ['GET'])]
@@ -153,7 +154,7 @@ final class TaskController extends AbstractController
         $user = $this->getUser();
         $task = $this->updateTaskDetails->handle($task, $dto, $user);
 
-        return JsonApiResponse::one(TaskResource::toItem($task));
+        return JsonApiResponse::one($this->taskResource->toItem($task));
     }
 
     #[Route('/{id}', name: 'delete', requirements: ['id' => Requirement::UUID_V7], methods: ['DELETE'])]

@@ -7,8 +7,10 @@ namespace App\Task\Resource;
 use App\Shared\Api\ResourceItem;
 use App\Task\Entity\Task;
 use App\Task\Enum\TaskStatus;
+use App\Task\Enum\TaskTransition;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 #[OA\Schema(
     properties: [
@@ -28,11 +30,30 @@ use OpenApi\Attributes as OA;
             ],
             type: 'object',
         ),
+        new OA\Property(
+            property: 'links',
+            description: 'The task itself and the transitions its current status allows; a transition that is not allowed has no link',
+            properties: [
+                new OA\Property(property: 'self', type: 'string', example: '/api/v1/tasks/0195f2f7-1f0a-7db2-b6f6-5d1d48d6752b'),
+                new OA\Property(property: 'start', type: 'string', example: '/api/v1/tasks/0195f2f7-1f0a-7db2-b6f6-5d1d48d6752b/start'),
+                new OA\Property(property: 'submit_for_review', type: 'string'),
+                new OA\Property(property: 'complete', type: 'string'),
+                new OA\Property(property: 'block', type: 'string'),
+                new OA\Property(property: 'unblock', type: 'string'),
+                new OA\Property(property: 'cancel', type: 'string', example: '/api/v1/tasks/0195f2f7-1f0a-7db2-b6f6-5d1d48d6752b/cancel'),
+            ],
+            type: 'object',
+        ),
     ]
 )]
-final class TaskResource
+final readonly class TaskResource
 {
-    public static function toItem(Task $task): ResourceItem
+    public function __construct(
+        private UrlGeneratorInterface $urls,
+    ) {
+    }
+
+    public function toItem(Task $task): ResourceItem
     {
         return new ResourceItem(
             type: 'tasks',
@@ -47,7 +68,21 @@ final class TaskResource
                 'created_at' => $task->getCreatedAt()->format(\DateTimeInterface::ATOM),
                 'updated_at' => $task->getUpdatedAt()->format(\DateTimeInterface::ATOM),
             ],
+            links: $this->links($task),
         );
+    }
+
+    /** @return array<string, string> */
+    private function links(Task $task): array
+    {
+        $id = ['id' => $task->getId()->toRfc4122()];
+        $links = ['self' => $this->urls->generate('api_task_get', $id)];
+
+        foreach (TaskTransition::availableFrom($task->getStatus()) as $transition) {
+            $links[$transition->value] = $this->urls->generate('api_task_'.$transition->value, $id);
+        }
+
+        return $links;
     }
 
     /**
@@ -55,8 +90,8 @@ final class TaskResource
      *
      * @return ResourceItem[]
      */
-    public static function toItems(array $tasks): array
+    public function toItems(array $tasks): array
     {
-        return array_map(self::toItem(...), $tasks);
+        return array_map($this->toItem(...), $tasks);
     }
 }

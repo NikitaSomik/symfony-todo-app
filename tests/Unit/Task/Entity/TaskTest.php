@@ -120,4 +120,27 @@ final class TaskTest extends TestCase
 
         $task->block(new BlockReason('Waiting for access'), new \DateTimeImmutable());
     }
+
+    #[Test]
+    public function unblockShouldNotStartATaskThatWasNeverBlocked(): void
+    {
+        $task = new Task(Uuid::v7());
+
+        $this->expectException(TaskTransitionNotAllowedException::class);
+
+        $task->unblock(new \DateTimeImmutable());
+    }
+
+    #[Test]
+    public function startShouldNotUnblockABlockedTask(): void
+    {
+        $task = new Task(Uuid::v7());
+        $at = new \DateTimeImmutable('2026-04-01 10:00:00');
+        $task->start($at);
+        $task->block(new BlockReason('Waiting for access'), $at);
+
+        $this->expectException(TaskTransitionNotAllowedException::class);
+
+        $task->start($at);
+    }
 }

@@ -6,6 +6,7 @@ namespace App\Task\Entity;
 
 use App\Auth\Entity\User;
 use App\Task\Enum\TaskStatus;
+use App\Task\Enum\TaskTransition;
 use App\Task\Exception\TaskTransitionNotAllowedException;
 use App\Task\Repository\TaskRepository;
 use App\Task\ValueObject\BlockReason;
@@ -147,33 +148,33 @@ class Task
 
     public function start(\DateTimeImmutable $at): void
     {
-        $this->transitionTo(TaskStatus::IN_PROGRESS, $at);
+        $this->apply(TaskTransition::START, $at);
     }
 
     public function submitForReview(\DateTimeImmutable $at): void
     {
-        $this->transitionTo(TaskStatus::IN_REVIEW, $at);
+        $this->apply(TaskTransition::SUBMIT_FOR_REVIEW, $at);
     }
 
     public function complete(\DateTimeImmutable $at): void
     {
-        $this->transitionTo(TaskStatus::COMPLETED, $at);
+        $this->apply(TaskTransition::COMPLETE, $at);
     }
 
     public function block(BlockReason $reason, \DateTimeImmutable $at): void
     {
-        $this->transitionTo(TaskStatus::BLOCKED, $at);
+        $this->apply(TaskTransition::BLOCK, $at);
         $this->blockReason = $reason->value;
     }
 
     public function unblock(\DateTimeImmutable $at): void
     {
-        $this->transitionTo(TaskStatus::IN_PROGRESS, $at);
+        $this->apply(TaskTransition::UNBLOCK, $at);
     }
 
     public function cancel(CancellationReason $reason, \DateTimeImmutable $at): void
     {
-        $this->transitionTo(TaskStatus::CANCELLED, $at);
+        $this->apply(TaskTransition::CANCEL, $at);
         $this->cancellationReason = $reason->value;
     }
 
@@ -187,14 +188,14 @@ class Task
         return $this->blockReason;
     }
 
-    private function transitionTo(TaskStatus $to, \DateTimeImmutable $at): void
+    private function apply(TaskTransition $transition, \DateTimeImmutable $at): void
     {
-        if (!$this->status->canTransitionTo($to)) {
-            throw new TaskTransitionNotAllowedException($this->status, $to);
+        if (!$transition->isAllowedFrom($this->status)) {
+            throw new TaskTransitionNotAllowedException($this->status, $transition->toStatus());
         }
 
-        $this->statusChanges->add(new TaskStatusChange($this, $this->status, $to, $at));
-        $this->status = $to;
+        $this->statusChanges->add(new TaskStatusChange($this, $this->status, $transition->toStatus(), $at));
+        $this->status = $transition->toStatus();
         $this->blockReason = null;
     }
 

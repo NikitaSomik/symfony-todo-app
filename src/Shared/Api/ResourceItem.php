@@ -9,12 +9,14 @@ final readonly class ResourceItem
     /**
      * @param array<string, mixed>                                                                     $attributes
      * @param array<string, array{data: array<string, string>|array<int, array<string, string>>|null}> $relationships
+     * @param array<string, string>                                                                    $links
      */
     public function __construct(
         public string $type,
         public string|int $id,
         public array $attributes = [],
         public array $relationships = [],
+        public array $links = [],
     ) {
     }
 
@@ -31,6 +33,10 @@ final readonly class ResourceItem
 
         if ([] !== $this->relationships) {
             $payload['relationships'] = $this->relationships;
+        }
+
+        if ([] !== $this->links) {
+            $payload['links'] = $this->links;
         }
 
         return $payload;
