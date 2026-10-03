@@ -54,7 +54,7 @@ Phase 1: Simple CRUD Monolith
     └── Single src/ structure
     └── Basic Task entity + REST API
 
-Phase 2: Feature-based Modular Monolith      ← current
+Phase 2: Feature-based Modular Monolith
     └── Auth + Task + Project modules
     └── CRUD + business rules in Service layer
 
@@ -75,8 +75,10 @@ Phase 5: CQRS (where justified)
 
 ### Architecture Decisions
 
-| Decision | Choice | Reason |
-|---|---|---|
+Each decision, with the alternatives that lost and what it costs, is an
+[architecture decision record](adr/README.md).
+
+---|---|---|
 | Structure | Feature-based Modular Monolith | Vertical slicing, easy to extract to microservice |
 | Config format | PHP (di.php, routing.php) | IDE refactoring support, auto-discovery via glob |
 | API style | REST JSON | Simple, no overhead |

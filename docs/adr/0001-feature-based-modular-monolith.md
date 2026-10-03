@@ -22,8 +22,9 @@ controllers, DTOs, entities, repositories, services, API resources.
   `src/<Module>/routing.php` its routes; `config/services.php` and `config/routes.php` only
   import `../src/**/di.php` and `../src/**/routing.php`. Adding a module never edits a
   central file.
-- Configuration is PHP, not YAML, so class names in it are real references that the IDE
-  can navigate and rename.
+- A module's services and routes are declared in PHP, not YAML, so class names in them are
+  real references that the IDE can navigate and rename. Package configuration under
+  `config/packages/` stays in YAML, as Symfony's recipes write it.
 - Doctrine maps each module's `Entity/` directory as its own mapping, and only that
   directory.
 - `src/` holds only production code. Test factories and stories live in `fixtures/`, under
