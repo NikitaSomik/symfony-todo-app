@@ -195,7 +195,6 @@ class Task
 
         $this->statusChanges->add(new TaskStatusChange($this, $this->status, $to, $at));
         $this->status = $to;
-        // The reason describes the current block only; whatever leaves the status takes it away.
         $this->blockReason = null;
     }
 
