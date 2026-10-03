@@ -108,5 +108,9 @@ cancelled cancelled   cancelled
 - Two transitions of the same task that run at the same moment are not detected: both
   read the same status and both succeed. One owner per task makes that unlikely today;
   shared projects (roadmap, Phase 2) are the signal to add optimistic locking.
+- A retried transition cannot be told from a refused one. When the response to `start`
+  is lost and the client sends it again, the second request answers `409`, exactly as if
+  someone else had moved the task. A machine-readable error code (roadmap) or an
+  idempotency key on the transition endpoints would let the client tell the two apart.
 - Signal to revisit Workflow: transitions that need guards contributed by other modules,
   or enough per-transition logic that the services stop being a few lines each.
