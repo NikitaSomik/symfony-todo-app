@@ -193,6 +193,8 @@ final class TaskTransitionTest extends ApiTestCase
     #[TestWith(['complete', TaskStatus::BLOCKED, 'A task in status "blocked" cannot move to "completed".'])]
     #[TestWith(['submit_for_review', TaskStatus::BLOCKED, 'A task in status "blocked" cannot move to "in_review".'])]
     #[TestWith(['unblock', TaskStatus::IN_PROGRESS, 'A task in status "in_progress" cannot move to "in_progress".'])]
+    #[TestWith(['unblock', TaskStatus::TODO, 'A task in status "todo" cannot move to "in_progress".'])]
+    #[TestWith(['start', TaskStatus::BLOCKED, 'A task in status "blocked" cannot move to "in_progress".'])]
     public function transitionOutsideTheLifecycleShouldReturn409AndChangeNothing(string $transition, TaskStatus $from, string $detail): void
     {
         $task = $this->taskIn($from);
