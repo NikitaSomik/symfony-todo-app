@@ -1094,7 +1094,8 @@
                 "required": [
                     "type",
                     "id",
-                    "attributes"
+                    "attributes",
+                    "links"
                 ],
                 "properties": {
                     "type": {
@@ -1143,6 +1144,36 @@
                             "updated_at": {
                                 "type": "string",
                                 "format": "date-time"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "links": {
+                        "description": "The task itself and the transitions its current status allows; a transition that is not allowed has no link",
+                        "properties": {
+                            "self": {
+                                "type": "string",
+                                "example": "/api/v1/tasks/0195f2f7-1f0a-7db2-b6f6-5d1d48d6752b"
+                            },
+                            "start": {
+                                "type": "string",
+                                "example": "/api/v1/tasks/0195f2f7-1f0a-7db2-b6f6-5d1d48d6752b/start"
+                            },
+                            "submit_for_review": {
+                                "type": "string"
+                            },
+                            "complete": {
+                                "type": "string"
+                            },
+                            "block": {
+                                "type": "string"
+                            },
+                            "unblock": {
+                                "type": "string"
+                            },
+                            "cancel": {
+                                "type": "string",
+                                "example": "/api/v1/tasks/0195f2f7-1f0a-7db2-b6f6-5d1d48d6752b/cancel"
                             }
                         },
                         "type": "object"

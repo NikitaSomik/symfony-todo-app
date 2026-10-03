@@ -276,4 +276,20 @@ final class TaskTransitionTest extends ApiTestCase
         self::assertSame(TaskStatus::TODO, static::getContainer()->get(TaskRepository::class)->find($task->getId())->getStatus());
         self::assertSame([], $this->statusHistory($task));
     }
+
+    #[Test]
+    public function transitionResponseShouldLinkWhatTheNewStatusAllows(): void
+    {
+        $task = $this->taskIn(TaskStatus::TODO);
+        $id = $task->getId()->toRfc4122();
+
+        $response = $this->transition('start', $task);
+
+        self::assertSame([
+            'self' => '/api/v1/tasks/'.$id,
+            'submit_for_review' => '/api/v1/tasks/'.$id.'/submit-for-review',
+            'block' => '/api/v1/tasks/'.$id.'/block',
+            'cancel' => '/api/v1/tasks/'.$id.'/cancel',
+        ], $this->jsonData($response)['links']);
+    }
 }
