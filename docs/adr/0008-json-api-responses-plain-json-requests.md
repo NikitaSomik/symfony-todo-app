@@ -22,7 +22,7 @@ would take custom infrastructure around them.
 
 **Followed:** the `application/vnd.api+json` media type and the `jsonapi` member on every
 response; resource objects with `type`, string `id` and `attributes`; foreign keys as
-`relationships`; `201` with a `Location` header; `filter[...]` and `page[...]` parameters
+`relationships`; `201` with a `Location` header for a created task; `filter[...]` and `page[...]` parameters
 with `first`/`last`/`prev`/`next` links; error objects with `status`, `detail` and a
 `source` — `pointer`, `parameter` or `header`.
 
@@ -31,7 +31,7 @@ with `first`/`last`/`prev`/`next` links; error objects with `status`, `detail` a
 | The specification asks for | What the API does | Why |
 |---|---|---|
 | Request bodies as resource documents | Plain JSON through `#[MapRequestPayload]` | Reading documents needs a custom body resolver |
-| `PATCH` with partial updates | `PUT` with full replacement | Status changes are planned as dedicated commands, which will leave `PUT` only plain fields to replace |
+| `PATCH` with partial updates | `PUT` with full replacement | Status changes are dedicated commands ([0015](0015-task-lifecycle-as-explicit-transitions.md)), so `PUT` replaces only plain fields |
 | `400` for an unknown query parameter | Ignored by `#[MapQueryString]` | The framework default was preferred to custom checks |
 | `sort=-created_at` syntax | `sort` and `direction`, `422` for an invalid value | See below |
 

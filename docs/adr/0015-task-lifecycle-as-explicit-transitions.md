@@ -100,7 +100,7 @@ cancelled cancelled   cancelled
   they are ignored rather than rejected.
 - A transition is one `UPDATE` of `tasks`, one history row and its audit entries, in one
   transaction; a refused one changes nothing.
-- The lifecycle is tested without the framework: the table in `TaskStatusTest`, the
+- The lifecycle is tested without the framework: the table in `TaskTransitionTest`, the
   entity in `TaskTest`.
 - The transition methods take the time as an argument, because an entity cannot ask a
   clock. A transition does not load the history that is already there — a test counts the
