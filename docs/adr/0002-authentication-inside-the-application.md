@@ -24,7 +24,9 @@ revocation implemented here ([0003](0003-jwt-signed-with-hs256.md),
 The reason is the goal of this stage, not a verdict on the alternatives: to build and
 understand the whole mechanism — password storage, token issuing and validation, sessions,
 revocation, abuse protection — rather than configure a product that hides it. The project
-avoids API Platform for the same reason.
+avoids API Platform partly for the same reason, and mainly because it would replace the
+architecture the project is built around — see
+[0008](0008-json-api-responses-plain-json-requests.md).
 
 ## Alternatives considered
 

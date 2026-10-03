@@ -32,9 +32,13 @@ entry, or an entry for a change that was rolled back, makes the history untrustw
   but the entry becomes eventually consistent: a task can be saved while its entry fails,
   and retries and deduplication become part of the feature. For a history that users are
   meant to trust, a missing or late entry is the worse trade.
-- **A task-only `task_audit_logs` table.** A valid design today, with a real foreign key.
-  The shared table was chosen because audit logging is treated as a capability of the
-  application rather than of one module, and the polymorphic pair costs little now.
+- **A task-only `task_audit_logs` table.** It looks safer, with a foreign key — but an
+  audit record has to outlive what it describes, so the key would either delete the
+  history with the task or block the deletion. Without the key, a per-entity table buys
+  nothing over a shared one. The shared table takes the polymorphic pair knowingly —
+  integrity of `entity_id` rests on the code — and is ready for the history of members and
+  roles in the next release. Its one real cost is `Shared` depending on `Auth` for the
+  actor ([0001](0001-feature-based-modular-monolith.md)).
 - **An explicit `flush()` inside `wrapInTransaction()`.** The code until #61. It is
   redundant — the wrapper flushes again before commit — and the second flush is not free:
   measured in #61, it turned one phantom change into an extra `UPDATE` on every write.

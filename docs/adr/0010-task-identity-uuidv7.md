@@ -27,7 +27,7 @@ two flushes: one to get the id, one to store the audit entry.
   atomicity that [0012](0012-synchronous-audit-log-one-transaction.md) chose.
 - **Call `Uuid::v7()` in `CreateTask`.** It works, but puts a library call and the choice
   of UUID version into the use case. With the interface the use case states what it needs
-  — a new task identity — and the strategy can change without touching it.
+  — a new task identity.
 - **Inject Symfony's `UuidFactory`.** It is one service for the whole application, and
   the version it creates is the framework-wide `framework.uid.default_uuid_version`
   setting. The identity of a task would then be decided outside the `Task` module: if the
@@ -53,3 +53,7 @@ two flushes: one to get the id, one to store the audit entry.
   key that references it.
 - `TaskStatusChange` and `AuditLog` keep database-generated integer ids: nothing needs
   their identity before the flush.
+- `TaskIdGenerator` is an interface with a single implementation and no test double.
+  Against a direct `Uuid::v7()` call it adds only a name for the intent. It stays because
+  it costs one alias; if it never gains a second implementation or a test double, inlining
+  it is the honest simplification.
