@@ -96,13 +96,15 @@ A transition is its own endpoint (`POST /api/v1/tasks/{id}/start`), a refused on
 
 | What | Why not | What would change that |
 |---|---|---|
-| API Platform | The goal is to build the API layer on Symfony itself and understand it | — |
+| API Platform | It brings its own architecture — state providers and processors in place of the use-case services, specifications and module boundaries this project is built around ([0008](docs/adr/0008-json-api-responses-plain-json-requests.md)) | Many resources with little behaviour of their own, where CRUD generated from the model is the point |
 | An identity provider (Keycloak, Auth0, SSO) | Deferred, not rejected: this stage is about building the mechanism ([0002](docs/adr/0002-authentication-inside-the-application.md)) | SSO, MFA, or third-party applications acting on a user's behalf |
-| Full JSON:API compliance | About 450 lines of custom infrastructure around Symfony's standard tools, for a CRUD model the project is moving away from; kept on `feature/api-json-api-compliance` | Strict compliance becoming a goal |
+| Full JSON:API compliance | About 450 lines of custom infrastructure around Symfony's standard tools, for a CRUD model the project is moving away from; kept on `feature/api-json-api-compliance` | A client that consumes JSON:API generically, through a JSON:API library |
 | Symfony Workflow | Same amount of code, but the entity can no longer protect its own status; kept on `feature/task-lifecycle-workflow` | Several transition rules contributed by different modules |
-| A search engine | Two columns of one table: PostgreSQL full-text search is enough | Typo tolerance, or ranking that takes too long |
-| A message bus | Nothing runs asynchronously yet, and the audit log is synchronous on purpose | A side effect that is slow or calls another system |
-| CQRS everywhere, a separate read store, event sourcing | Command and query handlers are planned only where real complexity justifies them ([roadmap](docs/roadmap.md), Phase 5) | A read model the entity cannot serve |
+| A search engine | Two columns of one table; measured on a million tasks, PostgreSQL answers in milliseconds for an ordinary user ([0013](docs/adr/0013-task-search-postgresql-full-text.md)) | Typo tolerance, or ranking that outgrows its ceiling — about 300 ms for 29,000 matches |
+| A message bus | Nothing runs asynchronously yet; the audit log is written in the same transaction on purpose ([0012](docs/adr/0012-synchronous-audit-log-one-transaction.md)) | A side effect that is slow or calls another system |
+| CQRS, a separate read store, event sourcing | One model serves both sides without strain: lists are specifications over the entity, and the one read that needed tuning, search, was solved with an index and a measurement | A read the entity cannot serve, such as a board with counts per status |
+| Microservices | One deployable keeps a change and its audit record in one transaction ([0012](docs/adr/0012-synchronous-audit-log-one-transaction.md)) and needs no network between modules | A module with its own scaling or release cadence |
+| `Application/Domain/Infrastructure` layers inside a module | Modules are cut by feature, and each owns its slice end to end ([0001](docs/adr/0001-feature-based-modular-monolith.md)) | — |
 
 ## Quality gates
 
