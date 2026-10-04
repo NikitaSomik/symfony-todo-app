@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Auth\Repository;
 
+use App\Auth\Contract\UserDirectory;
 use App\Auth\Entity\User;
 use App\Auth\ValueObject\Email;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -14,7 +15,7 @@ use Symfony\Component\Security\Core\User\UserInterface;
 /**
  * @extends ServiceEntityRepository<User>
  */
-class UserRepository extends ServiceEntityRepository implements UserLoaderInterface
+class UserRepository extends ServiceEntityRepository implements UserLoaderInterface, UserDirectory
 {
     public function __construct(ManagerRegistry $registry)
     {
@@ -24,5 +25,10 @@ class UserRepository extends ServiceEntityRepository implements UserLoaderInterf
     public function loadUserByIdentifier(string $identifier): ?UserInterface
     {
         return $this->findOneBy(['email' => (new Email($identifier))->value]);
+    }
+
+    public function idByEmail(string $email): ?int
+    {
+        return $this->findOneBy(['email' => (new Email($email))->value])?->getId();
     }
 }
