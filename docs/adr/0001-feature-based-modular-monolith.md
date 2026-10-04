@@ -50,10 +50,14 @@ The modules today are `Auth`, `Task` and `AuditLog`, with `Shared` next to them.
 ## Consequences
 
 - A module can be read, reviewed and — if ever needed — extracted on its own.
-- Nothing enforces the boundaries yet; they are a convention checked in review. The
-  convention was broken once: the audit log sat in `Shared` and referenced
-  `Auth\Entity\User`, the actor of a record. It became a module of its own that names the
-  actor by id ([0017](0017-audit-log-as-its-own-module.md)). When the next violation
-  appears, add an architecture test (Deptrac or PHPat) to CI instead of relying on review.
+- The boundaries were a convention checked in review, and the convention was broken once:
+  the audit log sat in `Shared` and referenced `Auth\Entity\User`, the actor of a record.
+  It became a module of its own that names the actor by id
+  ([0017](0017-audit-log-as-its-own-module.md)). Since #75 the allowed dependencies are
+  declared in `deptrac.php` and checked in CI: an import that crosses a boundary the
+  wrong way fails the build.
+- Deptrac checks which module imports which, not how. `Task` reaches into `Auth` for one
+  class only, the `User` entity, and into `AuditLog` for eight; neither module declares
+  which of its classes the others may use.
 - The glob import means a module appears by creating a directory — easy to add, and easy to
   miss in review, since no central file changes.

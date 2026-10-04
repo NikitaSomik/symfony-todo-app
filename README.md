@@ -114,6 +114,7 @@ status history and the audit log in one transaction.
 Every pull request that changes code runs, against a real PostgreSQL:
 
 - PHP-CS-Fixer and PHPStan level 8
+- Deptrac — the allowed dependencies between modules, declared in `deptrac.php`
 - `lint:container` for the development and production containers
 - migrations, then `doctrine:schema:validate`
 - PHPUnit — application tests through HTTP, unit tests for the domain rules

@@ -53,7 +53,7 @@ same log. That would have added a second module to what `Shared` depends on.
 ## Consequences
 
 - `Shared` imports nothing from a module, and `AuditLog` only from `Shared`. The
-  violation recorded in 0001 is gone; nothing enforces the boundaries in CI yet.
+  violation recorded in 0001 is gone, and Deptrac keeps it from coming back (#75).
 - Tables of different modules are no longer tied by a foreign key here. `tasks.user_id`
   keeps its key: a task belongs to its owner, and `Task` may depend on `Auth`.
 - The database no longer checks that `actor_id` points at a user. A record written past
