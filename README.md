@@ -61,15 +61,16 @@ authentication flow and a task transition: [docs/architecture.md](docs/architect
 ```mermaid
 flowchart LR
     Task -->|owner of a task| Auth
+    Task -->|writes its history| AuditLog
     Task --> Shared
     Auth --> Shared
-    Shared -.->|actor of an audit record| Auth
+    AuditLog --> Shared
 ```
 
 `Auth` — registration, login, refresh, logout. `Task` — tasks, their lifecycle, search and
-history. `Shared` — what both use: error rendering, JSON:API responses, the audit log. The
-dotted arrow is a known violation of "Shared depends on no module", recorded in
-[0001](docs/adr/0001-feature-based-modular-monolith.md).
+history. `AuditLog` — who changed what; modules write to it, and it knows none of them
+([0017](docs/adr/0017-audit-log-as-its-own-module.md)). `Shared` — technical code every
+module uses: error rendering, JSON:API responses.
 
 ## Task lifecycle
 

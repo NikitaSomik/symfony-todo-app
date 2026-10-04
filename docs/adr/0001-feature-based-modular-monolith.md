@@ -35,7 +35,7 @@ controllers, DTOs, entities, repositories, services, API resources.
 - Dependencies point one way: `Task` may use `Auth` (a task has an owner), `Auth` knows
   nothing about `Task`.
 
-The modules today are `Auth` and `Task`, with `Shared` next to them.
+The modules today are `Auth`, `Task` and `AuditLog`, with `Shared` next to them.
 
 ## Alternatives considered
 
@@ -51,10 +51,9 @@ The modules today are `Auth` and `Task`, with `Shared` next to them.
 
 - A module can be read, reviewed and — if ever needed — extracted on its own.
 - Nothing enforces the boundaries yet; they are a convention checked in review. The
-  convention is already broken in one place: `Shared/AuditLog` references `Auth\Entity\User`
-  (the actor of an audit record) and, in an OpenAPI example only, `Task\Enum\TaskStatus`.
-  Either the audit log becomes its own module, or the actor becomes a plain id. When a
-  second violation appears, add an architecture test (Deptrac or PHPat) to CI instead of
-  relying on review.
+  convention was broken once: the audit log sat in `Shared` and referenced
+  `Auth\Entity\User`, the actor of a record. It became a module of its own that names the
+  actor by id ([0017](0017-audit-log-as-its-own-module.md)). When the next violation
+  appears, add an architecture test (Deptrac or PHPat) to CI instead of relying on review.
 - The glob import means a module appears by creating a directory — easy to add, and easy to
   miss in review, since no central file changes.
