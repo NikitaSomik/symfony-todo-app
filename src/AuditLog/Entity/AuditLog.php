@@ -2,19 +2,18 @@
 
 declare(strict_types=1);
 
-namespace App\Shared\AuditLog\Entity;
+namespace App\AuditLog\Entity;
 
-use App\Auth\Entity\User;
-use App\Shared\AuditLog\Enum\AuditLogAction;
-use App\Shared\AuditLog\Enum\AuditLogEntityType;
-use App\Shared\AuditLog\Repository\AuditLogRepository;
+use App\AuditLog\Enum\AuditLogAction;
+use App\AuditLog\Enum\AuditLogEntityType;
+use App\AuditLog\Repository\AuditLogRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: AuditLogRepository::class)]
 #[ORM\Table(name: 'audit_logs')]
 #[ORM\Index(name: 'idx_audit_logs_entity_created_at', columns: ['entity_type', 'entity_id', 'created_at'])]
-#[ORM\Index(name: 'idx_audit_logs_user_id', columns: ['user_id'])]
+#[ORM\Index(name: 'idx_audit_logs_actor_id', columns: ['actor_id'])]
 class AuditLog
 {
     #[ORM\Id]
@@ -28,9 +27,12 @@ class AuditLog
     #[ORM\Column(type: Types::GUID)]
     private string $entityId;
 
-    #[ORM\ManyToOne(targetEntity: User::class)]
-    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
-    private ?User $user;
+    /**
+     * A plain id, not a relation: the record states who acted and has to stay as it is when
+     * that user is gone. Null for an action no user made.
+     */
+    #[ORM\Column(nullable: true)]
+    private ?int $actorId;
 
     #[ORM\Column(length: 50, enumType: AuditLogAction::class)]
     private AuditLogAction $action;
@@ -56,7 +58,7 @@ class AuditLog
     public function __construct(
         AuditLogEntityType $entityType,
         string $entityId,
-        ?User $user,
+        ?int $actorId,
         AuditLogAction $action,
         string $message,
         ?array $attributeChanges,
@@ -65,7 +67,7 @@ class AuditLog
     ) {
         $this->entityType = $entityType;
         $this->entityId = $entityId;
-        $this->user = $user;
+        $this->actorId = $actorId;
         $this->action = $action;
         $this->message = $message;
         $this->attributeChanges = $attributeChanges;
@@ -88,9 +90,9 @@ class AuditLog
         return $this->entityId;
     }
 
-    public function getUser(): ?User
+    public function getActorId(): ?int
     {
-        return $this->user;
+        return $this->actorId;
     }
 
     public function getAction(): AuditLogAction

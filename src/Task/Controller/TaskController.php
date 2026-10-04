@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace App\Task\Controller;
 
+use App\AuditLog\Api\Documentation\AuditLogCollectionResponseSchema;
+use App\AuditLog\Enum\AuditLogEntityType;
+use App\AuditLog\Repository\AuditLogRepository;
+use App\AuditLog\Resource\AuditLogResource;
 use App\Auth\Entity\User;
 use App\Shared\Api\Documentation\JsonApiContent;
 use App\Shared\Api\JsonApiResponse;
 use App\Shared\Api\PaginatedCollection;
 use App\Shared\Api\PaginationLinksBuilder;
 use App\Shared\Api\ResourceCollection;
-use App\Shared\AuditLog\Api\Documentation\AuditLogCollectionResponseSchema;
-use App\Shared\AuditLog\Enum\AuditLogEntityType;
-use App\Shared\AuditLog\Repository\AuditLogRepository;
-use App\Shared\AuditLog\Resource\AuditLogResource;
 use App\Shared\Http\PageQueryDTO;
 use App\Task\Api\Documentation\TaskCollectionResponseSchema;
 use App\Task\Api\Documentation\TaskResponseSchema;

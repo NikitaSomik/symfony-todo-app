@@ -33,8 +33,8 @@ doctrine:
             AuditLog:
                 type: attribute
                 is_bundle: false
-                dir: '%kernel.project_dir%/src/Shared/AuditLog/Entity'
-                prefix: 'App\Shared\AuditLog\Entity'
+                dir: '%kernel.project_dir%/src/AuditLog/Entity'
+                prefix: 'App\AuditLog\Entity'
         dql:
             string_functions:
                 TSMATCH: MartinGeorgiev\Doctrine\ORM\Query\AST\Functions\Tsmatch

@@ -2,13 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Shared\AuditLog\Resource;
+namespace App\AuditLog\Resource;
 
-use App\Auth\Resource\UserResource;
+use App\AuditLog\Entity\AuditLog;
+use App\AuditLog\Enum\AuditLogAction;
 use App\Shared\Api\ResourceItem;
-use App\Shared\AuditLog\Entity\AuditLog;
-use App\Shared\AuditLog\Enum\AuditLogAction;
-use App\Task\Enum\TaskStatus;
 use OpenApi\Attributes as OA;
 
 #[OA\Schema(
@@ -21,7 +19,7 @@ use OpenApi\Attributes as OA;
                 new OA\Property(property: 'action', type: 'string', enum: [AuditLogAction::CREATED->value, AuditLogAction::UPDATED->value, AuditLogAction::DELETED->value], example: AuditLogAction::UPDATED->value),
                 new OA\Property(property: 'message', type: 'string', example: 'Updated task title for "Buy almond milk"'),
                 new OA\Property(property: 'attribute_changes', properties: [new OA\Property(property: 'old', type: 'object', example: ['title' => 'Buy milk'], additionalProperties: new OA\AdditionalProperties(type: 'string', nullable: true)), new OA\Property(property: 'new', type: 'object', example: ['title' => 'Buy almond milk'], additionalProperties: new OA\AdditionalProperties(type: 'string', nullable: true))], type: 'object', nullable: true),
-                new OA\Property(property: 'metadata', type: 'object', example: ['entity_data' => ['title' => 'Buy milk', 'status' => TaskStatus::TODO->value]], nullable: true, additionalProperties: new OA\AdditionalProperties()),
+                new OA\Property(property: 'metadata', type: 'object', example: ['entity_data' => ['title' => 'Buy milk', 'status' => 'todo']], nullable: true, additionalProperties: new OA\AdditionalProperties()),
                 new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
             ],
             type: 'object',
@@ -31,8 +29,8 @@ use OpenApi\Attributes as OA;
             properties: [
                 new OA\Property(
                     property: 'user',
-                    description: 'Who made the change; null when the user no longer exists',
-                    properties: [new OA\Property(property: 'data', properties: [new OA\Property(property: 'type', type: 'string', example: UserResource::TYPE), new OA\Property(property: 'id', type: 'string', example: '7')], type: 'object', nullable: true)],
+                    description: 'Who made the change; null for an action no user made. The id stays when the user no longer exists',
+                    properties: [new OA\Property(property: 'data', properties: [new OA\Property(property: 'type', type: 'string', example: self::ACTOR_TYPE), new OA\Property(property: 'id', type: 'string', example: '7')], type: 'object', nullable: true)],
                     type: 'object',
                 ),
                 new OA\Property(
@@ -48,6 +46,9 @@ use OpenApi\Attributes as OA;
 )]
 final class AuditLogResource
 {
+    /** The JSON:API type users are exposed under; the audit log names the actor without depending on the module that owns users. */
+    private const string ACTOR_TYPE = 'users';
+
     public static function toItem(AuditLog $auditLog): ResourceItem
     {
         $id = $auditLog->getId();
@@ -91,8 +92,8 @@ final class AuditLogResource
      */
     private static function userIdentifier(AuditLog $auditLog): ?array
     {
-        $userId = $auditLog->getUser()?->getId();
+        $actorId = $auditLog->getActorId();
 
-        return null === $userId ? null : ['type' => UserResource::TYPE, 'id' => (string) $userId];
+        return null === $actorId ? null : ['type' => self::ACTOR_TYPE, 'id' => (string) $actorId];
     }
 }

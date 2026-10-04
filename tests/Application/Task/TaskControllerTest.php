@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Task;
 
+use App\AuditLog\Enum\AuditLogEntityType;
+use App\AuditLog\Repository\AuditLogRepository;
 use App\Auth\Entity\User;
 use App\Fixtures\Auth\UserFactory;
 use App\Fixtures\Task\TaskFactory;
-use App\Shared\AuditLog\Enum\AuditLogEntityType;
-use App\Shared\AuditLog\Repository\AuditLogRepository;
 use App\Task\Entity\Task;
 use App\Task\Entity\TaskStatusChange;
 use App\Task\Enum\TaskStatus;
@@ -892,7 +892,7 @@ final class TaskControllerTest extends ApiTestCase
         self::assertCount(1, $activities);
         self::assertSame('created', $activities[0]->getAction()->value);
         self::assertSame('Created task "Buy milk"', $activities[0]->getMessage());
-        self::assertSame($this->user->getId(), $activities[0]->getUser()?->getId());
+        self::assertSame($this->user->getId(), $activities[0]->getActorId());
         self::assertSame('Buy milk', $activities[0]->getMetadata()['entity_data']['title']);
     }
 

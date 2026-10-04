@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Task;
 
+use App\AuditLog\Entity\AuditLog;
+use App\AuditLog\Enum\AuditLogEntityType;
+use App\AuditLog\Repository\AuditLogRepository;
 use App\Auth\Entity\User;
 use App\Fixtures\Auth\UserFactory;
 use App\Fixtures\Task\TaskFactory;
-use App\Shared\AuditLog\Entity\AuditLog;
-use App\Shared\AuditLog\Enum\AuditLogEntityType;
-use App\Shared\AuditLog\Repository\AuditLogRepository;
 use App\Task\Entity\Task;
 use App\Task\Entity\TaskStatusChange;
 use App\Task\Enum\TaskStatus;
@@ -86,7 +86,7 @@ final class TaskTransitionTest extends ApiTestCase
         self::assertCount(1, $auditLogs);
         self::assertSame('Updated task status for "Buy milk"', $auditLogs[0]->getMessage());
         self::assertSame(['old' => ['status' => $from->value], 'new' => ['status' => $expectedStatus]], $auditLogs[0]->getAttributeChanges());
-        self::assertSame($this->user->getId(), $auditLogs[0]->getUser()?->getId());
+        self::assertSame($this->user->getId(), $auditLogs[0]->getActorId());
     }
 
     #[Test]

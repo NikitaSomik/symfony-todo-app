@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Shared\AuditLog\Repository;
+namespace App\AuditLog\Repository;
 
-use App\Shared\AuditLog\Entity\AuditLog;
-use App\Shared\AuditLog\Enum\AuditLogEntityType;
+use App\AuditLog\Entity\AuditLog;
+use App\AuditLog\Enum\AuditLogEntityType;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 

@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Task\AuditLog;
 
+use App\AuditLog\ChangeSetDetector;
+use App\AuditLog\Enum\AuditLogAction;
+use App\AuditLog\Enum\AuditLogEntityType;
+use App\AuditLog\Formatter\AuditLogMessageFormatter;
+use App\AuditLog\Service\AuditLogLogger;
 use App\Auth\Entity\User;
-use App\Shared\AuditLog\ChangeSetDetector;
-use App\Shared\AuditLog\Enum\AuditLogAction;
-use App\Shared\AuditLog\Enum\AuditLogEntityType;
-use App\Shared\AuditLog\Formatter\AuditLogMessageFormatter;
-use App\Shared\AuditLog\Service\AuditLogLogger;
 use App\Task\Entity\Task;
 
 final class TaskAuditLog
@@ -36,7 +36,7 @@ final class TaskAuditLog
         $this->auditLogLogger->log(
             entityType: AuditLogEntityType::TASK,
             entityId: $taskId,
-            user: $actor,
+            actorId: $actor->getId(),
             action: AuditLogAction::CREATED,
             message: $this->messageFormatter->created(self::ENTITY_LABEL, $state->title),
             metadata: ['entity_data' => $state->toArray()],
@@ -54,7 +54,7 @@ final class TaskAuditLog
             $this->auditLogLogger->log(
                 entityType: AuditLogEntityType::TASK,
                 entityId: $taskId,
-                user: $actor,
+                actorId: $actor->getId(),
                 action: AuditLogAction::UPDATED,
                 message: $this->messageFormatter->updated(
                     entityLabel: self::ENTITY_LABEL,
@@ -72,7 +72,7 @@ final class TaskAuditLog
         $this->auditLogLogger->log(
             entityType: AuditLogEntityType::TASK,
             entityId: $taskId,
-            user: $actor,
+            actorId: $actor->getId(),
             action: AuditLogAction::DELETED,
             message: $this->messageFormatter->deleted(self::ENTITY_LABEL, $state->title),
             metadata: ['entity_data' => $state->toArray()],

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Shared\AuditLog\Api\Documentation;
+namespace App\AuditLog\Api\Documentation;
 
+use App\AuditLog\Resource\AuditLogResource;
 use App\Shared\Api\Documentation\CollectionLinksSchema;
 use App\Shared\Api\Documentation\JsonApiObjectSchema;
-use App\Shared\AuditLog\Resource\AuditLogResource;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 
