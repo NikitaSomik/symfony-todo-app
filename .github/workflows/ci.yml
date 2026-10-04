@@ -77,8 +77,6 @@ jobs:
       - name: Run PHPStan
         run: vendor/bin/phpstan analyse --no-progress
 
-      # The allowed dependencies between modules are declared in deptrac.php; an import that
-      # crosses a boundary the wrong way fails here instead of waiting for a reviewer.
       - name: Check module boundaries
         run: vendor/bin/deptrac analyse --no-progress --no-cache
 
