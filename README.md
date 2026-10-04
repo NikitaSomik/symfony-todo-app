@@ -60,14 +60,14 @@ authentication flow and a task transition: [docs/architecture.md](docs/architect
 
 ```mermaid
 flowchart LR
-    Task -->|owner of a task| Auth
-    Task -->|writes its history| AuditLog
+    Task -->|needs the user who owns a task| Auth
+    Task -->|writes and reads its history| AuditLog
     Task --> Shared
     Auth --> Shared
     AuditLog --> Shared
 ```
 
-`Auth` — registration, login, refresh, logout. `Task` — tasks, their lifecycle, search and
+An arrow reads "depends on". `Auth` — registration, login, refresh, logout. `Task` — tasks, their lifecycle, search and
 history. `AuditLog` — who changed what; modules write to it, and it knows none of them
 ([0017](docs/adr/0017-audit-log-as-its-own-module.md)). `Shared` — technical code every
 module uses: error rendering, JSON:API responses.
@@ -90,8 +90,10 @@ stateDiagram-v2
     cancelled --> [*]
 ```
 
-A transition is its own endpoint (`POST /api/v1/tasks/{id}/start`), a refused one answers
-`409`, and each one writes the status history and the audit log in one transaction.
+`completed` and `cancelled` are final: nothing leads out of them, and the circle at the
+bottom marks the end of a task's life, not a status. A transition is its own endpoint
+(`POST /api/v1/tasks/{id}/start`), a refused one answers `409`, and each one writes the
+status history and the audit log in one transaction.
 
 ## Deliberately not built
 

@@ -58,14 +58,14 @@ flowchart TB
         s4[Persistence · Query]
     end
 
-    Task -->|owner of a task| Auth
-    Task -->|writes its history| AuditLog
+    Task -->|needs the user who owns a task| Auth
+    Task -->|writes and reads its history| AuditLog
     Task --> Shared
     Auth --> Shared
     AuditLog --> Shared
 ```
 
-A module owns its slice end to end and registers itself through its own `di.php` and
+An arrow reads "depends on". A module owns its slice end to end and registers itself through its own `di.php` and
 `routing.php` ([0001](adr/0001-feature-based-modular-monolith.md)). `Shared` depends on no
 module, and the audit log on none of the modules that write to it: a record names its
 actor by id ([0017](adr/0017-audit-log-as-its-own-module.md)). Nothing enforces the
@@ -128,7 +128,8 @@ stateDiagram-v2
     cancelled --> [*]
 ```
 
-The table lives in `TaskTransition`, and the `Task` entity enforces it: it has no status
+`completed` and `cancelled` are final: nothing leads out of them, and the circle at the
+bottom marks the end of a task's life, not a status. The table lives in `TaskTransition`, and the `Task` entity enforces it: it has no status
 setter, only `start()`, `submitForReview()`, `complete()`, `block()`, `unblock()` and
 `cancel()` ([0015](adr/0015-task-lifecycle-as-explicit-transitions.md),
 [0016](adr/0016-blocked-is-a-status-of-work-in-progress.md)). A task's response links the
