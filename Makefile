@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
 .PHONY: help bash build up down logs cache-clear migrate \
         db-create db-drop db-wipe db-reset db-seed db-fresh db-dump db-restore \
-        run-phpstan run-cs fix-cs run-tests coverage check-code fix-and-check-code \
+        run-phpstan run-deptrac run-cs fix-cs run-tests coverage check-code fix-and-check-code \
         generate-openapi
 
 EXEC = docker compose exec app
@@ -60,6 +60,9 @@ db-restore:     ## Restore from dump (name=mybackup)
 run-phpstan:    ## Run PHPStan static analysis
 	$(EXEC) vendor/bin/phpstan analyse
 
+run-deptrac:    ## Check the dependencies between modules
+	$(EXEC) vendor/bin/deptrac analyse --no-progress
+
 run-cs:         ## Check code style
 	$(EXEC) vendor/bin/php-cs-fixer fix --dry-run --diff
 
@@ -73,11 +76,11 @@ coverage:       ## Generate coverage report
 	$(EXEC) env XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-html var/coverage
 	@echo "Coverage report: var/coverage/index.html"
 
-check-code:     ## Run cs + phpstan + tests
-check-code: run-cs run-phpstan run-tests
+check-code:     ## Run cs + phpstan + deptrac + tests
+check-code: run-cs run-phpstan run-deptrac run-tests
 
-fix-and-check-code: ## Fix cs, then phpstan + tests
-fix-and-check-code: fix-cs run-phpstan run-tests
+fix-and-check-code: ## Fix cs, then phpstan + deptrac + tests
+fix-and-check-code: fix-cs run-phpstan run-deptrac run-tests
 
 ## —— Docs —————————————————————————————————————————
 generate-openapi: ## Generate OpenAPI spec

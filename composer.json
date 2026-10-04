@@ -90,6 +90,7 @@
     },
     "require-dev": {
         "dama/doctrine-test-bundle": "^8.6",
+        "deptrac/deptrac": "^4.7",
         "doctrine/doctrine-fixtures-bundle": "^4.3.1",
         "friendsofphp/php-cs-fixer": "^3.95.26",
         "nelmio/api-doc-bundle": "^5.12.2",

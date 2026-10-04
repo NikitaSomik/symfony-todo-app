@@ -27,3 +27,5 @@
 ###< lexik/jwt-authentication-bundle ###
 
 *.dump
+
+/.deptrac.cache
