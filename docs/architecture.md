@@ -68,8 +68,8 @@ flowchart TB
 An arrow reads "depends on". A module owns its slice end to end and registers itself through its own `di.php` and
 `routing.php` ([0001](adr/0001-feature-based-modular-monolith.md)). `Shared` depends on no
 module, and the audit log on none of the modules that write to it: a record names its
-actor by id ([0017](adr/0017-audit-log-as-its-own-module.md)). Nothing enforces the
-boundaries in CI yet.
+actor by id ([0017](adr/0017-audit-log-as-its-own-module.md)). The allowed
+dependencies are declared in `deptrac.php` and checked in CI.
 
 ## Authentication
 
