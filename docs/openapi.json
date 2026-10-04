@@ -803,6 +803,389 @@
                     }
                 }
             }
+        },
+        "/api/v1/workspaces": {
+            "get": {
+                "tags": [
+                    "Workspaces"
+                ],
+                "summary": "Get the workspaces the user is a member of",
+                "operationId": "get_api_workspace_get_all",
+                "responses": {
+                    "200": {
+                        "description": "Workspaces, oldest first",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/WorkspaceCollectionResponseSchema"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Workspaces"
+                ],
+                "summary": "Create a workspace",
+                "description": "The user who creates it becomes its owner.",
+                "operationId": "post_api_workspace_create",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/WorkspaceDTO"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Workspace created",
+                        "headers": {
+                            "Location": {
+                                "description": "URL of the created workspace",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/WorkspaceResponseSchema"
+                                }
+                            }
+                        }
+                    },
+                    "415": {
+                        "description": "Body is not sent as application/json"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    }
+                }
+            }
+        },
+        "/api/v1/workspaces/{id}": {
+            "get": {
+                "tags": [
+                    "Workspaces"
+                ],
+                "summary": "Get a workspace",
+                "operationId": "get_api_workspace_get",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Workspace details",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/WorkspaceResponseSchema"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Workspace not found, or the user is not a member of it"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Workspaces"
+                ],
+                "summary": "Rename a workspace",
+                "description": "Owners only.",
+                "operationId": "put_api_workspace_rename",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/WorkspaceDTO"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Workspace renamed",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/WorkspaceResponseSchema"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user is a member but not an owner"
+                    },
+                    "404": {
+                        "description": "Workspace not found, or the user is not a member of it"
+                    },
+                    "415": {
+                        "description": "Body is not sent as application/json"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    }
+                }
+            }
+        },
+        "/api/v1/workspaces/{id}/members": {
+            "get": {
+                "tags": [
+                    "Workspace members"
+                ],
+                "summary": "Get the members of a workspace",
+                "operationId": "get_api_workspace_member_get_all",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Members, in the order they joined",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MemberCollectionResponseSchema"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    },
+                    "404": {
+                        "description": "Workspace not found, or the user is not a member of it"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Workspace members"
+                ],
+                "summary": "Add a registered user to a workspace",
+                "description": "Owners only.",
+                "operationId": "post_api_workspace_member_add",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AddMemberDTO"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Member added",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MemberResponseSchema"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user is a member but not an owner"
+                    },
+                    "409": {
+                        "description": "The user is already a member"
+                    },
+                    "415": {
+                        "description": "Body is not sent as application/json"
+                    },
+                    "422": {
+                        "description": "Invalid body, or no user is registered with this email"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    },
+                    "404": {
+                        "description": "Workspace not found, or the user is not a member of it"
+                    }
+                }
+            }
+        },
+        "/api/v1/workspaces/{id}/members/{userId}": {
+            "put": {
+                "tags": [
+                    "Workspace members"
+                ],
+                "summary": "Change the role of a member",
+                "description": "Owners only. A workspace keeps at least one owner.",
+                "operationId": "put_api_workspace_member_change_role",
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "pattern": "[0-9]+"
+                        }
+                    },
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ChangeMemberRoleDTO"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Role changed",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MemberResponseSchema"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user is a member but not an owner"
+                    },
+                    "409": {
+                        "description": "The last owner cannot be given another role"
+                    },
+                    "415": {
+                        "description": "Body is not sent as application/json"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    },
+                    "404": {
+                        "description": "Workspace not found, or the user is not a member of it"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Workspace members"
+                ],
+                "summary": "Remove a member, or leave the workspace",
+                "description": "An owner removes anyone; any member may remove themselves. A workspace keeps at least one owner.",
+                "operationId": "delete_api_workspace_member_remove",
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "pattern": "[0-9]+"
+                        }
+                    },
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Member removed"
+                    },
+                    "403": {
+                        "description": "The user is not an owner and tries to remove someone else"
+                    },
+                    "409": {
+                        "description": "The last owner cannot be removed"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    },
+                    "404": {
+                        "description": "Workspace not found, or the user is not a member of it"
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -989,6 +1372,54 @@
                         "example": "Task is no longer relevant",
                         "maxLength": 500,
                         "minLength": 3
+                    }
+                },
+                "type": "object"
+            },
+            "WorkspaceDTO": {
+                "required": [
+                    "name"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "example": "Mobile team",
+                        "maxLength": 100
+                    }
+                },
+                "type": "object"
+            },
+            "WorkspaceRole": {
+                "type": "string",
+                "enum": [
+                    "owner",
+                    "member",
+                    "viewer"
+                ]
+            },
+            "AddMemberDTO": {
+                "required": [
+                    "email"
+                ],
+                "properties": {
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "colleague@example.com"
+                    },
+                    "role": {
+                        "$ref": "#/components/schemas/WorkspaceRole"
+                    }
+                },
+                "type": "object"
+            },
+            "ChangeMemberRoleDTO": {
+                "required": [
+                    "role"
+                ],
+                "properties": {
+                    "role": {
+                        "$ref": "#/components/schemas/WorkspaceRole"
                     }
                 },
                 "type": "object"
@@ -1415,6 +1846,201 @@
                     }
                 },
                 "type": "object"
+            },
+            "WorkspaceResource": {
+                "required": [
+                    "type",
+                    "id",
+                    "attributes",
+                    "links"
+                ],
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "example": "workspaces"
+                    },
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "0195f2f7-1f0a-7db2-b6f6-5d1d48d6752b"
+                    },
+                    "attributes": {
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "example": "Mobile team"
+                            },
+                            "role": {
+                                "$ref": "#/components/schemas/WorkspaceRole"
+                            },
+                            "created_at": {
+                                "type": "string",
+                                "format": "date-time"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "links": {
+                        "properties": {
+                            "self": {
+                                "type": "string",
+                                "example": "/api/v1/workspaces/0195f2f7-1f0a-7db2-b6f6-5d1d48d6752b"
+                            },
+                            "members": {
+                                "type": "string",
+                                "example": "/api/v1/workspaces/0195f2f7-1f0a-7db2-b6f6-5d1d48d6752b/members"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "WorkspaceCollectionResponseSchema": {
+                "required": [
+                    "jsonapi",
+                    "links",
+                    "data"
+                ],
+                "properties": {
+                    "jsonapi": {
+                        "$ref": "#/components/schemas/JsonApiObjectSchema"
+                    },
+                    "links": {
+                        "$ref": "#/components/schemas/CollectionLinksSchema"
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/WorkspaceResource"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "WorkspaceResponseSchema": {
+                "required": [
+                    "jsonapi",
+                    "data"
+                ],
+                "properties": {
+                    "jsonapi": {
+                        "$ref": "#/components/schemas/JsonApiObjectSchema"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/WorkspaceResource"
+                    }
+                },
+                "type": "object"
+            },
+            "MemberResource": {
+                "required": [
+                    "type",
+                    "id",
+                    "attributes",
+                    "relationships"
+                ],
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "example": "workspace_members"
+                    },
+                    "id": {
+                        "type": "string",
+                        "example": "12"
+                    },
+                    "attributes": {
+                        "properties": {
+                            "role": {
+                                "$ref": "#/components/schemas/WorkspaceRole"
+                            },
+                            "joined_at": {
+                                "type": "string",
+                                "format": "date-time"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "relationships": {
+                        "properties": {
+                            "user": {
+                                "properties": {
+                                    "data": {
+                                        "properties": {
+                                            "type": {
+                                                "type": "string",
+                                                "example": "users"
+                                            },
+                                            "id": {
+                                                "type": "string",
+                                                "example": "7"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "workspace": {
+                                "properties": {
+                                    "data": {
+                                        "properties": {
+                                            "type": {
+                                                "type": "string",
+                                                "example": "workspaces"
+                                            },
+                                            "id": {
+                                                "type": "string",
+                                                "format": "uuid"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "MemberCollectionResponseSchema": {
+                "required": [
+                    "jsonapi",
+                    "links",
+                    "data"
+                ],
+                "properties": {
+                    "jsonapi": {
+                        "$ref": "#/components/schemas/JsonApiObjectSchema"
+                    },
+                    "links": {
+                        "$ref": "#/components/schemas/CollectionLinksSchema"
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/MemberResource"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "MemberResponseSchema": {
+                "required": [
+                    "jsonapi",
+                    "data"
+                ],
+                "properties": {
+                    "jsonapi": {
+                        "$ref": "#/components/schemas/JsonApiObjectSchema"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/MemberResource"
+                    }
+                },
+                "type": "object"
             }
         },
         "responses": {
@@ -1525,6 +2151,12 @@
         },
         {
             "name": "Task lifecycle"
+        },
+        {
+            "name": "Workspaces"
+        },
+        {
+            "name": "Workspace members"
         }
     ]
 }

@@ -27,7 +27,9 @@ final class UserFactory extends PersistentObjectFactory
     protected function defaults(): array|callable
     {
         return [
-            'email' => self::faker()->unique()->email(),
+            // Lower case from the start: the application lowers emails, and two that differ only by
+            // case would be unique for Faker and a duplicate for the database.
+            'email' => self::faker()->unique()->regexify('[a-z]{5,9}\\.[a-z]{5,9}@example\\.com'),
             'password' => self::PASSWORD_HASH,
         ];
     }

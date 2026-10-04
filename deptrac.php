@@ -9,18 +9,26 @@ use Deptrac\Deptrac\Contract\Config\Ruleset;
 
 return static function (DeptracConfig $config): void {
     $module = static fn (string $name): Layer => Layer::withName($name)->collectors(DirectoryConfig::create('src/'.$name.'/.*'));
+    $contract = static fn (string $name): Layer => Layer::withName($name.'Contract')->collectors(DirectoryConfig::create('src/'.$name.'/Contract/.*'));
+    $internals = static fn (string $name): Layer => Layer::withName($name)->collectors(DirectoryConfig::create('src/'.$name.'/(?!Contract/).*'));
 
     $config
         ->paths('./src')
         ->layers(
-            $auth = $module('Auth'),
+            $authContract = $contract('Auth'),
+            $auth = $internals('Auth'),
+            $workspaceContract = $contract('Workspace'),
+            $workspace = $internals('Workspace'),
             $task = $module('Task'),
             $auditLog = $module('AuditLog'),
             $shared = $module('Shared'),
         )
         ->rulesets(
-            Ruleset::forLayer($task)->accesses($auth, $auditLog, $shared),
-            Ruleset::forLayer($auth)->accesses($shared),
+            Ruleset::forLayer($task)->accesses($auth, $authContract, $auditLog, $shared),
+            Ruleset::forLayer($workspace)->accesses($workspaceContract, $authContract, $auditLog, $shared),
+            Ruleset::forLayer($workspaceContract),
+            Ruleset::forLayer($auth)->accesses($authContract, $shared),
+            Ruleset::forLayer($authContract),
             Ruleset::forLayer($auditLog)->accesses($shared),
             Ruleset::forLayer($shared),
         )

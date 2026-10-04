@@ -1,0 +1,19 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Workspace\Event;
+
+use App\Workspace\Contract\WorkspaceRole;
+
+final readonly class MemberAdded
+{
+    public function __construct(
+        public string $workspaceId,
+        public string $workspaceName,
+        public int $userId,
+        public WorkspaceRole $role,
+        public int $actorId,
+    ) {
+    }
+}
