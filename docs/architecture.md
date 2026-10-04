@@ -45,24 +45,31 @@ flowchart TB
         a4[Security]
     end
 
+    subgraph AuditLog
+        direction TB
+        l1[Entity · Repository · Resource]
+        l2[Service]
+    end
+
     subgraph Shared
         direction TB
         s1[Http — error rendering, request id]
         s2[Api — JSON:API responses]
-        s3[AuditLog]
         s4[Persistence · Query]
     end
 
     Task -->|owner of a task| Auth
+    Task -->|writes its history| AuditLog
     Task --> Shared
     Auth --> Shared
-    Shared -.->|actor of an audit record| Auth
+    AuditLog --> Shared
 ```
 
 A module owns its slice end to end and registers itself through its own `di.php` and
-`routing.php` ([0001](adr/0001-feature-based-modular-monolith.md)). The dotted arrow is a
-known violation of "Shared depends on no module", recorded in the same ADR; nothing
-enforces the boundaries in CI yet.
+`routing.php` ([0001](adr/0001-feature-based-modular-monolith.md)). `Shared` depends on no
+module, and the audit log on none of the modules that write to it: a record names its
+actor by id ([0017](adr/0017-audit-log-as-its-own-module.md)). Nothing enforces the
+boundaries in CI yet.
 
 ## Authentication
 

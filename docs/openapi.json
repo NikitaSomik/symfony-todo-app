@@ -1350,7 +1350,7 @@
                     "relationships": {
                         "properties": {
                             "user": {
-                                "description": "Who made the change; null when the user no longer exists",
+                                "description": "Who made the change; null for an action no user made. The id stays when the user no longer exists",
                                 "properties": {
                                     "data": {
                                         "properties": {

@@ -37,8 +37,8 @@ entry, or an entry for a change that was rolled back, makes the history untrustw
   history with the task or block the deletion. Without the key, a per-entity table buys
   nothing over a shared one. The shared table takes the polymorphic pair knowingly —
   integrity of `entity_id` rests on the code — and is ready for the history of members and
-  roles in the next release. Its one real cost is `Shared` depending on `Auth` for the
-  actor ([0001](0001-feature-based-modular-monolith.md)).
+  roles in the next release. Its one real cost was `Shared` depending on `Auth` for the
+  actor, removed in [0017](0017-audit-log-as-its-own-module.md).
 - **An explicit `flush()` inside `wrapInTransaction()`.** The code until #61. It is
   redundant — the wrapper flushes again before commit — and the second flush is not free:
   measured in #61, it turned one phantom change into an extra `UPDATE` on every write.

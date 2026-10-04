@@ -44,3 +44,4 @@ Statuses:
 | [0014](0014-task-status-changed-as-part-of-an-update.md) | Change the task status as part of an update, with its invariant kept in the entity | superseded by [0015](0015-task-lifecycle-as-explicit-transitions.md) | 2026-04-02 |
 | [0015](0015-task-lifecycle-as-explicit-transitions.md) | Move a task through its lifecycle with explicit transitions, guarded by the entity | accepted | 2026-10-01 |
 | [0016](0016-blocked-is-a-status-of-work-in-progress.md) | A blocked task is a status of work in progress, reached and left only from `in_progress` | accepted | 2026-10-03 |
+| [0017](0017-audit-log-as-its-own-module.md) | The audit log is a module of its own, and names the actor by id | accepted | 2026-10-04 |

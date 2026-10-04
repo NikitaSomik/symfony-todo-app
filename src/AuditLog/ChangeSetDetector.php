@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Shared\AuditLog;
+namespace App\AuditLog;
 
 final class ChangeSetDetector
 {
