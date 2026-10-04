@@ -45,6 +45,14 @@ flowchart TB
         a4[Security]
     end
 
+    subgraph Workspace
+        direction TB
+        w1[Controller · DTO · Resource]
+        w2[Service · Listener]
+        w3[Entity · Contract]
+        w4[Security]
+    end
+
     subgraph AuditLog
         direction TB
         l1[Entity · Repository · Resource]
@@ -60,7 +68,10 @@ flowchart TB
 
     Task -->|needs the user who owns a task| Auth
     Task -->|writes and reads its history| AuditLog
+    Workspace -->|contract only| Auth
+    Workspace -->|writes its history| AuditLog
     Task --> Shared
+    Workspace --> Shared
     Auth --> Shared
     AuditLog --> Shared
 ```
@@ -69,7 +80,9 @@ An arrow reads "depends on". A module owns its slice end to end and registers it
 `routing.php` ([0001](adr/0001-feature-based-modular-monolith.md)). `Shared` depends on no
 module, and the audit log on none of the modules that write to it: a record names its
 actor by id ([0017](adr/0017-audit-log-as-its-own-module.md)). The allowed
-dependencies are declared in `deptrac.php` and checked in CI.
+dependencies are declared in `deptrac.php` and checked in CI. `Workspace` uses only
+`Auth`'s contract — an interface for the current user, a lookup by email and the
+registration event ([0018](adr/0018-modules-meet-through-contracts.md)).
 
 ## Authentication
 
