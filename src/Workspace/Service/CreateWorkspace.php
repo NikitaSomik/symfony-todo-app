@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Workspace\Service;
 
+use App\Auth\Contract\AuthenticatedUser;
 use App\Workspace\Entity\Workspace;
 use App\Workspace\Event\WorkspaceCreated;
 use Doctrine\ORM\EntityManagerInterface;
@@ -23,10 +24,13 @@ final readonly class CreateWorkspace
     public function handle(string $name, int $ownerId): Workspace
     {
         return $this->em->wrapInTransaction(function () use ($name, $ownerId): Workspace {
-            $workspace = new Workspace(Uuid::v7(), $name, $ownerId, $this->clock->now());
+            $owner = $this->em->getReference(AuthenticatedUser::class, $ownerId);
+            \assert(null !== $owner);
+
+            $workspace = new Workspace(Uuid::v7(), $name, $owner, $this->clock->now());
             $this->em->persist($workspace);
 
-            $this->eventDispatcher->dispatch(new WorkspaceCreated($workspace->getId()->toRfc4122(), $name, $ownerId));
+            $this->eventDispatcher->dispatch(new WorkspaceCreated($workspace->getId()->toRfc4122(), $workspace->getName(), $ownerId));
 
             return $workspace;
         });

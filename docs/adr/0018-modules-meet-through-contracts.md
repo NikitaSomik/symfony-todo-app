@@ -23,8 +23,8 @@ touched, not for its own sake.
 - **A module's `Contract/` namespace is its public face.** Other modules may import only
   that. In `deptrac.php` a module with a contract is two layers — `AuthContract` and
   `Auth` — and only the first appears in another module's rule.
-- **Another module's data is referenced by id.** A membership holds a `user_id`, not a
-  Doctrine relation to `User`. The JSON:API response already speaks that way: a
+- **Another module's data is referenced by id.** Services, events and responses carry a
+  user's id, never the `User` entity. The JSON:API response already speaks that way: a
   relationship is a type and an id.
 - **A cycle is broken with an event.** `Auth` dispatches `Contract\UserRegistered` inside
   the registration transaction; `Workspace` listens and creates the personal workspace.
@@ -36,8 +36,10 @@ touched, not for its own sake.
   to the other module's schema and is recorded as such. There is none today.
 - **A foreign key across modules only where the child means nothing without the
   parent.** A membership of a user that is gone means nothing, so `workspace_members.user_id`
-  has one; an audit record states a fact and has none
-  ([0017](0017-audit-log-as-its-own-module.md)).
+  has one. The entity then holds a relation to the other module's contract interface,
+  `Auth\Contract\AuthenticatedUser`, and Doctrine's `resolve_target_entities` names the
+  entity behind it. A record that has to outlive its parent holds a plain id and has no
+  key: an audit record states a fact ([0017](0017-audit-log-as-its-own-module.md)).
 
 ## Alternatives considered
 
@@ -51,19 +53,25 @@ touched, not for its own sake.
   preparing to split a module into a service does. With one database and no such plan it
   would cost database integrity and simple list queries, and buy an option nobody asked
   for.
+- **A plain id with the foreign key added by a schema listener.** Built first: a listener
+  on `ToolEvents::postGenerateSchema` added the key, so the entity held only an `int`. It
+  was custom code on Doctrine's internals for something the framework does by
+  configuration, and its first version, on the per-table event, lost the keys of real
+  relations.
 - **`Auth` calling `Workspace` on registration.** Direct and easy to follow, but it makes
   the two modules depend on each other.
 
 ## Consequences
 
-- Doctrine creates a foreign key only for a relation. For a plain id the key is added to
-  the schema by a listener on `ToolEvents::postGenerateSchema`
-  (`Workspace\Persistence\MembershipUserForeignKey`), so `migrations:diff` and
-  `schema:validate` see it. The per-table event cannot be used: Doctrine attaches the
-  keys of real relations afterwards, and a table replaced there loses them.
+- A membership holds an object again, but one that offers only `id()`. A service turns
+  the id it was given into that object with `getReference()`, which runs no query.
+- PHPStan's Doctrine extension reports such a relation as a type mismatch — the property
+  is the interface, the mapping resolves to the entity — and the line is ignored by its
+  identifier.
+- DQL can join through the relation and read `Auth`'s columns, and Deptrac does not read
+  query strings. The rule about joins is kept by review, not by a check.
 - Fetching through a contract is one more query where a join would be none.
-- `$membership->getUser()` does not exist. Showing a member's email takes a call to
-  `Auth`'s contract.
+- Showing a member's email takes a call to `Auth`'s contract.
 - `Task` still imports `Auth\Entity\User` and eight `AuditLog` classes. It moves to the
   contracts when tasks move into workspaces.
 - Registration now flushes twice in one transaction: the event carries the user's id,

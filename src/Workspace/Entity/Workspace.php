@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Workspace\Entity;
 
+use App\Auth\Contract\AuthenticatedUser;
 use App\Workspace\Contract\WorkspaceRole;
 use App\Workspace\Exception\LastOwnerException;
 use App\Workspace\Exception\MemberAlreadyExistsException;
@@ -37,12 +38,12 @@ class Workspace
     #[ORM\OrderBy(['joinedAt' => 'ASC', 'id' => 'ASC'])]
     private Collection $members;
 
-    public function __construct(Uuid $id, string $name, int $ownerId, \DateTimeImmutable $at)
+    public function __construct(Uuid $id, string $name, AuthenticatedUser $owner, \DateTimeImmutable $at)
     {
         $this->id = $id;
-        $this->name = $name;
+        $this->name = trim($name);
         $this->createdAt = $at;
-        $this->members = new ArrayCollection([new Membership($this, $ownerId, WorkspaceRole::OWNER, $at)]);
+        $this->members = new ArrayCollection([new Membership($this, $owner, WorkspaceRole::OWNER, $at)]);
     }
 
     public function getId(): Uuid
@@ -62,7 +63,7 @@ class Workspace
 
     public function rename(string $name): void
     {
-        $this->name = $name;
+        $this->name = trim($name);
     }
 
     /** @return list<Membership> */
@@ -76,21 +77,26 @@ class Workspace
         return $this->membershipOf($userId)?->getRole();
     }
 
-    public function addMember(int $userId, WorkspaceRole $role, \DateTimeImmutable $at): Membership
+    public function addMember(AuthenticatedUser $user, WorkspaceRole $role, \DateTimeImmutable $at): Membership
     {
-        if (null !== $this->membershipOf($userId)) {
+        if (null !== $this->membershipOf($user->id())) {
             throw new MemberAlreadyExistsException();
         }
 
-        $membership = new Membership($this, $userId, $role, $at);
+        $membership = new Membership($this, $user, $role, $at);
         $this->members->add($membership);
 
         return $membership;
     }
 
+    public function getMember(int $userId): Membership
+    {
+        return $this->membershipOf($userId) ?? throw new MemberNotFoundException();
+    }
+
     public function changeRole(int $userId, WorkspaceRole $role): Membership
     {
-        $membership = $this->membershipOf($userId) ?? throw new MemberNotFoundException();
+        $membership = $this->getMember($userId);
 
         if (WorkspaceRole::OWNER !== $role && $this->isLastOwner($membership)) {
             throw new LastOwnerException();
@@ -103,7 +109,7 @@ class Workspace
 
     public function removeMember(int $userId): Membership
     {
-        $membership = $this->membershipOf($userId) ?? throw new MemberNotFoundException();
+        $membership = $this->getMember($userId);
 
         if ($this->isLastOwner($membership)) {
             throw new LastOwnerException();

@@ -39,6 +39,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 final class WorkspaceMemberController extends AbstractController
 {
     public function __construct(
+        private readonly MemberResource $memberResource,
         private readonly AddMember $addMember,
         private readonly ChangeMemberRole $changeMemberRole,
         private readonly RemoveMember $removeMember,
@@ -51,7 +52,7 @@ final class WorkspaceMemberController extends AbstractController
     public function getAll(#[ValueResolver(MemberWorkspaceValueResolver::class)] Workspace $workspace): JsonResponse
     {
         return JsonApiResponse::collection(new ResourceCollection(
-            items: MemberResource::toItems($workspace->getMembers()),
+            items: $this->memberResource->toItems($workspace->getMembers()),
             links: ['self' => $this->generateUrl('api_workspace_member_get_all', ['id' => $workspace->getId()->toRfc4122()])],
         ));
     }
@@ -60,7 +61,7 @@ final class WorkspaceMemberController extends AbstractController
     #[IsGranted(WorkspaceVoter::MANAGE, subject: 'workspace')]
     #[OA\Post(summary: 'Add a registered user to a workspace', description: 'Owners only.')]
     #[OA\RequestBody(required: true, content: new OA\JsonContent(ref: new Model(type: AddMemberDTO::class)))]
-    #[OA\Response(response: 201, description: 'Member added', content: new JsonApiContent(ref: new Model(type: MemberResponseSchema::class)))]
+    #[OA\Response(response: 201, description: 'Member added', headers: [new OA\Header(header: 'Location', description: 'URL of the new member', schema: new OA\Schema(type: 'string'))], content: new JsonApiContent(ref: new Model(type: MemberResponseSchema::class)))]
     #[OA\Response(response: 403, description: 'The user is a member but not an owner')]
     #[OA\Response(response: 409, description: 'The user is already a member')]
     #[OA\Response(response: 415, description: 'Body is not sent as application/json')]
@@ -69,7 +70,16 @@ final class WorkspaceMemberController extends AbstractController
     {
         $membership = $this->addMember->handle($workspace, $dto->email, $dto->role(), $user->id());
 
-        return JsonApiResponse::one(MemberResource::toItem($membership), Response::HTTP_CREATED);
+        return JsonApiResponse::created($this->memberResource->toItem($membership), $this->memberResource->selfUrl($membership));
+    }
+
+    #[Route('/{userId}', name: 'get', methods: ['GET'])]
+    #[OA\Get(summary: 'Get a member of a workspace')]
+    #[OA\Parameter(name: 'userId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(response: 200, description: 'The member', content: new JsonApiContent(ref: new Model(type: MemberResponseSchema::class)))]
+    public function get(int $userId, #[ValueResolver(MemberWorkspaceValueResolver::class)] Workspace $workspace): JsonResponse
+    {
+        return JsonApiResponse::one($this->memberResource->toItem($workspace->getMember($userId)));
     }
 
     #[Route('/{userId}', name: 'change_role', methods: ['PUT'])]
@@ -86,21 +96,18 @@ final class WorkspaceMemberController extends AbstractController
     {
         $membership = $this->changeMemberRole->handle($workspace, $userId, $dto->role(), $user->id());
 
-        return JsonApiResponse::one(MemberResource::toItem($membership));
+        return JsonApiResponse::one($this->memberResource->toItem($membership));
     }
 
     #[Route('/{userId}', name: 'remove', methods: ['DELETE'])]
-    #[OA\Delete(summary: 'Remove a member, or leave the workspace', description: 'An owner removes anyone; any member may remove themselves. A workspace keeps at least one owner.')]
+    #[IsGranted(WorkspaceVoter::MANAGE, subject: 'workspace')]
+    #[OA\Delete(summary: 'Remove a member', description: 'Owners only. A workspace keeps at least one owner.')]
     #[OA\Parameter(name: 'userId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
     #[OA\Response(response: 204, description: 'Member removed')]
-    #[OA\Response(response: 403, description: 'The user is not an owner and tries to remove someone else')]
+    #[OA\Response(response: 403, description: 'The user is a member but not an owner')]
     #[OA\Response(response: 409, description: 'The last owner cannot be removed')]
     public function remove(int $userId, #[ValueResolver(MemberWorkspaceValueResolver::class)] Workspace $workspace, #[CurrentUser] AuthenticatedUser $user): Response
     {
-        if ($userId !== $user->id()) {
-            $this->denyAccessUnlessGranted(WorkspaceVoter::MANAGE, $workspace);
-        }
-
         $this->removeMember->handle($workspace, $userId, $user->id());
 
         return JsonApiResponse::noContent();

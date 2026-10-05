@@ -9,6 +9,7 @@ use App\Workspace\Contract\WorkspaceRole;
 use App\Workspace\Entity\Membership;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 #[OA\Schema(
     properties: [
@@ -38,11 +39,23 @@ use OpenApi\Attributes as OA;
             ],
             type: 'object',
         ),
+        new OA\Property(
+            property: 'links',
+            properties: [
+                new OA\Property(property: 'self', type: 'string', example: '/api/v1/workspaces/0195f2f7-1f0a-7db2-b6f6-5d1d48d6752b/members/7'),
+            ],
+            type: 'object',
+        ),
     ]
 )]
-final class MemberResource
+final readonly class MemberResource
 {
-    public static function toItem(Membership $membership): ResourceItem
+    public function __construct(
+        private UrlGeneratorInterface $urls,
+    ) {
+    }
+
+    public function toItem(Membership $membership): ResourceItem
     {
         return new ResourceItem(
             type: 'workspace_members',
@@ -55,6 +68,7 @@ final class MemberResource
                 'user' => ['data' => ['type' => 'users', 'id' => (string) $membership->getUserId()]],
                 'workspace' => ['data' => ['type' => 'workspaces', 'id' => $membership->getWorkspace()->getId()->toRfc4122()]],
             ],
+            links: ['self' => $this->selfUrl($membership)],
         );
     }
 
@@ -63,8 +77,16 @@ final class MemberResource
      *
      * @return ResourceItem[]
      */
-    public static function toItems(array $memberships): array
+    public function toItems(array $memberships): array
     {
-        return array_map(self::toItem(...), $memberships);
+        return array_map($this->toItem(...), $memberships);
+    }
+
+    public function selfUrl(Membership $membership): string
+    {
+        return $this->urls->generate('api_workspace_member_get', [
+            'id' => $membership->getWorkspace()->getId()->toRfc4122(),
+            'userId' => $membership->getUserId(),
+        ]);
     }
 }

@@ -6,6 +6,7 @@ namespace App\Tests\Application\Workspace;
 
 use App\AuditLog\Enum\AuditLogEntityType;
 use App\AuditLog\Repository\AuditLogRepository;
+use App\Auth\Contract\UserRegistered;
 use App\Auth\Entity\User;
 use App\Auth\Repository\UserRepository;
 use App\Fixtures\Auth\UserFactory;
@@ -50,6 +51,20 @@ final class WorkspaceControllerTest extends ApiTestCase
     }
 
     #[Test]
+    public function registrationShouldBeUndoneWhenWhatItSetsOffFails(): void
+    {
+        static::getContainer()->get('event_dispatcher')->addListener(
+            UserRegistered::class,
+            static fn () => throw new \RuntimeException('The personal workspace could not be created.'),
+        );
+
+        $this->post($this->route('api_auth_register'), ['email' => 'new@example.com', 'password' => 'secret123']);
+
+        self::assertResponseStatusCodeSame(500);
+        self::assertNull(static::getContainer()->get(UserRepository::class)->findOneBy(['email' => 'new@example.com']));
+    }
+
+    #[Test]
     public function createShouldMakeTheUserItsOwner(): void
     {
         $response = $this->post($this->route('api_workspace_create'), ['name' => '  Mobile team  ']);
@@ -87,7 +102,7 @@ final class WorkspaceControllerTest extends ApiTestCase
     public function getAllShouldReturnOnlyTheWorkspacesTheUserBelongsTo(): void
     {
         WorkspaceFactory::createOne(['name' => 'Mine', 'owner' => $this->user]);
-        WorkspaceFactory::new()->withMembers([$this->user->id() => WorkspaceRole::VIEWER])->create(['name' => 'Shared with me']);
+        WorkspaceFactory::new()->withMembers([[$this->user, WorkspaceRole::VIEWER]])->create(['name' => 'Shared with me']);
         WorkspaceFactory::createOne(['name' => 'Somebody else\'s']);
 
         $response = $this->get($this->route('api_workspace_get_all'));
@@ -99,7 +114,7 @@ final class WorkspaceControllerTest extends ApiTestCase
     #[Test]
     public function getShouldTellTheUserTheirRole(): void
     {
-        $workspace = WorkspaceFactory::new()->withMembers([$this->user->id() => WorkspaceRole::VIEWER])->create();
+        $workspace = WorkspaceFactory::new()->withMembers([[$this->user, WorkspaceRole::VIEWER]])->create();
 
         $response = $this->get($this->route('api_workspace_get', ['id' => $workspace->getId()->toRfc4122()]));
 
@@ -139,7 +154,7 @@ final class WorkspaceControllerTest extends ApiTestCase
     #[Test]
     public function renameByAMemberWhoIsNotAnOwnerShouldReturn403(): void
     {
-        $workspace = WorkspaceFactory::new()->withMembers([$this->user->id() => WorkspaceRole::MEMBER])->create();
+        $workspace = WorkspaceFactory::new()->withMembers([[$this->user, WorkspaceRole::MEMBER]])->create();
 
         $response = $this->put($this->route('api_workspace_rename', ['id' => $workspace->getId()->toRfc4122()]), ['name' => 'Apps team']);
 
@@ -150,7 +165,7 @@ final class WorkspaceControllerTest extends ApiTestCase
     #[Test]
     public function permissionShouldBeCheckedBeforeTheBody(): void
     {
-        $workspace = WorkspaceFactory::new()->withMembers([$this->user->id() => WorkspaceRole::MEMBER])->create();
+        $workspace = WorkspaceFactory::new()->withMembers([[$this->user, WorkspaceRole::MEMBER]])->create();
 
         $this->put($this->route('api_workspace_rename', ['id' => $workspace->getId()->toRfc4122()]), ['name' => '']);
 

@@ -34,11 +34,11 @@ final class WorkspaceFactory extends PersistentObjectFactory
     }
 
     /**
-     * @param array<int, WorkspaceRole> $roles role by user id
+     * @param list<array{User, WorkspaceRole}> $members
      */
-    public function withMembers(array $roles): static
+    public function withMembers(array $members): static
     {
-        return $this->with(['members' => $roles]);
+        return $this->with(['members' => $members]);
     }
 
     #[\Override]
@@ -49,10 +49,10 @@ final class WorkspaceFactory extends PersistentObjectFactory
             \assert($owner instanceof User);
             $at = new \DateTimeImmutable();
 
-            $workspace = new Workspace(Uuid::v7(), $attributes['name'], $owner->id(), $at);
+            $workspace = new Workspace(Uuid::v7(), $attributes['name'], $owner, $at);
 
-            foreach ($attributes['members'] as $userId => $role) {
-                $workspace->addMember($userId, $role, $at);
+            foreach ($attributes['members'] as [$user, $role]) {
+                $workspace->addMember($user, $role, $at);
             }
 
             return $workspace;

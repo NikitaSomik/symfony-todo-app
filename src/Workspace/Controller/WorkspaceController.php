@@ -17,11 +17,13 @@ use App\Workspace\Resource\WorkspaceResource;
 use App\Workspace\Security\MemberWorkspaceValueResolver;
 use App\Workspace\Security\WorkspaceVoter;
 use App\Workspace\Service\CreateWorkspace;
+use App\Workspace\Service\LeaveWorkspace;
 use App\Workspace\Service\RenameWorkspace;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\HttpKernel\Attribute\ValueResolver;
 use Symfony\Component\Routing\Attribute\Route;
@@ -39,6 +41,7 @@ final class WorkspaceController extends AbstractController
         private readonly WorkspaceResource $workspaceResource,
         private readonly CreateWorkspace $createWorkspace,
         private readonly RenameWorkspace $renameWorkspace,
+        private readonly LeaveWorkspace $leaveWorkspace,
     ) {
     }
 
@@ -61,7 +64,7 @@ final class WorkspaceController extends AbstractController
     #[OA\Response(ref: '#/components/responses/ValidationError', response: 422)]
     public function create(#[MapRequestPayload(acceptFormat: 'json')] WorkspaceDTO $dto, #[CurrentUser] AuthenticatedUser $user): JsonResponse
     {
-        $workspace = $this->createWorkspace->handle(trim($dto->name), $user->id());
+        $workspace = $this->createWorkspace->handle($dto->name, $user->id());
 
         return JsonApiResponse::created(
             $this->workspaceResource->toItem($workspace, $user->id()),
@@ -91,8 +94,21 @@ final class WorkspaceController extends AbstractController
     #[OA\Response(ref: '#/components/responses/ValidationError', response: 422)]
     public function rename(#[MapRequestPayload(acceptFormat: 'json')] WorkspaceDTO $dto, #[ValueResolver(MemberWorkspaceValueResolver::class)] Workspace $workspace, #[CurrentUser] AuthenticatedUser $user): JsonResponse
     {
-        $workspace = $this->renameWorkspace->handle($workspace, trim($dto->name), $user->id());
+        $workspace = $this->renameWorkspace->handle($workspace, $dto->name, $user->id());
 
         return JsonApiResponse::one($this->workspaceResource->toItem($workspace, $user->id()));
+    }
+
+    #[Route('/{id}/leave', name: 'leave', requirements: ['id' => Requirement::UUID_V7], methods: ['POST'])]
+    #[OA\Post(summary: 'Leave a workspace', description: 'Any member. A workspace keeps at least one owner.')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))]
+    #[OA\Response(response: 204, description: 'The user is no longer a member')]
+    #[OA\Response(response: 404, description: 'Workspace not found, or the user is not a member of it')]
+    #[OA\Response(response: 409, description: 'The last owner cannot leave')]
+    public function leave(#[ValueResolver(MemberWorkspaceValueResolver::class)] Workspace $workspace, #[CurrentUser] AuthenticatedUser $user): Response
+    {
+        $this->leaveWorkspace->handle($workspace, $user->id());
+
+        return JsonApiResponse::noContent();
     }
 }

@@ -971,6 +971,42 @@
                 }
             }
         },
+        "/api/v1/workspaces/{id}/leave": {
+            "post": {
+                "tags": [
+                    "Workspaces"
+                ],
+                "summary": "Leave a workspace",
+                "description": "Any member. A workspace keeps at least one owner.",
+                "operationId": "post_api_workspace_leave",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "The user is no longer a member"
+                    },
+                    "404": {
+                        "description": "Workspace not found, or the user is not a member of it"
+                    },
+                    "409": {
+                        "description": "The last owner cannot leave"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    }
+                }
+            }
+        },
         "/api/v1/workspaces/{id}/members": {
             "get": {
                 "tags": [
@@ -1041,6 +1077,14 @@
                 "responses": {
                     "201": {
                         "description": "Member added",
+                        "headers": {
+                            "Location": {
+                                "description": "URL of the new member",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
                         "content": {
                             "application/vnd.api+json": {
                                 "schema": {
@@ -1071,6 +1115,52 @@
             }
         },
         "/api/v1/workspaces/{id}/members/{userId}": {
+            "get": {
+                "tags": [
+                    "Workspace members"
+                ],
+                "summary": "Get a member of a workspace",
+                "operationId": "get_api_workspace_member_get",
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "pattern": "[0-9]+"
+                        }
+                    },
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The member",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MemberResponseSchema"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    },
+                    "404": {
+                        "description": "Workspace not found, or the user is not a member of it"
+                    }
+                }
+            },
             "put": {
                 "tags": [
                     "Workspace members"
@@ -1144,8 +1234,8 @@
                 "tags": [
                     "Workspace members"
                 ],
-                "summary": "Remove a member, or leave the workspace",
-                "description": "An owner removes anyone; any member may remove themselves. A workspace keeps at least one owner.",
+                "summary": "Remove a member",
+                "description": "Owners only. A workspace keeps at least one owner.",
                 "operationId": "delete_api_workspace_member_remove",
                 "parameters": [
                     {
@@ -1173,7 +1263,7 @@
                         "description": "Member removed"
                     },
                     "403": {
-                        "description": "The user is not an owner and tries to remove someone else"
+                        "description": "The user is a member but not an owner"
                     },
                     "409": {
                         "description": "The last owner cannot be removed"
@@ -1938,7 +2028,8 @@
                     "type",
                     "id",
                     "attributes",
-                    "relationships"
+                    "relationships",
+                    "links"
                 ],
                 "properties": {
                     "type": {
@@ -1998,6 +2089,15 @@
                                     }
                                 },
                                 "type": "object"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "links": {
+                        "properties": {
+                            "self": {
+                                "type": "string",
+                                "example": "/api/v1/workspaces/0195f2f7-1f0a-7db2-b6f6-5d1d48d6752b/members/7"
                             }
                         },
                         "type": "object"

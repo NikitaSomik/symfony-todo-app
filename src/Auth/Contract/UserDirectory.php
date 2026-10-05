@@ -6,5 +6,5 @@ namespace App\Auth\Contract;
 
 interface UserDirectory
 {
-    public function idByEmail(string $email): ?int;
+    public function findIdByEmail(string $email): ?int;
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Workspace\Entity;
 
+use App\Auth\Contract\AuthenticatedUser;
 use App\Workspace\Contract\WorkspaceRole;
 use App\Workspace\Entity\Workspace;
 use App\Workspace\Exception\LastOwnerException;
@@ -18,9 +19,23 @@ final class WorkspaceTest extends TestCase
     private const int OWNER = 1;
     private const int COLLEAGUE = 2;
 
+    private static function user(int $id): AuthenticatedUser
+    {
+        return new readonly class($id) implements AuthenticatedUser {
+            public function __construct(private int $id)
+            {
+            }
+
+            public function id(): int
+            {
+                return $this->id;
+            }
+        };
+    }
+
     private function workspace(): Workspace
     {
-        return new Workspace(Uuid::v7(), 'Mobile team', self::OWNER, new \DateTimeImmutable('2026-04-01 10:00:00'));
+        return new Workspace(Uuid::v7(), 'Mobile team', self::user(self::OWNER), new \DateTimeImmutable('2026-04-01 10:00:00'));
     }
 
     #[Test]
@@ -37,18 +52,18 @@ final class WorkspaceTest extends TestCase
     public function userShouldNotBeAddedTwice(): void
     {
         $workspace = $this->workspace();
-        $workspace->addMember(self::COLLEAGUE, WorkspaceRole::MEMBER, new \DateTimeImmutable());
+        $workspace->addMember(self::user(self::COLLEAGUE), WorkspaceRole::MEMBER, new \DateTimeImmutable());
 
         $this->expectException(MemberAlreadyExistsException::class);
 
-        $workspace->addMember(self::COLLEAGUE, WorkspaceRole::VIEWER, new \DateTimeImmutable());
+        $workspace->addMember(self::user(self::COLLEAGUE), WorkspaceRole::VIEWER, new \DateTimeImmutable());
     }
 
     #[Test]
     public function lastOwnerShouldNotBeRemoved(): void
     {
         $workspace = $this->workspace();
-        $workspace->addMember(self::COLLEAGUE, WorkspaceRole::MEMBER, new \DateTimeImmutable());
+        $workspace->addMember(self::user(self::COLLEAGUE), WorkspaceRole::MEMBER, new \DateTimeImmutable());
 
         $this->expectException(LastOwnerException::class);
 
@@ -69,7 +84,7 @@ final class WorkspaceTest extends TestCase
     public function ownerShouldBeAbleToStepDownOnceAnotherOwnerExists(): void
     {
         $workspace = $this->workspace();
-        $workspace->addMember(self::COLLEAGUE, WorkspaceRole::OWNER, new \DateTimeImmutable());
+        $workspace->addMember(self::user(self::COLLEAGUE), WorkspaceRole::OWNER, new \DateTimeImmutable());
 
         $workspace->changeRole(self::OWNER, WorkspaceRole::MEMBER);
         $workspace->removeMember(self::OWNER);

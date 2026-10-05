@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace App\Workspace\Entity;
 
+use App\Auth\Contract\AuthenticatedUser;
 use App\Workspace\Contract\WorkspaceRole;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'workspace_members')]
-#[ORM\UniqueConstraint(name: 'uniq_workspace_members_workspace_user', columns: ['workspace_id', 'user_id'])]
-#[ORM\Index(name: 'idx_workspace_members_user_id', columns: ['user_id'])]
+#[ORM\UniqueConstraint(name: 'uniq_workspace_members_user_workspace', columns: ['user_id', 'workspace_id'])]
+#[ORM\Index(name: 'idx_workspace_members_workspace_id', columns: ['workspace_id'])]
 final class Membership
 {
     #[ORM\Id]
@@ -19,25 +20,22 @@ final class Membership
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(targetEntity: Workspace::class, inversedBy: 'members')]
-    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
-    private Workspace $workspace;
+    public function __construct(
+        #[ORM\ManyToOne(targetEntity: Workspace::class, inversedBy: 'members')]
+        #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
+        private Workspace $workspace,
 
-    #[ORM\Column]
-    private int $userId;
+        // @phpstan-ignore doctrine.associationType
+        #[ORM\ManyToOne(targetEntity: AuthenticatedUser::class)]
+        #[ORM\JoinColumn(nullable: false)]
+        private AuthenticatedUser $user,
 
-    #[ORM\Column(length: 20, enumType: WorkspaceRole::class)]
-    private WorkspaceRole $role;
+        #[ORM\Column(length: 20, enumType: WorkspaceRole::class)]
+        private WorkspaceRole $role,
 
-    #[ORM\Column(type: Types::DATETIMETZ_IMMUTABLE)]
-    private \DateTimeImmutable $joinedAt;
-
-    public function __construct(Workspace $workspace, int $userId, WorkspaceRole $role, \DateTimeImmutable $joinedAt)
-    {
-        $this->workspace = $workspace;
-        $this->userId = $userId;
-        $this->role = $role;
-        $this->joinedAt = $joinedAt;
+        #[ORM\Column(type: Types::DATETIMETZ_IMMUTABLE)]
+        private \DateTimeImmutable $joinedAt,
+    ) {
     }
 
     public function getId(): ?int
@@ -52,7 +50,7 @@ final class Membership
 
     public function getUserId(): int
     {
-        return $this->userId;
+        return $this->user->id();
     }
 
     public function getRole(): WorkspaceRole

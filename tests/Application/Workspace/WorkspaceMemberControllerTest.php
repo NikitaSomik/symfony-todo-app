@@ -32,7 +32,7 @@ final class WorkspaceMemberControllerTest extends ApiTestCase
     private function ownedWorkspace(?WorkspaceRole $colleagueRole = null): Workspace
     {
         return WorkspaceFactory::new()
-            ->withMembers(null === $colleagueRole ? [] : [$this->colleague->id() => $colleagueRole])
+            ->withMembers(null === $colleagueRole ? [] : [[$this->colleague, $colleagueRole]])
             ->create(['name' => 'Mobile team', 'owner' => $this->user]);
     }
 
@@ -40,7 +40,7 @@ final class WorkspaceMemberControllerTest extends ApiTestCase
     private function workspaceOfTheColleague(WorkspaceRole $userRole): Workspace
     {
         return WorkspaceFactory::new()
-            ->withMembers([$this->user->id() => $userRole])
+            ->withMembers([[$this->user, $userRole]])
             ->create(['name' => 'Mobile team', 'owner' => $this->colleague]);
     }
 
@@ -51,7 +51,12 @@ final class WorkspaceMemberControllerTest extends ApiTestCase
 
     private function member(Workspace $workspace, User $user): string
     {
-        return $this->route('api_workspace_member_remove', ['id' => $workspace->getId()->toRfc4122(), 'userId' => $user->id()]);
+        return $this->route('api_workspace_member_get', ['id' => $workspace->getId()->toRfc4122(), 'userId' => $user->id()]);
+    }
+
+    private function leave(Workspace $workspace): string
+    {
+        return $this->route('api_workspace_leave', ['id' => $workspace->getId()->toRfc4122()]);
     }
 
     /** @return array<string, string> role by user id */
@@ -105,6 +110,8 @@ final class WorkspaceMemberControllerTest extends ApiTestCase
         $data = $this->jsonData($response);
 
         self::assertResponseStatusCodeSame(201);
+        self::assertResponseHeaderSame('Location', $this->member($workspace, $this->colleague));
+        self::assertSame($this->member($workspace, $this->colleague), $data['links']['self']);
         self::assertSame('workspace_members', $data['type']);
         self::assertSame('member', $data['attributes']['role']);
         self::assertSame(['type' => 'users', 'id' => (string) $this->colleague->id()], $data['relationships']['user']['data']);
@@ -214,15 +221,49 @@ final class WorkspaceMemberControllerTest extends ApiTestCase
     }
 
     #[Test]
+    public function getShouldReturnOneMember(): void
+    {
+        $workspace = $this->ownedWorkspace(WorkspaceRole::VIEWER);
+
+        $data = $this->jsonData($this->get($this->member($workspace, $this->colleague)));
+
+        self::assertResponseStatusCodeSame(200);
+        self::assertSame('viewer', $data['attributes']['role']);
+        self::assertSame(['type' => 'users', 'id' => (string) $this->colleague->id()], $data['relationships']['user']['data']);
+    }
+
+    #[Test]
+    public function getOfSomeoneWhoIsNotAMemberShouldReturn404(): void
+    {
+        $this->get($this->member($this->ownedWorkspace(), $this->colleague));
+
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    #[Test]
     public function memberShouldBeAbleToLeave(): void
     {
         $workspace = $this->workspaceOfTheColleague(WorkspaceRole::VIEWER);
 
-        $this->delete($this->member($workspace, $this->user));
+        $this->post($this->leave($workspace));
         self::assertResponseStatusCodeSame(204);
+        self::assertSame(
+            [sprintf('User %d left workspace "Mobile team"', $this->user->id())],
+            $this->auditMessages($workspace),
+        );
 
         $this->get($this->members($workspace));
         self::assertResponseStatusCodeSame(404);
+    }
+
+    #[Test]
+    public function memberWhoIsNotAnOwnerShouldNotRemoveThemselves(): void
+    {
+        $workspace = $this->workspaceOfTheColleague(WorkspaceRole::MEMBER);
+
+        $this->delete($this->member($workspace, $this->user));
+
+        self::assertResponseStatusCodeSame(403);
     }
 
     #[Test]
@@ -237,6 +278,16 @@ final class WorkspaceMemberControllerTest extends ApiTestCase
 
     #[Test]
     public function lastOwnerShouldNotLeave(): void
+    {
+        $workspace = $this->ownedWorkspace(WorkspaceRole::MEMBER);
+
+        $this->post($this->leave($workspace));
+
+        self::assertResponseStatusCodeSame(409);
+    }
+
+    #[Test]
+    public function lastOwnerShouldNotBeRemoved(): void
     {
         $workspace = $this->ownedWorkspace(WorkspaceRole::MEMBER);
 

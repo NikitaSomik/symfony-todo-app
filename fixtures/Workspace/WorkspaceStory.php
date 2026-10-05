@@ -48,7 +48,7 @@ final class WorkspaceStory extends Story
                     $colleagues = [];
 
                     foreach (array_slice($users, $index + 1, random_int(2, 9)) as $position => $colleague) {
-                        $colleagues[$colleague->id()] = 0 === $position % 4 ? WorkspaceRole::VIEWER : WorkspaceRole::MEMBER;
+                        $colleagues[] = [$colleague, 0 === $position % 4 ? WorkspaceRole::VIEWER : WorkspaceRole::MEMBER];
                     }
 
                     WorkspaceFactory::new()->withMembers($colleagues)->create(['owner' => $user]);

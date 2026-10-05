@@ -27,12 +27,16 @@ moved the boards people had kept personally into workspaces when it made that ru
   ([0018](0018-modules-meet-through-contracts.md)). It is an ordinary workspace named
   "Personal": people can be added to it later.
 - **A member is added by the email of a registered user**, by an owner.
+- **Removing a member and leaving are two actions.** An owner removes a member
+  (`DELETE /workspaces/{id}/members/{userId}`); any member leaves
+  (`POST /workspaces/{id}/leave`). The row deleted is the same; who decided, who may and
+  what the audit log says are not.
 - **Who may do what is answered in three steps.** A workspace the user is not a member of
   answers `404`, like a missing one — the resolver loads it only among the user's own. A
   member without the right answers `403`, from `WorkspaceVoter`. Only then is the body
   validated (`422`) and the rule checked (`409`).
 - **Membership changes are history**: created, renamed, member added, role changed,
-  member removed go to the audit log in the same transaction
+  member removed, member left go to the audit log in the same transaction
   ([0012](0012-synchronous-audit-log-one-transaction.md)).
 - Tasks are not in workspaces yet; that is the next step.
 
@@ -54,8 +58,14 @@ moved the boards people had kept personally into workspaces when it made that ru
   one answers `422`. Only an authenticated owner can ask; invitations would remove it.
 - `403` exists again, next to `404`: a stranger cannot learn that a workspace exists, a
   member learns that an action is not theirs.
-- A member can leave; the last owner cannot. Deleting a workspace is not possible yet —
-  what happens to its tasks has to be decided first.
+- The last owner cannot leave. Deleting a workspace is not possible yet — what happens to
+  its tasks has to be decided first.
+- "At least one owner" is checked on the members loaded in the request. Two owners
+  stepping down at the same moment each see the other and both succeed, leaving none.
+  Nothing locks the workspace yet; a version column on it would.
+- A user who is a member of a workspace cannot be deleted: the foreign key refuses it
+  ([0018](0018-modules-meet-through-contracts.md)). Nothing deletes users today; archiving
+  workspaces and deactivating users is a later stage.
 - A workspace loads all its members to answer who may do what. Fine for teams of this
   size; a workspace with thousands of members would need the role read by a query.
 - The fixtures give every user a personal workspace and every tenth one a team; the

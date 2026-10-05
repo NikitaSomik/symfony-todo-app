@@ -23,8 +23,8 @@ final readonly class RenameWorkspace
             $previousName = $workspace->getName();
             $workspace->rename($name);
 
-            if ($previousName !== $name) {
-                $this->eventDispatcher->dispatch(new WorkspaceRenamed($workspace->getId()->toRfc4122(), $previousName, $name, $actorId));
+            if ($previousName !== $workspace->getName()) {
+                $this->eventDispatcher->dispatch(new WorkspaceRenamed($workspace->getId()->toRfc4122(), $previousName, $workspace->getName(), $actorId));
             }
 
             return $workspace;

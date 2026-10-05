@@ -32,7 +32,7 @@ final class RegisterUser
         try {
             return $this->em->wrapInTransaction(function () use ($user): User {
                 $this->em->persist($user);
-                // The id comes from the database, and what registration sets off needs it.
+                // Flush now: the database assigns the id, and the event below carries it.
                 $this->em->flush();
 
                 $this->eventDispatcher->dispatch(new UserRegistered($user->id()));

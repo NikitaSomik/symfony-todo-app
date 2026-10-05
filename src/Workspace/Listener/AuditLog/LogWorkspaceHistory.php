@@ -8,6 +8,7 @@ use App\AuditLog\Enum\AuditLogAction;
 use App\AuditLog\Enum\AuditLogEntityType;
 use App\AuditLog\Service\AuditLogLogger;
 use App\Workspace\Event\MemberAdded;
+use App\Workspace\Event\MemberLeft;
 use App\Workspace\Event\MemberRemoved;
 use App\Workspace\Event\MemberRoleChanged;
 use App\Workspace\Event\WorkspaceCreated;
@@ -85,6 +86,19 @@ final readonly class LogWorkspaceHistory
             actorId: $event->actorId,
             action: AuditLogAction::UPDATED,
             message: sprintf('Removed user %d from workspace "%s"', $event->userId, $event->workspaceName),
+            attributeChanges: ['old' => ['member' => ['user_id' => $event->userId, 'role' => $event->role->value]], 'new' => ['member' => null]],
+        );
+    }
+
+    #[AsEventListener]
+    public function memberLeft(MemberLeft $event): void
+    {
+        $this->auditLogLogger->log(
+            entityType: AuditLogEntityType::WORKSPACE,
+            entityId: $event->workspaceId,
+            actorId: $event->userId,
+            action: AuditLogAction::UPDATED,
+            message: sprintf('User %d left workspace "%s"', $event->userId, $event->workspaceName),
             attributeChanges: ['old' => ['member' => ['user_id' => $event->userId, 'role' => $event->role->value]], 'new' => ['member' => null]],
         );
     }
