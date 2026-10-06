@@ -156,16 +156,17 @@ Each decision, with the alternatives that lost and what it costs, is an
 
 ---
 
-## Phase 2 — Projects
+## Phase 2 — Workspaces
 
-> New module: `src/Project/`
+> New module: `src/Workspace/`. A workspace is the team; projects inside it come later.
 
-- [ ] `Project` entity — `id`, `name`, `description`, `owner`, `createdAt`
-- [ ] `ProjectMember` — User ↔ Project with role (`OWNER`, `MEMBER`)
-- [ ] Move `Task` under `Project`
-- [ ] `ProjectController` — CRUD `/api/v1/projects`
-- [ ] Symfony Voters — access control (only members can see/edit)
-- [ ] Assign task to project member
+- [x] `Workspace` with members and roles — `owner`, `member`, `viewer`, at least one owner ([ADR 0019](adr/0019-workspaces-members-and-roles.md))
+- [x] A personal workspace for every user, created at registration
+- [x] `/api/v1/workspaces` and `/api/v1/workspaces/{id}/members`
+- [x] Symfony Voter — `403` for a member without the right, `404` for a stranger
+- [ ] Move `Task` into a workspace; access by membership
+- [ ] Assign a task to a member
+- [ ] Projects inside a workspace
 
 ---
 

@@ -17,6 +17,8 @@ doctrine:
         identity_generation_preferences:
             Doctrine\DBAL\Platforms\PostgreSQLPlatform: identity
         auto_mapping: true
+        resolve_target_entities:
+            App\Auth\Contract\AuthenticatedUser: App\Auth\Entity\User
         # Only entity directories: the rest of src/ holds code that must not be reflected
         # in prod, e.g. fixtures built on dev-only packages.
         mappings:
@@ -35,6 +37,11 @@ doctrine:
                 is_bundle: false
                 dir: '%kernel.project_dir%/src/AuditLog/Entity'
                 prefix: 'App\AuditLog\Entity'
+            Workspace:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Workspace/Entity'
+                prefix: 'App\Workspace\Entity'
         dql:
             string_functions:
                 TSMATCH: MartinGeorgiev\Doctrine\ORM\Query\AST\Functions\Tsmatch

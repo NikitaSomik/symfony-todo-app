@@ -7,6 +7,7 @@ namespace App\AuditLog\Enum;
 enum AuditLogEntityType: string
 {
     case TASK = 'task';
+    case WORKSPACE = 'workspace';
 
     /**
      * The JSON:API type the audited entity is exposed under.
@@ -15,6 +16,7 @@ enum AuditLogEntityType: string
     {
         return match ($this) {
             self::TASK => 'tasks',
+            self::WORKSPACE => 'workspaces',
         };
     }
 }

@@ -34,9 +34,13 @@ The rules it enforces now:
 - **A session can be ended.** Logging out on one device ends the sessions on all of them,
   within 15 minutes at most ([0005](docs/adr/0005-revocable-sessions.md)).
 
-What comes next ([roadmap](docs/roadmap.md)): shared work — members with roles, so that
-several people work on the same tasks and a task has an assignee; then limits on work in
-progress and deadlines with consequences.
+- **People work together in workspaces.** A workspace has owners, members and viewers,
+  always at least one owner, and every user starts with a personal one
+  ([0019](docs/adr/0019-workspaces-members-and-roles.md)).
+
+What comes next ([roadmap](docs/roadmap.md)): tasks move into workspaces, so that several
+people work on the same tasks and a task has an assignee; then limits on work in progress
+and deadlines with consequences.
 
 ## Where to look
 
@@ -47,6 +51,7 @@ progress and deadlines with consequences.
 | How does a failure reach the client? | Exceptions mapped to statuses in configuration, rendered by a serializer normalizer — after a first design that did not hold | [0006](docs/adr/0006-errors-rendered-by-exception-subscriber.md) → [0007](docs/adr/0007-exception-mapping-and-error-normalizer.md) |
 | How far does the API follow JSON:API? | Responses and query parameters do, request bodies stay plain JSON — full compliance was built on a branch and measured | [0008](docs/adr/0008-json-api-responses-plain-json-requests.md) |
 | What is logged? | Per request: buffered quietly, written on failure, tagged with request and user ids | [0009](docs/adr/0009-production-logging.md) |
+| What may modules know about each other? | A module's `Contract/` namespace, ids instead of entities, events to break a cycle — checked by Deptrac | [0018](docs/adr/0018-modules-meet-through-contracts.md) |
 | What does someone else's task answer? | `404`, exactly like a missing one | [0011](docs/adr/0011-foreign-task-answers-404.md) |
 | Can the audit log disagree with the data? | No: it is written in the same transaction, one flush per use case | [0012](docs/adr/0012-synchronous-audit-log-one-transaction.md) |
 | Why a stored `tsvector` column for search? | Because results are ranked — measured against an expression index on a million tasks | [0013](docs/adr/0013-task-search-postgresql-full-text.md) |
@@ -62,13 +67,12 @@ authentication flow and a task transition: [docs/architecture.md](docs/architect
 flowchart LR
     Task -->|needs the user who owns a task| Auth
     Task -->|writes and reads its history| AuditLog
-    Task --> Shared
-    Auth --> Shared
-    AuditLog --> Shared
+    Workspace -->|contract only| Auth
+    Workspace -->|writes its history| AuditLog
 ```
 
-An arrow reads "depends on". `Auth` — registration, login, refresh, logout. `Task` — tasks, their lifecycle, search and
-history. `AuditLog` — who changed what; modules write to it, and it knows none of them
+An arrow reads "depends on". Every module also uses `Shared`, which depends on none. `Auth` — registration, login, refresh, logout. `Task` — tasks, their lifecycle, search and
+history. `Workspace` — who works together and in which role. `AuditLog` — who changed what; modules write to it, and it knows none of them
 ([0017](docs/adr/0017-audit-log-as-its-own-module.md)). `Shared` — technical code every
 module uses: error rendering, JSON:API responses.
 

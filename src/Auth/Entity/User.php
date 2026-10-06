@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Auth\Entity;
 
+use App\Auth\Contract\AuthenticatedUser;
 use App\Auth\Repository\UserRepository;
 use App\Auth\ValueObject\Email;
 use Doctrine\DBAL\Types\Types;
@@ -15,7 +16,7 @@ use Symfony\Component\Security\Core\User\UserInterface;
 #[ORM\Table(name: 'users')]
 #[ORM\UniqueConstraint(name: 'uniq_users_email', columns: ['email'])]
 #[ORM\HasLifecycleCallbacks]
-class User implements UserInterface, PasswordAuthenticatedUserInterface
+class User implements UserInterface, PasswordAuthenticatedUserInterface, AuthenticatedUser
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -49,6 +50,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function id(): int
+    {
+        return $this->id ?? throw new \LogicException('The user has no id before it is persisted.');
     }
 
     public function getEmail(): string

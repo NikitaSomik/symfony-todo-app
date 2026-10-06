@@ -11,6 +11,21 @@ framework:
         App\Task\Exception\TaskTransitionNotAllowedException:
             status_code: 409
             log_level: info
+        App\Workspace\Exception\CannotRemoveYourselfException:
+            status_code: 409
+            log_level: info
+        App\Workspace\Exception\LastOwnerException:
+            status_code: 409
+            log_level: info
+        App\Workspace\Exception\MemberAlreadyExistsException:
+            status_code: 409
+            log_level: info
+        App\Workspace\Exception\MemberNotFoundException:
+            status_code: 404
+            log_level: info
+        App\Workspace\Exception\UserNotRegisteredException:
+            status_code: 422
+            log_level: info
         # Client errors raised by Symfony itself keep their status. They are the client's to
         # fix, not incidents: without this they are logged as errors and flush the prod buffer.
         Symfony\Component\HttpKernel\Exception\BadRequestHttpException: { log_level: info }

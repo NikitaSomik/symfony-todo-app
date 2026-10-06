@@ -45,3 +45,5 @@ Statuses:
 | [0015](0015-task-lifecycle-as-explicit-transitions.md) | Move a task through its lifecycle with explicit transitions, guarded by the entity | accepted | 2026-10-01 |
 | [0016](0016-blocked-is-a-status-of-work-in-progress.md) | A blocked task is a status of work in progress, reached and left only from `in_progress` | accepted | 2026-10-03 |
 | [0017](0017-audit-log-as-its-own-module.md) | The audit log is a module of its own, and names the actor by id | accepted | 2026-10-04 |
+| [0018](0018-modules-meet-through-contracts.md) | Modules meet through contracts, ids and events | accepted | 2026-10-04 |
+| [0019](0019-workspaces-members-and-roles.md) | Work is shared in workspaces: members, three roles, at least one owner | accepted | 2026-10-04 |
