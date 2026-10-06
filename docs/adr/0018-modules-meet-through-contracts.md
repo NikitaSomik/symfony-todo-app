@@ -72,7 +72,8 @@ touched, not for its own sake.
   query strings. The rule about joins is kept by review, not by a check.
 - Fetching through a contract is one more query where a join would be none.
 - Showing a member's email takes a call to `Auth`'s contract.
-- `Task` still imports `Auth\Entity\User` and eight `AuditLog` classes. It moves to the
-  contracts when tasks move into workspaces.
+- `Task` moved to `Auth`'s contract in #77: it keeps its creator as an id, and Deptrac
+  no longer lets it import `Auth`'s internals. It still imports eight `AuditLog` classes;
+  no planned work changes that.
 - Registration now flushes twice in one transaction: the event carries the user's id,
   and the id comes from the database.

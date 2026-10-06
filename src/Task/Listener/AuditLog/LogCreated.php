@@ -18,6 +18,6 @@ final readonly class LogCreated
 
     public function __invoke(TaskCreated $event): void
     {
-        $this->taskAuditLog->created($event->taskId, $event->actor, $event->state);
+        $this->taskAuditLog->created($event->taskId, $event->actorId, $event->state);
     }
 }

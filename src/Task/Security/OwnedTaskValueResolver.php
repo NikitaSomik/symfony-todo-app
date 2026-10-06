@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Task\Security;
 
-use App\Auth\Entity\User;
+use App\Auth\Contract\AuthenticatedUser;
 use App\Task\Entity\Task;
 use App\Task\Repository\TaskRepository;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -41,7 +41,7 @@ final readonly class OwnedTaskValueResolver implements ValueResolverInterface
 
         // Without a user there is no owner to look for: authentication is required, and the
         // firewall answers it with a 401.
-        if (!$user instanceof User) {
+        if (!$user instanceof AuthenticatedUser) {
             throw new AccessDeniedException();
         }
 
@@ -51,7 +51,7 @@ final readonly class OwnedTaskValueResolver implements ValueResolverInterface
             throw new NotFoundHttpException(sprintf('Task "%s" not found.', $id));
         }
 
-        $task = $this->taskRepository->findOneBy(['id' => Uuid::fromString($id), 'user' => $user]);
+        $task = $this->taskRepository->findOneBy(['id' => Uuid::fromString($id), 'creatorId' => $user->id()]);
 
         if (null === $task) {
             throw new NotFoundHttpException(sprintf('Task "%s" not found.', $id));

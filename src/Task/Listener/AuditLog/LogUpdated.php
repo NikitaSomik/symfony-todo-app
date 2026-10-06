@@ -18,6 +18,6 @@ final readonly class LogUpdated
 
     public function __invoke(TaskUpdated $event): void
     {
-        $this->taskAuditLog->updated($event->taskId, $event->actor, $event->previousState, $event->currentState);
+        $this->taskAuditLog->updated($event->taskId, $event->actorId, $event->previousState, $event->currentState);
     }
 }

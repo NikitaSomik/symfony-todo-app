@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Task\Controller;
 
-use App\Auth\Entity\User;
+use App\Auth\Contract\AuthenticatedUser;
 use App\Shared\Api\Documentation\JsonApiContent;
 use App\Shared\Api\JsonApiResponse;
 use App\Task\Api\Documentation\TaskResponseSchema;
@@ -27,6 +27,7 @@ use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\HttpKernel\Attribute\ValueResolver;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 #[Route('/api/v1/tasks/{id}', name: 'api_task_', requirements: ['id' => Requirement::UUID_V7], methods: ['POST'], format: 'json')]
 #[OA\Tag(name: 'Task lifecycle')]
@@ -50,23 +51,23 @@ final class TaskTransitionController extends AbstractController
 
     #[Route('/start', name: 'start')]
     #[OA\Post(summary: 'Start a task', description: '`todo` → `in_progress`')]
-    public function start(#[ValueResolver(OwnedTaskValueResolver::class)] Task $task): JsonResponse
+    public function start(#[ValueResolver(OwnedTaskValueResolver::class)] Task $task, #[CurrentUser] AuthenticatedUser $user): JsonResponse
     {
-        return JsonApiResponse::one($this->taskResource->toItem($this->startTask->handle($task, $this->user())));
+        return JsonApiResponse::one($this->taskResource->toItem($this->startTask->handle($task, $user->id())));
     }
 
     #[Route('/submit-for-review', name: 'submit_for_review')]
     #[OA\Post(summary: 'Submit a task for review', description: '`in_progress` → `in_review`')]
-    public function submitForReview(#[ValueResolver(OwnedTaskValueResolver::class)] Task $task): JsonResponse
+    public function submitForReview(#[ValueResolver(OwnedTaskValueResolver::class)] Task $task, #[CurrentUser] AuthenticatedUser $user): JsonResponse
     {
-        return JsonApiResponse::one($this->taskResource->toItem($this->submitTaskForReview->handle($task, $this->user())));
+        return JsonApiResponse::one($this->taskResource->toItem($this->submitTaskForReview->handle($task, $user->id())));
     }
 
     #[Route('/complete', name: 'complete')]
     #[OA\Post(summary: 'Complete a task', description: '`in_review` → `completed`. A completed task is final.')]
-    public function complete(#[ValueResolver(OwnedTaskValueResolver::class)] Task $task): JsonResponse
+    public function complete(#[ValueResolver(OwnedTaskValueResolver::class)] Task $task, #[CurrentUser] AuthenticatedUser $user): JsonResponse
     {
-        return JsonApiResponse::one($this->taskResource->toItem($this->completeTask->handle($task, $this->user())));
+        return JsonApiResponse::one($this->taskResource->toItem($this->completeTask->handle($task, $user->id())));
     }
 
     #[Route('/block', name: 'block')]
@@ -74,16 +75,16 @@ final class TaskTransitionController extends AbstractController
     #[OA\RequestBody(required: true, content: new OA\JsonContent(ref: new Model(type: BlockTaskDTO::class)))]
     #[OA\Response(response: 415, description: 'Body is not sent as application/json')]
     #[OA\Response(ref: '#/components/responses/ValidationError', response: 422)]
-    public function block(#[MapRequestPayload(acceptFormat: 'json')] BlockTaskDTO $dto, #[ValueResolver(OwnedTaskValueResolver::class)] Task $task): JsonResponse
+    public function block(#[MapRequestPayload(acceptFormat: 'json')] BlockTaskDTO $dto, #[ValueResolver(OwnedTaskValueResolver::class)] Task $task, #[CurrentUser] AuthenticatedUser $user): JsonResponse
     {
-        return JsonApiResponse::one($this->taskResource->toItem($this->blockTask->handle($task, $dto, $this->user())));
+        return JsonApiResponse::one($this->taskResource->toItem($this->blockTask->handle($task, $dto->reason(), $user->id())));
     }
 
     #[Route('/unblock', name: 'unblock')]
     #[OA\Post(summary: 'Unblock a task', description: '`blocked` → `in_progress`')]
-    public function unblock(#[ValueResolver(OwnedTaskValueResolver::class)] Task $task): JsonResponse
+    public function unblock(#[ValueResolver(OwnedTaskValueResolver::class)] Task $task, #[CurrentUser] AuthenticatedUser $user): JsonResponse
     {
-        return JsonApiResponse::one($this->taskResource->toItem($this->unblockTask->handle($task, $this->user())));
+        return JsonApiResponse::one($this->taskResource->toItem($this->unblockTask->handle($task, $user->id())));
     }
 
     #[Route('/cancel', name: 'cancel')]
@@ -91,16 +92,8 @@ final class TaskTransitionController extends AbstractController
     #[OA\RequestBody(required: true, content: new OA\JsonContent(ref: new Model(type: CancelTaskDTO::class)))]
     #[OA\Response(response: 415, description: 'Body is not sent as application/json')]
     #[OA\Response(ref: '#/components/responses/ValidationError', response: 422)]
-    public function cancel(#[MapRequestPayload(acceptFormat: 'json')] CancelTaskDTO $dto, #[ValueResolver(OwnedTaskValueResolver::class)] Task $task): JsonResponse
+    public function cancel(#[MapRequestPayload(acceptFormat: 'json')] CancelTaskDTO $dto, #[ValueResolver(OwnedTaskValueResolver::class)] Task $task, #[CurrentUser] AuthenticatedUser $user): JsonResponse
     {
-        return JsonApiResponse::one($this->taskResource->toItem($this->cancelTask->handle($task, $dto, $this->user())));
-    }
-
-    private function user(): User
-    {
-        /** @var User $user */
-        $user = $this->getUser();
-
-        return $user;
+        return JsonApiResponse::one($this->taskResource->toItem($this->cancelTask->handle($task, $dto->reason(), $user->id())));
     }
 }

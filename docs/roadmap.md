@@ -164,6 +164,7 @@ Each decision, with the alternatives that lost and what it costs, is an
 - [x] A personal workspace for every user, created at registration
 - [x] `/api/v1/workspaces` and `/api/v1/workspaces/{id}/members`
 - [x] Symfony Voter — `403` for a member without the right, `404` for a stranger
+- [x] `Task` keeps its creator as an id and uses `Auth` only through its contract
 - [ ] Move `Task` into a workspace; access by membership
 - [ ] Assign a task to a member
 - [ ] Projects inside a workspace

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Task\Service;
 
-use App\Auth\Entity\User;
 use App\Task\AuditLog\TaskState;
 use App\Task\Entity\Task;
 use App\Task\Event\TaskStatusChanged;
@@ -21,13 +20,13 @@ final readonly class CompleteTask
     ) {
     }
 
-    public function handle(Task $task, User $user): Task
+    public function handle(Task $task, int $actorId): Task
     {
-        return $this->em->wrapInTransaction(function () use ($task, $user): Task {
+        return $this->em->wrapInTransaction(function () use ($task, $actorId): Task {
             $previousState = TaskState::fromTask($task);
 
             $task->complete($this->clock->now());
-            $this->eventDispatcher->dispatch(TaskStatusChanged::from($task, $user, $previousState));
+            $this->eventDispatcher->dispatch(TaskStatusChanged::from($task, $actorId, $previousState));
 
             return $task;
         });

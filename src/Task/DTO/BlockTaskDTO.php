@@ -22,4 +22,9 @@ readonly class BlockTaskDTO
         public string $reason,
     ) {
     }
+
+    public function reason(): BlockReason
+    {
+        return new BlockReason($this->reason);
+    }
 }

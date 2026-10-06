@@ -8,7 +8,7 @@ use App\AuditLog\Api\Documentation\AuditLogCollectionResponseSchema;
 use App\AuditLog\Enum\AuditLogEntityType;
 use App\AuditLog\Repository\AuditLogRepository;
 use App\AuditLog\Resource\AuditLogResource;
-use App\Auth\Entity\User;
+use App\Auth\Contract\AuthenticatedUser;
 use App\Shared\Api\Documentation\JsonApiContent;
 use App\Shared\Api\JsonApiResponse;
 use App\Shared\Api\PaginatedCollection;
@@ -40,6 +40,7 @@ use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\HttpKernel\Attribute\ValueResolver;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 #[Route('/api/v1/tasks', name: 'api_task_', format: 'json')]
 #[OA\Tag(name: 'Tasks')]
@@ -68,12 +69,10 @@ final class TaskController extends AbstractController
         #[MapQueryString(validationFailedStatusCode: Response::HTTP_UNPROCESSABLE_ENTITY)]
         TaskListQueryDTO $query,
         Request $request,
+        #[CurrentUser] AuthenticatedUser $user,
     ): JsonResponse {
-        /** @var User $user */
-        $user = $this->getUser();
-
-        $tasks = $this->taskRepository->findForUserList($user, $query);
-        $total = $this->taskRepository->countForUserList($user, $query);
+        $tasks = $this->taskRepository->findForUserList($user->id(), $query);
+        $total = $this->taskRepository->countForUserList($user->id(), $query);
 
         return JsonApiResponse::collection(
             new PaginatedCollection(
@@ -93,11 +92,9 @@ final class TaskController extends AbstractController
     #[OA\Response(response: 415, description: 'Body is not sent as application/json')]
     #[OA\Response(ref: '#/components/responses/ValidationError', response: 422)]
     #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
-    public function create(#[MapRequestPayload(acceptFormat: 'json')] CreateTaskDTO $dto): JsonResponse
+    public function create(#[MapRequestPayload(acceptFormat: 'json')] CreateTaskDTO $dto, #[CurrentUser] AuthenticatedUser $user): JsonResponse
     {
-        /** @var User $user */
-        $user = $this->getUser();
-        $task = $this->createTask->handle($dto, $user);
+        $task = $this->createTask->handle($dto->details(), $user->id());
 
         return JsonApiResponse::created(
             $this->taskResource->toItem($task),
@@ -148,11 +145,9 @@ final class TaskController extends AbstractController
     #[OA\Response(response: 415, description: 'Body is not sent as application/json')]
     #[OA\Response(ref: '#/components/responses/ValidationError', response: 422)]
     #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
-    public function update(#[MapRequestPayload(acceptFormat: 'json')] UpdateTaskDetailsDTO $dto, #[ValueResolver(OwnedTaskValueResolver::class)] Task $task): JsonResponse
+    public function update(#[MapRequestPayload(acceptFormat: 'json')] UpdateTaskDetailsDTO $dto, #[ValueResolver(OwnedTaskValueResolver::class)] Task $task, #[CurrentUser] AuthenticatedUser $user): JsonResponse
     {
-        /** @var User $user */
-        $user = $this->getUser();
-        $task = $this->updateTaskDetails->handle($task, $dto, $user);
+        $task = $this->updateTaskDetails->handle($task, $dto->details(), $user->id());
 
         return JsonApiResponse::one($this->taskResource->toItem($task));
     }
@@ -163,11 +158,9 @@ final class TaskController extends AbstractController
     #[OA\Response(response: 204, description: 'Task deleted')]
     #[OA\Response(response: 404, description: 'Task not found')]
     #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
-    public function delete(#[ValueResolver(OwnedTaskValueResolver::class)] Task $task): Response
+    public function delete(#[ValueResolver(OwnedTaskValueResolver::class)] Task $task, #[CurrentUser] AuthenticatedUser $user): Response
     {
-        /** @var User $user */
-        $user = $this->getUser();
-        $this->deleteTask->handle($task, $user);
+        $this->deleteTask->handle($task, $user->id());
 
         return JsonApiResponse::noContent();
     }

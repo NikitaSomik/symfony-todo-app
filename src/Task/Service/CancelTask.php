@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace App\Task\Service;
 
-use App\Auth\Entity\User;
 use App\Task\AuditLog\TaskState;
-use App\Task\DTO\CancelTaskDTO;
 use App\Task\Entity\Task;
 use App\Task\Event\TaskStatusChanged;
 use App\Task\ValueObject\CancellationReason;
@@ -23,13 +21,13 @@ final readonly class CancelTask
     ) {
     }
 
-    public function handle(Task $task, CancelTaskDTO $dto, User $user): Task
+    public function handle(Task $task, CancellationReason $reason, int $actorId): Task
     {
-        return $this->em->wrapInTransaction(function () use ($task, $dto, $user): Task {
+        return $this->em->wrapInTransaction(function () use ($task, $reason, $actorId): Task {
             $previousState = TaskState::fromTask($task);
 
-            $task->cancel(new CancellationReason($dto->reason), $this->clock->now());
-            $this->eventDispatcher->dispatch(TaskStatusChanged::from($task, $user, $previousState));
+            $task->cancel($reason, $this->clock->now());
+            $this->eventDispatcher->dispatch(TaskStatusChanged::from($task, $actorId, $previousState));
 
             return $task;
         });

@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace App\Task\Service;
 
-use App\Auth\Entity\User;
-use App\Task\DTO\CreateTaskDTO;
 use App\Task\Entity\Task;
 use App\Task\Event\TaskCreated;
 use App\Task\Identity\TaskIdGenerator;
+use App\Task\ValueObject\TaskDetails;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
@@ -21,18 +20,17 @@ final class CreateTask
     ) {
     }
 
-    public function handle(CreateTaskDTO $dto, User $user): Task
+    public function handle(TaskDetails $details, int $creatorId): Task
     {
-        return $this->em->wrapInTransaction(function () use ($dto, $user): Task {
-            $task = new Task($this->taskIdGenerator->generate());
-            $task->setTitle($dto->title);
-            $task->setDescription($dto->description);
-            $task->setDueDate($dto->dueDate());
-            $task->setUser($user);
+        return $this->em->wrapInTransaction(function () use ($details, $creatorId): Task {
+            $task = new Task($this->taskIdGenerator->generate(), $creatorId);
+            $task->setTitle($details->title);
+            $task->setDescription($details->description);
+            $task->setDueDate($details->dueDate);
 
             $this->em->persist($task);
 
-            $this->eventDispatcher->dispatch(TaskCreated::from(task: $task, actor: $user));
+            $this->eventDispatcher->dispatch(TaskCreated::from(task: $task, actorId: $creatorId));
 
             return $task;
         });

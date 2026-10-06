@@ -65,7 +65,7 @@ authentication flow and a task transition: [docs/architecture.md](docs/architect
 
 ```mermaid
 flowchart LR
-    Task -->|needs the user who owns a task| Auth
+    Task -->|contract only| Auth
     Task -->|writes and reads its history| AuditLog
     Workspace -->|contract only| Auth
     Workspace -->|writes its history| AuditLog
