@@ -101,11 +101,11 @@ final class WorkspaceMemberController extends AbstractController
 
     #[Route('/{userId}', name: 'remove', methods: ['DELETE'])]
     #[IsGranted(WorkspaceVoter::MANAGE, subject: 'workspace')]
-    #[OA\Delete(summary: 'Remove a member', description: 'Owners only. A workspace keeps at least one owner.')]
+    #[OA\Delete(summary: 'Remove a member', description: 'Owners only, and only someone else: an owner who wants out leaves the workspace.')]
     #[OA\Parameter(name: 'userId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
     #[OA\Response(response: 204, description: 'Member removed')]
     #[OA\Response(response: 403, description: 'The user is a member but not an owner')]
-    #[OA\Response(response: 409, description: 'The last owner cannot be removed')]
+    #[OA\Response(response: 409, description: 'An owner cannot remove themselves')]
     public function remove(int $userId, #[ValueResolver(MemberWorkspaceValueResolver::class)] Workspace $workspace, #[CurrentUser] AuthenticatedUser $user): Response
     {
         $this->removeMember->handle($workspace, $userId, $user->id());

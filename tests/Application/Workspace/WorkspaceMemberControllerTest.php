@@ -12,6 +12,9 @@ use App\Fixtures\Workspace\WorkspaceFactory;
 use App\Tests\ApiTestCase;
 use App\Workspace\Contract\WorkspaceRole;
 use App\Workspace\Entity\Workspace;
+use App\Workspace\Exception\MemberAlreadyExistsException;
+use App\Workspace\Service\AddMember;
+use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 use Symfony\Component\HttpFoundation\Response;
@@ -287,12 +290,29 @@ final class WorkspaceMemberControllerTest extends ApiTestCase
     }
 
     #[Test]
-    public function lastOwnerShouldNotBeRemoved(): void
+    public function ownerShouldNotRemoveThemselves(): void
     {
-        $workspace = $this->ownedWorkspace(WorkspaceRole::MEMBER);
+        $workspace = $this->ownedWorkspace(WorkspaceRole::OWNER);
 
         $this->delete($this->member($workspace, $this->user));
 
         self::assertResponseStatusCodeSame(409);
+        self::assertSame([], $this->auditMessages($workspace));
+    }
+
+    #[Test]
+    public function addOfSomeoneAddedMeanwhileShouldBeRefusedLikeAnExistingMember(): void
+    {
+        $workspace = $this->ownedWorkspace();
+        static::getContainer()->get(EntityManagerInterface::class)->getConnection()->insert('workspace_members', [
+            'workspace_id' => $workspace->getId()->toRfc4122(),
+            'user_id' => $this->colleague->id(),
+            'role' => 'viewer',
+            'joined_at' => '2026-04-01 10:00:00+00',
+        ]);
+
+        $this->expectException(MemberAlreadyExistsException::class);
+
+        static::getContainer()->get(AddMember::class)->handle($workspace, 'colleague@example.com', WorkspaceRole::MEMBER, $this->user->id());
     }
 }

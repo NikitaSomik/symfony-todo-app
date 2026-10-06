@@ -18,7 +18,7 @@ readonly class WorkspaceDTO
 {
     public function __construct(
         #[Assert\NotBlank(normalizer: 'trim')]
-        #[Assert\Length(max: Workspace::NAME_MAX_LENGTH)]
+        #[Assert\Length(max: Workspace::NAME_MAX_LENGTH, normalizer: 'trim')]
         public string $name,
     ) {
     }

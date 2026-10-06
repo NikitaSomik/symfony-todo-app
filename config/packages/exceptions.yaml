@@ -11,6 +11,9 @@ framework:
         App\Task\Exception\TaskTransitionNotAllowedException:
             status_code: 409
             log_level: info
+        App\Workspace\Exception\CannotRemoveYourselfException:
+            status_code: 409
+            log_level: info
         App\Workspace\Exception\LastOwnerException:
             status_code: 409
             log_level: info

@@ -27,8 +27,8 @@ moved the boards people had kept personally into workspaces when it made that ru
   ([0018](0018-modules-meet-through-contracts.md)). It is an ordinary workspace named
   "Personal": people can be added to it later.
 - **A member is added by the email of a registered user**, by an owner.
-- **Removing a member and leaving are two actions.** An owner removes a member
-  (`DELETE /workspaces/{id}/members/{userId}`); any member leaves
+- **Removing a member and leaving are two actions.** An owner removes someone else
+  (`DELETE /workspaces/{id}/members/{userId}`); any member, an owner included, leaves
   (`POST /workspaces/{id}/leave`). The row deleted is the same; who decided, who may and
   what the audit log says are not.
 - **Who may do what is answered in three steps.** A workspace the user is not a member of

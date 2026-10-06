@@ -13,6 +13,7 @@ use App\Fixtures\Auth\UserFactory;
 use App\Fixtures\Workspace\WorkspaceFactory;
 use App\Tests\ApiTestCase;
 use App\Workspace\Contract\WorkspaceRole;
+use App\Workspace\Entity\Workspace;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;
@@ -76,6 +77,17 @@ final class WorkspaceControllerTest extends ApiTestCase
         self::assertSame('owner', $data['attributes']['role']);
         self::assertSame($this->route('api_workspace_get', ['id' => $data['id']]), $response->headers->get('Location'));
         self::assertSame($this->route('api_workspace_member_get_all', ['id' => $data['id']]), $data['links']['members']);
+    }
+
+    #[Test]
+    public function nameShouldBeMeasuredWithoutTheSpacesAroundIt(): void
+    {
+        $name = str_repeat('a', Workspace::NAME_MAX_LENGTH);
+
+        $data = $this->jsonData($this->post($this->route('api_workspace_create'), ['name' => '  '.$name.'  ']));
+
+        self::assertResponseStatusCodeSame(201);
+        self::assertSame($name, $data['attributes']['name']);
     }
 
     #[Test]

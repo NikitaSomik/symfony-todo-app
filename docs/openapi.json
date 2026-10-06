@@ -1235,7 +1235,7 @@
                     "Workspace members"
                 ],
                 "summary": "Remove a member",
-                "description": "Owners only. A workspace keeps at least one owner.",
+                "description": "Owners only, and only someone else: an owner who wants out leaves the workspace.",
                 "operationId": "delete_api_workspace_member_remove",
                 "parameters": [
                     {
@@ -1266,7 +1266,7 @@
                         "description": "The user is a member but not an owner"
                     },
                     "409": {
-                        "description": "The last owner cannot be removed"
+                        "description": "An owner cannot remove themselves"
                     },
                     "401": {
                         "$ref": "#/components/responses/UnauthorizedError"
