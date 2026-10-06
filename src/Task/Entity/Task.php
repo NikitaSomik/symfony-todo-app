@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Task\Entity;
 
-use App\Auth\Entity\User;
 use App\Task\Enum\TaskStatus;
 use App\Task\Enum\TaskTransition;
 use App\Task\Exception\TaskTransitionNotAllowedException;
@@ -20,7 +19,7 @@ use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: TaskRepository::class)]
 #[ORM\Table(name: 'tasks')]
-#[ORM\Index(name: 'idx_tasks_user_id', columns: ['user_id'])]
+#[ORM\Index(name: 'idx_tasks_creator_id', columns: ['creator_id'])]
 #[ORM\Index(name: 'idx_tasks_search_vector', columns: ['search_vector'])]
 #[ORM\HasLifecycleCallbacks]
 class Task
@@ -85,9 +84,8 @@ class Task
     )]
     private ?string $searchVector = null;
 
-    #[ORM\ManyToOne(targetEntity: User::class)]
-    #[ORM\JoinColumn(nullable: false)]
-    private User $user;
+    #[ORM\Column]
+    private int $creatorId;
 
     /**
      * Write-only on purpose: a transition adds its row here and nothing reads the collection, so
@@ -98,9 +96,10 @@ class Task
     #[ORM\OneToMany(targetEntity: TaskStatusChange::class, mappedBy: 'task', cascade: ['persist'], fetch: 'EXTRA_LAZY')]
     private Collection $statusChanges;
 
-    public function __construct(Uuid $id)
+    public function __construct(Uuid $id, int $creatorId)
     {
         $this->id = $id;
+        $this->creatorId = $creatorId;
         $this->statusChanges = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable();
         $this->updatedAt = new \DateTimeImmutable();
@@ -221,15 +220,8 @@ class Task
         return $this->updatedAt;
     }
 
-    public function getUser(): User
+    public function getCreatorId(): int
     {
-        return $this->user;
-    }
-
-    public function setUser(User $user): static
-    {
-        $this->user = $user;
-
-        return $this;
+        return $this->creatorId;
     }
 }

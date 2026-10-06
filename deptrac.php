@@ -24,7 +24,7 @@ return static function (DeptracConfig $config): void {
             $shared = $module('Shared'),
         )
         ->rulesets(
-            Ruleset::forLayer($task)->accesses($auth, $authContract, $auditLog, $shared),
+            Ruleset::forLayer($task)->accesses($authContract, $auditLog, $shared),
             Ruleset::forLayer($workspace)->accesses($workspaceContract, $authContract, $auditLog, $shared),
             Ruleset::forLayer($workspaceContract),
             Ruleset::forLayer($auth)->accesses($authContract, $shared),

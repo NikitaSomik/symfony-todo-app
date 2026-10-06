@@ -18,6 +18,6 @@ final readonly class LogDeleted
 
     public function __invoke(TaskDeleted $event): void
     {
-        $this->taskAuditLog->deleted($event->taskId, $event->actor, $event->state);
+        $this->taskAuditLog->deleted($event->taskId, $event->actorId, $event->state);
     }
 }

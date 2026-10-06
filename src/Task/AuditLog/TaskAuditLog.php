@@ -9,7 +9,6 @@ use App\AuditLog\Enum\AuditLogAction;
 use App\AuditLog\Enum\AuditLogEntityType;
 use App\AuditLog\Formatter\AuditLogMessageFormatter;
 use App\AuditLog\Service\AuditLogLogger;
-use App\Auth\Entity\User;
 use App\Task\Entity\Task;
 
 final class TaskAuditLog
@@ -31,19 +30,19 @@ final class TaskAuditLog
     ) {
     }
 
-    public function created(string $taskId, User $actor, TaskState $state): void
+    public function created(string $taskId, int $actorId, TaskState $state): void
     {
         $this->auditLogLogger->log(
             entityType: AuditLogEntityType::TASK,
             entityId: $taskId,
-            actorId: $actor->getId(),
+            actorId: $actorId,
             action: AuditLogAction::CREATED,
             message: $this->messageFormatter->created(self::ENTITY_LABEL, $state->title),
             metadata: ['entity_data' => $state->toArray()],
         );
     }
 
-    public function updated(string $taskId, User $actor, TaskState $previousState, TaskState $currentState): void
+    public function updated(string $taskId, int $actorId, TaskState $previousState, TaskState $currentState): void
     {
         $changes = $this->changeSetDetector->detect($previousState->toArray(), $currentState->toArray());
         if (empty($changes)) {
@@ -54,7 +53,7 @@ final class TaskAuditLog
             $this->auditLogLogger->log(
                 entityType: AuditLogEntityType::TASK,
                 entityId: $taskId,
-                actorId: $actor->getId(),
+                actorId: $actorId,
                 action: AuditLogAction::UPDATED,
                 message: $this->messageFormatter->updated(
                     entityLabel: self::ENTITY_LABEL,
@@ -67,12 +66,12 @@ final class TaskAuditLog
         }
     }
 
-    public function deleted(string $taskId, User $actor, TaskState $state): void
+    public function deleted(string $taskId, int $actorId, TaskState $state): void
     {
         $this->auditLogLogger->log(
             entityType: AuditLogEntityType::TASK,
             entityId: $taskId,
-            actorId: $actor->getId(),
+            actorId: $actorId,
             action: AuditLogAction::DELETED,
             message: $this->messageFormatter->deleted(self::ENTITY_LABEL, $state->title),
             metadata: ['entity_data' => $state->toArray()],

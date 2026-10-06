@@ -66,7 +66,7 @@ flowchart TB
         s4[Persistence · Query]
     end
 
-    Task -->|needs the user who owns a task| Auth
+    Task -->|contract only| Auth
     Task -->|writes and reads its history| AuditLog
     Workspace -->|contract only| Auth
     Workspace -->|writes its history| AuditLog
@@ -80,8 +80,8 @@ An arrow reads "depends on". A module owns its slice end to end and registers it
 `routing.php` ([0001](adr/0001-feature-based-modular-monolith.md)). `Shared` depends on no
 module, and the audit log on none of the modules that write to it: a record names its
 actor by id ([0017](adr/0017-audit-log-as-its-own-module.md)). The allowed
-dependencies are declared in `deptrac.php` and checked in CI. `Workspace` uses only
-`Auth`'s contract — an interface for the current user, a lookup by email and the
+dependencies are declared in `deptrac.php` and checked in CI. `Task` and `Workspace` use
+only `Auth`'s contract — an interface for the current user, a lookup by email and the
 registration event ([0018](adr/0018-modules-meet-through-contracts.md)).
 
 ## Authentication
@@ -165,7 +165,7 @@ sequenceDiagram
     Note right of Ctl: not found or someone else's → 404
     Ctl->>Ctl: validate the body
     Note right of Ctl: no usable reason → 422
-    Ctl->>S: handle(task, dto, user)
+    Ctl->>S: handle(task, reason, actor id)
     activate S
     Note over S,DB: one transaction
     S->>T: cancel(reason, now)

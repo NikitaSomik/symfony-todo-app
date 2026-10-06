@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Task\Service;
 
-use App\Auth\Entity\User;
-use App\Task\DTO\CreateTaskDTO;
 use App\Task\Entity\Task;
 use App\Task\Event\TaskCreated;
 use App\Task\Identity\TaskIdGenerator;
@@ -21,18 +19,17 @@ final class CreateTask
     ) {
     }
 
-    public function handle(CreateTaskDTO $dto, User $user): Task
+    public function handle(string $title, ?string $description, ?\DateTimeImmutable $dueDate, int $creatorId): Task
     {
-        return $this->em->wrapInTransaction(function () use ($dto, $user): Task {
-            $task = new Task($this->taskIdGenerator->generate());
-            $task->setTitle($dto->title);
-            $task->setDescription($dto->description);
-            $task->setDueDate($dto->dueDate());
-            $task->setUser($user);
+        return $this->em->wrapInTransaction(function () use ($title, $description, $dueDate, $creatorId): Task {
+            $task = new Task($this->taskIdGenerator->generate(), $creatorId);
+            $task->setTitle($title);
+            $task->setDescription($description);
+            $task->setDueDate($dueDate);
 
             $this->em->persist($task);
 
-            $this->eventDispatcher->dispatch(TaskCreated::from(task: $task, actor: $user));
+            $this->eventDispatcher->dispatch(TaskCreated::from(task: $task, actorId: $creatorId));
 
             return $task;
         });

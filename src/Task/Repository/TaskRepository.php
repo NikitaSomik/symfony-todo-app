@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Task\Repository;
 
-use App\Auth\Entity\User;
 use App\Shared\Persistence\Doctrine\SpecificationApplier;
 use App\Shared\Query\Sort;
 use App\Shared\Query\SortDirection;
@@ -34,7 +33,7 @@ class TaskRepository extends ServiceEntityRepository
     /**
      * @return Task[]
      */
-    public function findForUserList(User $user, TaskListQueryDTO $query): array
+    public function findForUserList(int $userId, TaskListQueryDTO $query): array
     {
         $search = $query->filter->searchQuery();
         $field = $query->sortField();
@@ -46,8 +45,8 @@ class TaskRepository extends ServiceEntityRepository
         }
 
         $queryBuilder = $this->createQueryBuilder('t')
-            ->where('t.user = :user')
-            ->setParameter('user', $user)
+            ->where('t.creatorId = :userId')
+            ->setParameter('userId', $userId)
             ->setFirstResult(($query->page->number - 1) * $query->page->size)
             ->setMaxResults($query->page->size);
 
@@ -70,12 +69,12 @@ class TaskRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    public function countForUserList(User $user, TaskListQueryDTO $query): int
+    public function countForUserList(int $userId, TaskListQueryDTO $query): int
     {
         $queryBuilder = $this->createQueryBuilder('t')
             ->select('COUNT(t.id)')
-            ->where('t.user = :user')
-            ->setParameter('user', $user);
+            ->where('t.creatorId = :userId')
+            ->setParameter('userId', $userId);
 
         $this->specificationApplier->apply($queryBuilder, [
             new TaskSearchSpecification($query->filter->searchQuery()),

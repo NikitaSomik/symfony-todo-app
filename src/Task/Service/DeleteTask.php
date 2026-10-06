@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Task\Service;
 
-use App\Auth\Entity\User;
 use App\Task\Entity\Task;
 use App\Task\Event\TaskDeleted;
 use Doctrine\ORM\EntityManagerInterface;
@@ -18,10 +17,10 @@ final class DeleteTask
     ) {
     }
 
-    public function handle(Task $task, User $user): void
+    public function handle(Task $task, int $actorId): void
     {
-        $this->em->wrapInTransaction(function () use ($task, $user): void {
-            $this->eventDispatcher->dispatch(TaskDeleted::from(task: $task, actor: $user));
+        $this->em->wrapInTransaction(function () use ($task, $actorId): void {
+            $this->eventDispatcher->dispatch(TaskDeleted::from(task: $task, actorId: $actorId));
             $this->em->remove($task);
         });
     }

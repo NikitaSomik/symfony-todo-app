@@ -23,4 +23,9 @@ readonly class CancelTaskDTO
         public string $reason,
     ) {
     }
+
+    public function reason(): CancellationReason
+    {
+        return new CancellationReason($this->reason);
+    }
 }

@@ -1015,7 +1015,7 @@ final class TaskControllerTest extends ApiTestCase
         self::assertResponseStatusCodeSame(500);
 
         $tasks = static::getContainer()->get(TaskRepository::class)->findBy([
-            'user' => $this->user,
+            'creatorId' => $this->user->id(),
             'title' => 'Buy milk',
         ]);
 

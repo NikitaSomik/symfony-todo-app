@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace App\Task\Service;
 
-use App\Auth\Entity\User;
 use App\Task\AuditLog\TaskState;
-use App\Task\DTO\UpdateTaskDetailsDTO;
 use App\Task\Entity\Task;
 use App\Task\Event\TaskUpdated;
 use Doctrine\ORM\EntityManagerInterface;
@@ -20,18 +18,18 @@ final class UpdateTaskDetails
     ) {
     }
 
-    public function handle(Task $task, UpdateTaskDetailsDTO $dto, User $user): Task
+    public function handle(Task $task, string $title, ?string $description, ?\DateTimeImmutable $dueDate, int $actorId): Task
     {
-        return $this->em->wrapInTransaction(function () use ($task, $dto, $user): Task {
+        return $this->em->wrapInTransaction(function () use ($task, $title, $description, $dueDate, $actorId): Task {
             $previousState = TaskState::fromTask($task);
 
-            $task->setTitle($dto->title);
-            $task->setDescription($dto->description);
-            $task->setDueDate($dto->dueDate());
+            $task->setTitle($title);
+            $task->setDescription($description);
+            $task->setDueDate($dueDate);
 
             $this->eventDispatcher->dispatch(TaskUpdated::from(
                 task: $task,
-                actor: $user,
+                actorId: $actorId,
                 previousState: $previousState,
             ));
 
