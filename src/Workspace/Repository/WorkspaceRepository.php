@@ -4,8 +4,13 @@ declare(strict_types=1);
 
 namespace App\Workspace\Repository;
 
+use App\Workspace\Contract\WorkspaceAccess;
+use App\Workspace\Contract\WorkspaceReference;
+use App\Workspace\Contract\WorkspaceRole;
+use App\Workspace\Entity\Membership;
 use App\Workspace\Entity\Workspace;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\AbstractQuery;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Uid\Uuid;
@@ -13,7 +18,7 @@ use Symfony\Component\Uid\Uuid;
 /**
  * @extends ServiceEntityRepository<Workspace>
  */
-final class WorkspaceRepository extends ServiceEntityRepository
+final class WorkspaceRepository extends ServiceEntityRepository implements WorkspaceAccess
 {
     public function __construct(ManagerRegistry $registry)
     {
@@ -45,5 +50,41 @@ final class WorkspaceRepository extends ServiceEntityRepository
             ->setParameter('userId', $userId)
             ->getQuery()
             ->getOneOrNullResult();
+    }
+
+    public function roleOf(Uuid $workspaceId, int $userId): ?WorkspaceRole
+    {
+        $role = $this->getEntityManager()->createQueryBuilder()
+            ->select('m.role')
+            ->from(Membership::class, 'm')
+            ->where('IDENTITY(m.workspace) = :workspaceId')
+            ->andWhere('IDENTITY(m.user) = :userId')
+            ->setParameter('workspaceId', $workspaceId, UuidType::NAME)
+            ->setParameter('userId', $userId)
+            ->getQuery()
+            ->getOneOrNullResult(AbstractQuery::HYDRATE_SINGLE_SCALAR);
+
+        return null === $role ? null : WorkspaceRole::from($role);
+    }
+
+    public function reference(Uuid $workspaceId): WorkspaceReference
+    {
+        $workspace = $this->getEntityManager()->getReference(Workspace::class, $workspaceId);
+        \assert(null !== $workspace);
+
+        return $workspace;
+    }
+
+    public function workspaceIdsOf(int $userId): array
+    {
+        $ids = $this->getEntityManager()->createQueryBuilder()
+            ->select('IDENTITY(m.workspace)')
+            ->from(Membership::class, 'm')
+            ->where('IDENTITY(m.user) = :userId')
+            ->setParameter('userId', $userId)
+            ->getQuery()
+            ->getSingleColumnResult();
+
+        return array_values(array_map(Uuid::fromString(...), $ids));
     }
 }

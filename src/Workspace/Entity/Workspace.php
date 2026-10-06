@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Workspace\Entity;
 
 use App\Auth\Contract\AuthenticatedUser;
+use App\Workspace\Contract\WorkspaceReference;
 use App\Workspace\Contract\WorkspaceRole;
 use App\Workspace\Exception\LastOwnerException;
 use App\Workspace\Exception\MemberAlreadyExistsException;
@@ -19,7 +20,7 @@ use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: WorkspaceRepository::class)]
 #[ORM\Table(name: 'workspaces')]
-class Workspace
+class Workspace implements WorkspaceReference
 {
     public const int NAME_MAX_LENGTH = 100;
 

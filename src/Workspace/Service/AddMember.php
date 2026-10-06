@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Workspace\Service;
 
-use App\Auth\Contract\AuthenticatedUser;
 use App\Auth\Contract\UserDirectory;
 use App\Workspace\Contract\WorkspaceRole;
 use App\Workspace\Entity\Membership;
@@ -33,10 +32,7 @@ final readonly class AddMember
             return $this->em->wrapInTransaction(function () use ($workspace, $email, $role, $actorId): Membership {
                 $userId = $this->users->findIdByEmail($email) ?? throw new UserNotRegisteredException();
 
-                $user = $this->em->getReference(AuthenticatedUser::class, $userId);
-                \assert(null !== $user);
-
-                $membership = $workspace->addMember($user, $role, $this->clock->now());
+                $membership = $workspace->addMember($this->users->reference($userId), $role, $this->clock->now());
 
                 $this->eventDispatcher->dispatch(new MemberAdded($workspace->getId()->toRfc4122(), $workspace->getName(), $userId, $role, $actorId));
 

@@ -191,7 +191,7 @@
                 "tags": [
                     "Tasks"
                 ],
-                "summary": "Get all tasks (paginated)",
+                "summary": "Get the tasks of every workspace the user is a member of (paginated)",
                 "operationId": "get_api_task_get_all",
                 "parameters": [
                     {
@@ -303,53 +303,6 @@
                         "$ref": "#/components/responses/UnauthorizedError"
                     }
                 }
-            },
-            "post": {
-                "tags": [
-                    "Tasks"
-                ],
-                "summary": "Create a task",
-                "description": "A new task always starts in `todo`.",
-                "operationId": "post_api_task_create",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/CreateTaskDTO"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "Task created",
-                        "headers": {
-                            "Location": {
-                                "description": "URL of the created task",
-                                "schema": {
-                                    "type": "string"
-                                }
-                            }
-                        },
-                        "content": {
-                            "application/vnd.api+json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/TaskResponseSchema"
-                                }
-                            }
-                        }
-                    },
-                    "415": {
-                        "description": "Body is not sent as application/json"
-                    },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationError"
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/UnauthorizedError"
-                    }
-                }
             }
         },
         "/api/v1/tasks/{id}": {
@@ -383,7 +336,7 @@
                         }
                     },
                     "404": {
-                        "description": "Task not found"
+                        "description": "Task not found, or the user is not a member of its workspace"
                     },
                     "401": {
                         "$ref": "#/components/responses/UnauthorizedError"
@@ -430,8 +383,11 @@
                             }
                         }
                     },
+                    "403": {
+                        "description": "The user is a viewer in the workspace of the task"
+                    },
                     "404": {
-                        "description": "Task not found"
+                        "description": "Task not found, or the user is not a member of its workspace"
                     },
                     "415": {
                         "description": "Body is not sent as application/json"
@@ -466,8 +422,11 @@
                     "204": {
                         "description": "Task deleted"
                     },
+                    "403": {
+                        "description": "The user is a viewer in the workspace of the task"
+                    },
                     "404": {
-                        "description": "Task not found"
+                        "description": "Task not found, or the user is not a member of its workspace"
                     },
                     "401": {
                         "$ref": "#/components/responses/UnauthorizedError"
@@ -506,7 +465,7 @@
                         }
                     },
                     "404": {
-                        "description": "Task not found"
+                        "description": "Task not found, or the user is not a member of its workspace"
                     },
                     "401": {
                         "$ref": "#/components/responses/UnauthorizedError"
@@ -545,8 +504,11 @@
                             }
                         }
                     },
+                    "403": {
+                        "description": "The user is a viewer in the workspace of the task"
+                    },
                     "404": {
-                        "description": "Task not found"
+                        "description": "Task not found, or the user is not a member of its workspace"
                     },
                     "409": {
                         "description": "The task cannot make this transition from its current status"
@@ -588,8 +550,11 @@
                             }
                         }
                     },
+                    "403": {
+                        "description": "The user is a viewer in the workspace of the task"
+                    },
                     "404": {
-                        "description": "Task not found"
+                        "description": "Task not found, or the user is not a member of its workspace"
                     },
                     "409": {
                         "description": "The task cannot make this transition from its current status"
@@ -631,8 +596,11 @@
                             }
                         }
                     },
+                    "403": {
+                        "description": "The user is a viewer in the workspace of the task"
+                    },
                     "404": {
-                        "description": "Task not found"
+                        "description": "Task not found, or the user is not a member of its workspace"
                     },
                     "409": {
                         "description": "The task cannot make this transition from its current status"
@@ -690,8 +658,11 @@
                             }
                         }
                     },
+                    "403": {
+                        "description": "The user is a viewer in the workspace of the task"
+                    },
                     "404": {
-                        "description": "Task not found"
+                        "description": "Task not found, or the user is not a member of its workspace"
                     },
                     "409": {
                         "description": "The task cannot make this transition from its current status"
@@ -733,8 +704,11 @@
                             }
                         }
                     },
+                    "403": {
+                        "description": "The user is a viewer in the workspace of the task"
+                    },
                     "404": {
-                        "description": "Task not found"
+                        "description": "Task not found, or the user is not a member of its workspace"
                     },
                     "409": {
                         "description": "The task cannot make this transition from its current status"
@@ -792,14 +766,214 @@
                             }
                         }
                     },
+                    "403": {
+                        "description": "The user is a viewer in the workspace of the task"
+                    },
                     "404": {
-                        "description": "Task not found"
+                        "description": "Task not found, or the user is not a member of its workspace"
                     },
                     "409": {
                         "description": "The task cannot make this transition from its current status"
                     },
                     "401": {
                         "$ref": "#/components/responses/UnauthorizedError"
+                    }
+                }
+            }
+        },
+        "/api/v1/workspaces/{id}/tasks": {
+            "get": {
+                "tags": [
+                    "Tasks"
+                ],
+                "summary": "Get the tasks of a workspace (paginated)",
+                "operationId": "get_api_workspace_task_get_all",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "style": "deepObject",
+                        "explode": true,
+                        "schema": {
+                            "properties": {
+                                "number": {
+                                    "type": "integer",
+                                    "example": 1,
+                                    "default": 1,
+                                    "maximum": 10000,
+                                    "minimum": 1
+                                },
+                                "size": {
+                                    "type": "integer",
+                                    "example": 20,
+                                    "default": 20,
+                                    "maximum": 100,
+                                    "minimum": 1
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    {
+                        "name": "filter",
+                        "in": "query",
+                        "required": false,
+                        "style": "deepObject",
+                        "explode": true,
+                        "schema": {
+                            "properties": {
+                                "status": {
+                                    "oneOf": [
+                                        {
+                                            "$ref": "#/components/schemas/TaskStatus"
+                                        }
+                                    ],
+                                    "nullable": true
+                                },
+                                "due_from": {
+                                    "type": "string",
+                                    "format": "date",
+                                    "example": "2026-04-01",
+                                    "nullable": true
+                                },
+                                "due_to": {
+                                    "type": "string",
+                                    "format": "date",
+                                    "example": "2026-04-30",
+                                    "nullable": true
+                                },
+                                "search": {
+                                    "description": "Full-text search across task title and description. Without `sort`, results are ranked by relevance.",
+                                    "type": "string",
+                                    "example": "milk",
+                                    "nullable": true,
+                                    "maxLength": 100
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "description": "Defaults to relevance when `filter[search]` is given, otherwise to `created_at`. With a search, tasks that tie on the chosen field are ranked by relevance.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "created_at",
+                                "status",
+                                "due_date"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "direction",
+                        "in": "query",
+                        "description": "Applies to the chosen sort, or to relevance when a search has no `sort`.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "desc",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated list of tasks",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TaskCollectionResponseSchema"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    },
+                    "404": {
+                        "description": "Workspace not found, or the user is not a member of it"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Tasks"
+                ],
+                "summary": "Create a task in a workspace",
+                "description": "A new task always starts in `todo`. Owners and members only.",
+                "operationId": "post_api_workspace_task_create",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateTaskDTO"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Task created",
+                        "headers": {
+                            "Location": {
+                                "description": "URL of the created task",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TaskResponseSchema"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user is a viewer in the workspace"
+                    },
+                    "415": {
+                        "description": "Body is not sent as application/json"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    },
+                    "404": {
+                        "description": "Workspace not found, or the user is not a member of it"
                     }
                 }
             }
@@ -1382,34 +1556,6 @@
                 },
                 "type": "object"
             },
-            "CreateTaskDTO": {
-                "required": [
-                    "title"
-                ],
-                "properties": {
-                    "title": {
-                        "type": "string",
-                        "example": "Buy milk",
-                        "maxLength": 255
-                    },
-                    "description": {
-                        "type": "string",
-                        "example": "2 liters",
-                        "nullable": true,
-                        "default": null,
-                        "maxLength": 2000,
-                        "minLength": 3
-                    },
-                    "due_date": {
-                        "type": "string",
-                        "format": "date",
-                        "example": "2026-04-01",
-                        "nullable": true,
-                        "default": null
-                    }
-                },
-                "type": "object"
-            },
             "UpdateTaskDetailsDTO": {
                 "required": [
                     "title"
@@ -1462,6 +1608,34 @@
                         "example": "Task is no longer relevant",
                         "maxLength": 500,
                         "minLength": 3
+                    }
+                },
+                "type": "object"
+            },
+            "CreateTaskDTO": {
+                "required": [
+                    "title"
+                ],
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "example": "Buy milk",
+                        "maxLength": 255
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "2 liters",
+                        "nullable": true,
+                        "default": null,
+                        "maxLength": 2000,
+                        "minLength": 3
+                    },
+                    "due_date": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-04-01",
+                        "nullable": true,
+                        "default": null
                     }
                 },
                 "type": "object"
@@ -1616,6 +1790,7 @@
                     "type",
                     "id",
                     "attributes",
+                    "relationships",
                     "links"
                 ],
                 "properties": {
@@ -1665,6 +1840,47 @@
                             "updated_at": {
                                 "type": "string",
                                 "format": "date-time"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "relationships": {
+                        "properties": {
+                            "workspace": {
+                                "properties": {
+                                    "data": {
+                                        "properties": {
+                                            "type": {
+                                                "type": "string",
+                                                "example": "workspaces"
+                                            },
+                                            "id": {
+                                                "type": "string",
+                                                "format": "uuid"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "creator": {
+                                "properties": {
+                                    "data": {
+                                        "properties": {
+                                            "type": {
+                                                "type": "string",
+                                                "example": "users"
+                                            },
+                                            "id": {
+                                                "type": "string",
+                                                "example": "7"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
                             }
                         },
                         "type": "object"

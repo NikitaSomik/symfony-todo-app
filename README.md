@@ -11,13 +11,14 @@ that lost and what the choice costs, and the ones that were later revised are ke
 
 ## What the application does
 
-A task tracker. Today it serves one person; the next release turns it into a tool for a
-small team.
+A task tracker for a small team: people share tasks in workspaces, each with a role.
 
 The rules it enforces now:
 
-- **A task belongs to its owner.** Nobody else can read it, change it, or learn that it
-  exists ([0011](docs/adr/0011-foreign-task-answers-404.md)).
+- **A task belongs to a workspace.** Its members see it, a viewer only reads it, and
+  nobody else can read it, change it, or learn that it exists
+  ([0020](docs/adr/0020-a-task-belongs-to-a-workspace.md),
+  [0011](docs/adr/0011-foreign-task-answers-404.md)).
 - **Work moves one way:** to do → in progress → in review → completed. Finished work stays
   finished — a completed or cancelled task cannot be reopened
   ([0015](docs/adr/0015-task-lifecycle-as-explicit-transitions.md)).
@@ -38,9 +39,8 @@ The rules it enforces now:
   always at least one owner, and every user starts with a personal one
   ([0019](docs/adr/0019-workspaces-members-and-roles.md)).
 
-What comes next ([roadmap](docs/roadmap.md)): tasks move into workspaces, so that several
-people work on the same tasks and a task has an assignee; then limits on work in progress
-and deadlines with consequences.
+What comes next ([roadmap](docs/roadmap.md)): a task gets an assignee and each role its
+own rights; then limits on work in progress and deadlines with consequences.
 
 ## Where to look
 
@@ -52,7 +52,7 @@ and deadlines with consequences.
 | How far does the API follow JSON:API? | Responses and query parameters do, request bodies stay plain JSON — full compliance was built on a branch and measured | [0008](docs/adr/0008-json-api-responses-plain-json-requests.md) |
 | What is logged? | Per request: buffered quietly, written on failure, tagged with request and user ids | [0009](docs/adr/0009-production-logging.md) |
 | What may modules know about each other? | A module's `Contract/` namespace, ids instead of entities, events to break a cycle — checked by Deptrac | [0018](docs/adr/0018-modules-meet-through-contracts.md) |
-| What does someone else's task answer? | `404`, exactly like a missing one | [0011](docs/adr/0011-foreign-task-answers-404.md) |
+| Who reaches a task? | The members of its workspace; a viewer only reads; anyone else gets `404`, exactly like for a missing task | [0020](docs/adr/0020-a-task-belongs-to-a-workspace.md), [0011](docs/adr/0011-foreign-task-answers-404.md) |
 | Can the audit log disagree with the data? | No: it is written in the same transaction, one flush per use case | [0012](docs/adr/0012-synchronous-audit-log-one-transaction.md) |
 | Why a stored `tsvector` column for search? | Because results are ranked — measured against an expression index on a million tasks | [0013](docs/adr/0013-task-search-postgresql-full-text.md) |
 | Who decides which status may follow which? | The `Task` entity; Symfony Workflow was built on a branch and compared | [0014](docs/adr/0014-task-status-changed-as-part-of-an-update.md) → [0015](docs/adr/0015-task-lifecycle-as-explicit-transitions.md) |
@@ -66,6 +66,7 @@ authentication flow and a task transition: [docs/architecture.md](docs/architect
 ```mermaid
 flowchart LR
     Task -->|contract only| Auth
+    Task -->|contract only| Workspace
     Task -->|writes and reads its history| AuditLog
     Workspace -->|contract only| Auth
     Workspace -->|writes its history| AuditLog

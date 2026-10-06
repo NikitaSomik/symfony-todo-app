@@ -10,12 +10,14 @@ use App\AuditLog\Repository\AuditLogRepository;
 use App\Auth\Entity\User;
 use App\Fixtures\Auth\UserFactory;
 use App\Fixtures\Task\TaskFactory;
+use App\Fixtures\Workspace\WorkspaceFactory;
 use App\Task\Entity\Task;
 use App\Task\Entity\TaskStatusChange;
 use App\Task\Enum\TaskStatus;
 use App\Task\Repository\TaskRepository;
 use App\Tests\ApiTestCase;
 use App\Tests\Support\AuditLogFailureToggle;
+use App\Workspace\Entity\Workspace;
 use Doctrine\Persistence\ManagerRegistry;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
@@ -24,18 +26,20 @@ use Symfony\Component\HttpFoundation\Response;
 final class TaskTransitionTest extends ApiTestCase
 {
     private User $user;
+    private Workspace $workspace;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->user = UserFactory::createOne();
         $this->actingAs($this->user);
+        $this->workspace = WorkspaceFactory::createOne(['owner' => $this->user]);
     }
 
-    private function taskIn(TaskStatus $status, ?User $user = null): Task
+    private function taskIn(TaskStatus $status, ?Workspace $workspace = null): Task
     {
         return TaskFactory::createOne([
-            'user' => $user ?? $this->user,
+            'workspace' => $workspace ?? $this->workspace,
             'title' => 'Buy milk',
             'status' => $status,
             'cancellationReason' => TaskStatus::CANCELLED === $status ? 'Outdated' : null,
@@ -254,9 +258,9 @@ final class TaskTransitionTest extends ApiTestCase
     #[TestWith(['cancel'])]
     #[TestWith(['block'])]
     #[TestWith(['unblock'])]
-    public function transitionOfSomeoneElsesTaskShouldReturn404(string $transition): void
+    public function transitionOfATaskInAWorkspaceOfStrangersShouldReturn404(string $transition): void
     {
-        $task = $this->taskIn(TaskStatus::TODO, UserFactory::createOne());
+        $task = $this->taskIn(TaskStatus::TODO, WorkspaceFactory::createOne());
 
         // No body: for cancel it is invalid, and a 422 here would give the task away.
         $this->transition($transition, $task);

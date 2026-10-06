@@ -60,7 +60,7 @@ final class ClientErrorLoggingTest extends ApiTestCase
     #[Test]
     public function someoneElsesTaskShouldBeLoggedAtInfo(): void
     {
-        $task = TaskFactory::createOne(['user' => UserFactory::createOne()]);
+        $task = TaskFactory::createOne();
         $this->actingAs(UserFactory::createOne());
 
         $this->get($this->route('api_task_get', ['id' => $task->getId()->toRfc4122()]));

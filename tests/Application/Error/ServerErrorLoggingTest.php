@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Application\Error;
 
 use App\Fixtures\Auth\UserFactory;
+use App\Fixtures\Workspace\WorkspaceFactory;
 use App\Tests\ApiTestCase;
 use App\Tests\Support\AuditLogFailureToggle;
 use Monolog\Handler\TestHandler;
@@ -15,10 +16,12 @@ final class ServerErrorLoggingTest extends ApiTestCase
     #[Test]
     public function serverErrorShouldBeLoggedWithItsException(): void
     {
-        $this->actingAs(UserFactory::createOne());
+        $user = UserFactory::createOne();
+        $this->actingAs($user);
+        $workspace = WorkspaceFactory::createOne(['owner' => $user]);
         static::getContainer()->get(AuditLogFailureToggle::class)->enable();
 
-        $response = $this->post($this->route('api_task_create'), ['title' => 'Buy milk']);
+        $response = $this->post($this->route('api_workspace_task_create', ['id' => $workspace->getId()->toRfc4122()]), ['title' => 'Buy milk']);
 
         self::assertResponseStatusCodeSame(500);
         self::assertSame('500', $this->json($response)['errors'][0]['status']);

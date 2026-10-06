@@ -47,3 +47,4 @@ Statuses:
 | [0017](0017-audit-log-as-its-own-module.md) | The audit log is a module of its own, and names the actor by id | accepted | 2026-10-04 |
 | [0018](0018-modules-meet-through-contracts.md) | Modules meet through contracts, ids and events | accepted | 2026-10-04 |
 | [0019](0019-workspaces-members-and-roles.md) | Work is shared in workspaces: members, three roles, at least one owner | accepted | 2026-10-04 |
+| [0020](0020-a-task-belongs-to-a-workspace.md) | A task belongs to a workspace, and membership decides who reaches it | accepted | 2026-10-06 |

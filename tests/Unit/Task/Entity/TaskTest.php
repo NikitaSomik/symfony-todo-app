@@ -9,22 +9,35 @@ use App\Task\Enum\TaskStatus;
 use App\Task\Exception\TaskTransitionNotAllowedException;
 use App\Task\ValueObject\BlockReason;
 use App\Task\ValueObject\CancellationReason;
+use App\Workspace\Contract\WorkspaceReference;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Uid\Uuid;
 
 final class TaskTest extends TestCase
 {
+    private static function task(): Task
+    {
+        $workspace = new class implements WorkspaceReference {
+            public function getId(): Uuid
+            {
+                return Uuid::v7();
+            }
+        };
+
+        return new Task(Uuid::v7(), $workspace, 1);
+    }
+
     #[Test]
     public function newTaskShouldStartInTodo(): void
     {
-        self::assertSame(TaskStatus::TODO, new Task(Uuid::v7(), 1)->getStatus());
+        self::assertSame(TaskStatus::TODO, self::task()->getStatus());
     }
 
     #[Test]
     public function taskShouldMoveThroughItsLifecycleToCompleted(): void
     {
-        $task = new Task(Uuid::v7(), 1);
+        $task = self::task();
         $at = new \DateTimeImmutable('2026-04-01 10:00:00');
 
         $task->start($at);
@@ -41,7 +54,7 @@ final class TaskTest extends TestCase
     #[Test]
     public function cancelShouldKeepTheReason(): void
     {
-        $task = new Task(Uuid::v7(), 1);
+        $task = self::task();
         $at = new \DateTimeImmutable('2026-04-01 10:00:00');
 
         $task->cancel(new CancellationReason('No longer needed'), $at);
@@ -53,7 +66,7 @@ final class TaskTest extends TestCase
     #[Test]
     public function completeWhenTaskIsNotInReviewShouldBeRefused(): void
     {
-        $task = new Task(Uuid::v7(), 1);
+        $task = self::task();
         $at = new \DateTimeImmutable('2026-04-01 10:00:00');
 
         $this->expectException(TaskTransitionNotAllowedException::class);
@@ -65,7 +78,7 @@ final class TaskTest extends TestCase
     #[Test]
     public function refusedTransitionShouldLeaveTheTaskUnchanged(): void
     {
-        $task = new Task(Uuid::v7(), 1);
+        $task = self::task();
         $at = new \DateTimeImmutable('2026-04-01 10:00:00');
         $task->cancel(new CancellationReason('No longer needed'), $at);
 
@@ -82,7 +95,7 @@ final class TaskTest extends TestCase
     #[Test]
     public function blockShouldKeepTheReasonUntilTheTaskIsUnblocked(): void
     {
-        $task = new Task(Uuid::v7(), 1);
+        $task = self::task();
         $at = new \DateTimeImmutable('2026-04-01 10:00:00');
         $task->start($at);
 
@@ -98,7 +111,7 @@ final class TaskTest extends TestCase
     #[Test]
     public function cancellingABlockedTaskShouldDropTheBlockReason(): void
     {
-        $task = new Task(Uuid::v7(), 1);
+        $task = self::task();
         $at = new \DateTimeImmutable('2026-04-01 10:00:00');
         $task->start($at);
         $task->block(new BlockReason('Waiting for access'), $at);
@@ -113,7 +126,7 @@ final class TaskTest extends TestCase
     #[Test]
     public function taskThatWasNotStartedShouldNotBeBlocked(): void
     {
-        $task = new Task(Uuid::v7(), 1);
+        $task = self::task();
 
         $this->expectException(TaskTransitionNotAllowedException::class);
         $this->expectExceptionMessage('A task in status "todo" cannot move to "blocked".');
@@ -124,7 +137,7 @@ final class TaskTest extends TestCase
     #[Test]
     public function unblockShouldNotStartATaskThatWasNeverBlocked(): void
     {
-        $task = new Task(Uuid::v7(), 1);
+        $task = self::task();
 
         $this->expectException(TaskTransitionNotAllowedException::class);
 
@@ -134,7 +147,7 @@ final class TaskTest extends TestCase
     #[Test]
     public function startShouldNotUnblockABlockedTask(): void
     {
-        $task = new Task(Uuid::v7(), 1);
+        $task = self::task();
         $at = new \DateTimeImmutable('2026-04-01 10:00:00');
         $task->start($at);
         $task->block(new BlockReason('Waiting for access'), $at);
