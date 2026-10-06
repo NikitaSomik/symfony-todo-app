@@ -94,7 +94,7 @@ final class TaskController extends AbstractController
     #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
     public function create(#[MapRequestPayload(acceptFormat: 'json')] CreateTaskDTO $dto, #[CurrentUser] AuthenticatedUser $user): JsonResponse
     {
-        $task = $this->createTask->handle($dto->title, $dto->description, $dto->dueDate(), $user->id());
+        $task = $this->createTask->handle($dto->details(), $user->id());
 
         return JsonApiResponse::created(
             $this->taskResource->toItem($task),
@@ -147,7 +147,7 @@ final class TaskController extends AbstractController
     #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
     public function update(#[MapRequestPayload(acceptFormat: 'json')] UpdateTaskDetailsDTO $dto, #[ValueResolver(OwnedTaskValueResolver::class)] Task $task, #[CurrentUser] AuthenticatedUser $user): JsonResponse
     {
-        $task = $this->updateTaskDetails->handle($task, $dto->title, $dto->description, $dto->dueDate(), $user->id());
+        $task = $this->updateTaskDetails->handle($task, $dto->details(), $user->id());
 
         return JsonApiResponse::one($this->taskResource->toItem($task));
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Task\DTO;
 
+use App\Task\ValueObject\TaskDetails;
 use OpenApi\Attributes as OA;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -30,7 +31,12 @@ readonly class UpdateTaskDetailsDTO
     ) {
     }
 
-    public function dueDate(): ?\DateTimeImmutable
+    public function details(): TaskDetails
+    {
+        return new TaskDetails($this->title, $this->description, $this->dueDate());
+    }
+
+    private function dueDate(): ?\DateTimeImmutable
     {
         return self::parseDueDate($this->due_date);
     }
