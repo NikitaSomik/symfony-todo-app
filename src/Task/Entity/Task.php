@@ -25,6 +25,8 @@ use Symfony\Component\Uid\Uuid;
 #[ORM\HasLifecycleCallbacks]
 class Task
 {
+    public const int TITLE_MAX_LENGTH = 255;
+
     public const string FIELD_ID = 'id';
     public const string FIELD_TITLE = 'title';
     public const string FIELD_DESCRIPTION = 'description';
@@ -42,7 +44,7 @@ class Task
     #[ORM\Column(type: UuidType::NAME, unique: true)]
     private Uuid $id;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: self::TITLE_MAX_LENGTH)]
     private string $title;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]

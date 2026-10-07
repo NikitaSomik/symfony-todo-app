@@ -23,7 +23,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, Authent
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 180)]
+    #[ORM\Column(length: Email::MAX_LENGTH)]
     private string $email;
 
     #[ORM\Column]

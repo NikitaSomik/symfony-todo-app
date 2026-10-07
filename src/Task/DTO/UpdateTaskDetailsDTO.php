@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Task\DTO;
 
+use App\Task\Entity\Task;
 use App\Task\ValueObject\TaskDetails;
 use OpenApi\Attributes as OA;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -20,7 +21,7 @@ readonly class UpdateTaskDetailsDTO
 {
     public function __construct(
         #[Assert\NotBlank]
-        #[Assert\Length(max: 255)]
+        #[Assert\Length(max: Task::TITLE_MAX_LENGTH)]
         public string $title,
 
         #[Assert\Length(min: 3, max: 2000)]
