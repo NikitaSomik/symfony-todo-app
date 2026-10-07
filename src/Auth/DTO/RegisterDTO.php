@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Auth\DTO;
 
+use App\Auth\ValueObject\Email;
 use OpenApi\Attributes as OA;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -19,7 +20,7 @@ readonly class RegisterDTO
     public function __construct(
         #[Assert\NotBlank]
         #[Assert\Email]
-        #[Assert\Length(max: 180)]
+        #[Assert\Length(max: Email::MAX_LENGTH)]
         public string $email,
 
         #[Assert\NotBlank]

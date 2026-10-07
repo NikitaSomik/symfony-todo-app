@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Workspace\Service;
 
-use App\Auth\Contract\AuthenticatedUser;
 use App\Auth\Contract\UserDirectory;
 use App\Workspace\Contract\WorkspaceRole;
 use App\Workspace\Entity\Membership;
@@ -29,21 +28,21 @@ final readonly class AddMember
 
     public function handle(Workspace $workspace, string $email, WorkspaceRole $role, int $actorId): Membership
     {
+        $userId = $this->users->findIdByEmail($email);
+
+        if (null === $userId) {
+            throw new UserNotRegisteredException();
+        }
+
         try {
-            return $this->em->wrapInTransaction(function () use ($workspace, $email, $role, $actorId): Membership {
-                $userId = $this->users->findIdByEmail($email) ?? throw new UserNotRegisteredException();
-
-                $user = $this->em->getReference(AuthenticatedUser::class, $userId);
-                \assert(null !== $user);
-
-                $membership = $workspace->addMember($user, $role, $this->clock->now());
+            return $this->em->wrapInTransaction(function () use ($workspace, $userId, $role, $actorId): Membership {
+                $membership = $workspace->addMember($this->users->reference($userId), $role, $this->clock->now());
 
                 $this->eventDispatcher->dispatch(new MemberAdded($workspace->getId()->toRfc4122(), $workspace->getName(), $userId, $role, $actorId));
 
                 return $membership;
             });
         } catch (UniqueConstraintViolationException) {
-            // Someone added the same user between this request's read and its write.
             throw new MemberAlreadyExistsException();
         }
     }

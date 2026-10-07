@@ -29,7 +29,7 @@ final class RequestBodyFormatTest extends ApiTestCase
     #[TestWith(['application/x-www-form-urlencoded'])]
     public function bodyThatIsNotJsonShouldBeRejectedWith415(?string $contentType): void
     {
-        $response = $this->sendRaw('POST', $this->route('api_task_create'), $contentType, '{"title":"Buy milk"}');
+        $response = $this->sendRaw('POST', $this->route('api_workspace_create'), $contentType, '{"name":"Mobile team"}');
 
         self::assertResponseStatusCodeSame(415);
         self::assertSame(
@@ -45,7 +45,7 @@ final class RequestBodyFormatTest extends ApiTestCase
     #[Test]
     public function jsonBodyShouldBeAccepted(): void
     {
-        $this->sendRaw('POST', $this->route('api_task_create'), 'application/json', '{"title":"Buy milk"}');
+        $this->sendRaw('POST', $this->route('api_workspace_create'), 'application/json', '{"name":"Mobile team"}');
 
         self::assertResponseStatusCodeSame(201);
     }

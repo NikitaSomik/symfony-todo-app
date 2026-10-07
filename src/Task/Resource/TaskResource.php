@@ -31,6 +31,22 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
             type: 'object',
         ),
         new OA\Property(
+            property: 'relationships',
+            properties: [
+                new OA\Property(
+                    property: 'workspace',
+                    properties: [new OA\Property(property: 'data', properties: [new OA\Property(property: 'type', type: 'string', example: 'workspaces'), new OA\Property(property: 'id', type: 'string', format: 'uuid')], type: 'object')],
+                    type: 'object',
+                ),
+                new OA\Property(
+                    property: 'creator',
+                    properties: [new OA\Property(property: 'data', properties: [new OA\Property(property: 'type', type: 'string', example: 'users'), new OA\Property(property: 'id', type: 'string', example: '7')], type: 'object')],
+                    type: 'object',
+                ),
+            ],
+            type: 'object',
+        ),
+        new OA\Property(
             property: 'links',
             description: 'The task itself and the transitions its current status allows; a transition that is not allowed has no link',
             properties: [
@@ -67,6 +83,10 @@ final readonly class TaskResource
                 'due_date' => $task->getDueDate()?->format('Y-m-d'),
                 'created_at' => $task->getCreatedAt()->format(\DateTimeInterface::ATOM),
                 'updated_at' => $task->getUpdatedAt()->format(\DateTimeInterface::ATOM),
+            ],
+            relationships: [
+                'workspace' => ['data' => ['type' => 'workspaces', 'id' => $task->getWorkspaceId()->toRfc4122()]],
+                'creator' => ['data' => ['type' => 'users', 'id' => (string) $task->getCreatorId()]],
             ],
             links: $this->links($task),
         );

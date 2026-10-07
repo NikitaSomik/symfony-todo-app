@@ -9,12 +9,14 @@ use App\AuditLog\Repository\AuditLogRepository;
 use App\Auth\Entity\User;
 use App\Fixtures\Auth\UserFactory;
 use App\Fixtures\Task\TaskFactory;
+use App\Fixtures\Workspace\WorkspaceFactory;
 use App\Task\Entity\Task;
 use App\Task\Entity\TaskStatusChange;
 use App\Task\Enum\TaskStatus;
 use App\Task\Repository\TaskRepository;
 use App\Tests\ApiTestCase;
 use App\Tests\Support\AuditLogFailureToggle;
+use App\Workspace\Entity\Workspace;
 use Doctrine\Persistence\ManagerRegistry;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
@@ -24,12 +26,16 @@ use Symfony\Component\Uid\Uuid;
 final class TaskControllerTest extends ApiTestCase
 {
     private User $user;
+    private Workspace $workspace;
+    private string $tasks;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->user = UserFactory::createOne();
         $this->actingAs($this->user);
+        $this->workspace = WorkspaceFactory::createOne(['owner' => $this->user]);
+        $this->tasks = $this->route('api_workspace_task_get_all', ['id' => $this->workspace->getId()->toRfc4122()]);
     }
 
     /**
@@ -65,9 +71,9 @@ final class TaskControllerTest extends ApiTestCase
      */
     private function createTasksOfDifferentRelevanceToMilk(array $attributes = []): void
     {
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Milk plan', 'description' => 'Weekly groceries', ...$attributes]);
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Workout', 'description' => 'Drink milk after gym', ...$attributes]);
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Milk run', 'description' => 'Get milk for the week', ...$attributes]);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Milk plan', 'description' => 'Weekly groceries', ...$attributes]);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Workout', 'description' => 'Drink milk after gym', ...$attributes]);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Milk run', 'description' => 'Get milk for the week', ...$attributes]);
     }
 
     private function missingTaskId(): string
@@ -90,7 +96,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function getAllWhenNoTasksShouldReturnEmptyArray(): void
     {
-        $response = $this->get($this->route('api_task_get_all'));
+        $response = $this->get($this->tasks);
         $json = $this->json($response);
 
         self::assertResponseIsSuccessful();
@@ -107,9 +113,9 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function getAllWhenTasksExistShouldReturnAll(): void
     {
-        TaskFactory::createMany(3, ['user' => $this->user]);
+        TaskFactory::createMany(3, ['workspace' => $this->workspace]);
 
-        $response = $this->get($this->route('api_task_get_all'));
+        $response = $this->get($this->tasks);
         $data = $this->jsonData($response);
 
         self::assertResponseIsSuccessful();
@@ -119,11 +125,10 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function getAllShouldNotReturnOtherUsersTask(): void
     {
-        $otherUser = UserFactory::createOne();
-        TaskFactory::createOne(['user' => $otherUser]);
-        TaskFactory::createMany(2, ['user' => $this->user]);
+        TaskFactory::createOne();
+        TaskFactory::createMany(2, ['workspace' => $this->workspace]);
 
-        $response = $this->get($this->route('api_task_get_all'));
+        $response = $this->get($this->tasks);
         $data = $this->jsonData($response);
 
         self::assertResponseIsSuccessful();
@@ -133,9 +138,9 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function getAllShouldReturnPaginationLinks(): void
     {
-        TaskFactory::createMany(25, ['user' => $this->user]);
+        TaskFactory::createMany(25, ['workspace' => $this->workspace]);
 
-        $response = $this->get('/api/v1/tasks?page[number]=2&page[size]=10');
+        $response = $this->get($this->tasks.'?page[number]=2&page[size]=10');
         $json = $this->json($response);
 
         self::assertResponseIsSuccessful();
@@ -145,19 +150,19 @@ final class TaskControllerTest extends ApiTestCase
         self::assertSame(25, $json['meta']['page']['total']);
         self::assertSame(3, $json['meta']['page']['last']);
         self::assertArrayNotHasKey('self', $json['links']);
-        self::assertSame('/api/v1/tasks?page[number]=1&page[size]=10', $json['links']['first']);
-        self::assertSame('/api/v1/tasks?page[number]=3&page[size]=10', $json['links']['last']);
-        self::assertSame('/api/v1/tasks?page[number]=1&page[size]=10', $json['links']['prev']);
-        self::assertSame('/api/v1/tasks?page[number]=3&page[size]=10', $json['links']['next']);
+        self::assertSame($this->tasks.'?page[number]=1&page[size]=10', $json['links']['first']);
+        self::assertSame($this->tasks.'?page[number]=3&page[size]=10', $json['links']['last']);
+        self::assertSame($this->tasks.'?page[number]=1&page[size]=10', $json['links']['prev']);
+        self::assertSame($this->tasks.'?page[number]=3&page[size]=10', $json['links']['next']);
     }
 
     #[Test]
     public function getAllShouldFilterByStatus(): void
     {
-        TaskFactory::createOne(['user' => $this->user, 'status' => TaskStatus::TODO]);
-        TaskFactory::createOne(['user' => $this->user, 'status' => TaskStatus::COMPLETED]);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'status' => TaskStatus::TODO]);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'status' => TaskStatus::COMPLETED]);
 
-        $response = $this->get('/api/v1/tasks?filter[status]=completed');
+        $response = $this->get($this->tasks.'?filter[status]=completed');
         $data = $this->jsonData($response);
 
         self::assertResponseIsSuccessful();
@@ -174,11 +179,11 @@ final class TaskControllerTest extends ApiTestCase
     #[TestWith(['?direction=asc', ['Oldest', 'Middle', 'Newest']])]
     public function getAllWithoutSortShouldOrderByCreationTime(string $query, array $expectedTitles): void
     {
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Middle', 'createdAt' => new \DateTimeImmutable('2026-04-01 10:01:00')]);
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Newest', 'createdAt' => new \DateTimeImmutable('2026-04-01 10:02:00')]);
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Oldest', 'createdAt' => new \DateTimeImmutable('2026-04-01 10:00:00')]);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Middle', 'createdAt' => new \DateTimeImmutable('2026-04-01 10:01:00')]);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Newest', 'createdAt' => new \DateTimeImmutable('2026-04-01 10:02:00')]);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Oldest', 'createdAt' => new \DateTimeImmutable('2026-04-01 10:00:00')]);
 
-        $response = $this->get('/api/v1/tasks'.$query);
+        $response = $this->get($this->tasks.$query);
 
         self::assertResponseIsSuccessful();
         self::assertSame($expectedTitles, $this->titles($response));
@@ -187,11 +192,11 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function getAllShouldSortByStatus(): void
     {
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'In progress', 'status' => TaskStatus::IN_PROGRESS]);
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Todo', 'status' => TaskStatus::TODO]);
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Completed', 'status' => TaskStatus::COMPLETED]);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'In progress', 'status' => TaskStatus::IN_PROGRESS]);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Todo', 'status' => TaskStatus::TODO]);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Completed', 'status' => TaskStatus::COMPLETED]);
 
-        $response = $this->get('/api/v1/tasks?sort=status&direction=asc');
+        $response = $this->get($this->tasks.'?sort=status&direction=asc');
 
         self::assertResponseIsSuccessful();
         self::assertSame(['Completed', 'In progress', 'Todo'], $this->titles($response));
@@ -200,11 +205,11 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function getAllShouldSortByDueDateAscendingWithNullsLast(): void
     {
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Later', 'dueDate' => new \DateTimeImmutable('2026-04-02')]);
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'No deadline', 'dueDate' => null]);
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Sooner', 'dueDate' => new \DateTimeImmutable('2026-04-01')]);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Later', 'dueDate' => new \DateTimeImmutable('2026-04-02')]);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'No deadline', 'dueDate' => null]);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Sooner', 'dueDate' => new \DateTimeImmutable('2026-04-01')]);
 
-        $response = $this->get('/api/v1/tasks?sort=due_date&direction=asc');
+        $response = $this->get($this->tasks.'?sort=due_date&direction=asc');
 
         self::assertResponseIsSuccessful();
         self::assertSame(['Sooner', 'Later', 'No deadline'], $this->titles($response));
@@ -220,13 +225,13 @@ final class TaskControllerTest extends ApiTestCase
     #[TestWith(['asc'])]
     public function getAllShouldBreakSortTiesInTheRequestedDirection(string $direction): void
     {
-        $tasks = TaskFactory::createMany(3, ['user' => $this->user, 'status' => TaskStatus::TODO]);
+        $tasks = TaskFactory::createMany(3, ['workspace' => $this->workspace, 'status' => TaskStatus::TODO]);
         $created = array_map(fn (Task $task): string => $this->taskId($task), $tasks);
         $expected = 'asc' === $direction ? $created : array_reverse($created);
 
         $pages = [];
         foreach ([1, 2, 3] as $number) {
-            $pages[] = $this->jsonData($this->get('/api/v1/tasks?sort=status&direction='.$direction.'&page[size]=1&page[number]='.$number))[0]['id'];
+            $pages[] = $this->jsonData($this->get($this->tasks.'?sort=status&direction='.$direction.'&page[size]=1&page[number]='.$number))[0]['id'];
         }
 
         self::assertSame($expected, $pages);
@@ -235,13 +240,13 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function getAllPastTheLastPageShouldPointBackToTheLastPage(): void
     {
-        TaskFactory::createMany(3, ['user' => $this->user]);
+        TaskFactory::createMany(3, ['workspace' => $this->workspace]);
 
-        $json = $this->json($this->get('/api/v1/tasks?page[number]=5&page[size]=2'));
+        $json = $this->json($this->get($this->tasks.'?page[number]=5&page[size]=2'));
 
         self::assertSame([], $json['data']);
-        self::assertSame('/api/v1/tasks?page[number]=2&page[size]=2', $json['links']['prev']);
-        self::assertSame('/api/v1/tasks?page[number]=2&page[size]=2', $json['links']['last']);
+        self::assertSame($this->tasks.'?page[number]=2&page[size]=2', $json['links']['prev']);
+        self::assertSame($this->tasks.'?page[number]=2&page[size]=2', $json['links']['last']);
         self::assertNull($json['links']['next']);
     }
 
@@ -252,7 +257,7 @@ final class TaskControllerTest extends ApiTestCase
     #[TestWith([''])]
     public function getAllWhenSortFieldIsNotSupportedShouldReturn422(string $sort): void
     {
-        $response = $this->get('/api/v1/tasks?sort='.$sort);
+        $response = $this->get($this->tasks.'?sort='.$sort);
 
         self::assertResponseStatusCodeSame(422);
         self::assertSame(['parameter' => 'sort'], $this->json($response)['errors'][0]['source']);
@@ -261,7 +266,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function getAllWhenSearchTermIsTooLongShouldReturn422(): void
     {
-        $response = $this->get('/api/v1/tasks?filter[search]='.str_repeat('a', 101));
+        $response = $this->get($this->tasks.'?filter[search]='.str_repeat('a', 101));
 
         self::assertResponseStatusCodeSame(422);
         self::assertSame(['parameter' => 'filter[search]'], $this->json($response)['errors'][0]['source']);
@@ -270,11 +275,11 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function getAllShouldFilterByDueDateRange(): void
     {
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Before range', 'dueDate' => new \DateTimeImmutable('2026-03-31')]);
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Inside range', 'dueDate' => new \DateTimeImmutable('2026-04-02')]);
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'After range', 'dueDate' => new \DateTimeImmutable('2026-04-06')]);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Before range', 'dueDate' => new \DateTimeImmutable('2026-03-31')]);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Inside range', 'dueDate' => new \DateTimeImmutable('2026-04-02')]);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'After range', 'dueDate' => new \DateTimeImmutable('2026-04-06')]);
 
-        $response = $this->get('/api/v1/tasks?filter[due_from]=2026-04-01&filter[due_to]=2026-04-05');
+        $response = $this->get($this->tasks.'?filter[due_from]=2026-04-01&filter[due_to]=2026-04-05');
         $data = $this->jsonData($response);
 
         self::assertResponseIsSuccessful();
@@ -285,11 +290,11 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function getAllShouldSearchByTitleAndDescription(): void
     {
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Buy milk', 'description' => null]);
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Workout', 'description' => 'Drink milk after gym']);
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Read book', 'description' => 'Evening routine']);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Buy milk', 'description' => null]);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Workout', 'description' => 'Drink milk after gym']);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Read book', 'description' => 'Evening routine']);
 
-        $response = $this->get('/api/v1/tasks?filter[search]=milk');
+        $response = $this->get($this->tasks.'?filter[search]=milk');
         $data = $this->jsonData($response);
 
         self::assertResponseIsSuccessful();
@@ -300,17 +305,17 @@ final class TaskControllerTest extends ApiTestCase
     public function getAllShouldSupportMultiWordSearch(): void
     {
         TaskFactory::createOne([
-            'user' => $this->user,
+            'workspace' => $this->workspace,
             'title' => 'Review PostgreSQL full-text search',
             'description' => 'Prepare implementation notes',
         ]);
         TaskFactory::createOne([
-            'user' => $this->user,
+            'workspace' => $this->workspace,
             'title' => 'Review PostgreSQL indexes',
             'description' => 'Compare search options later',
         ]);
 
-        $response = $this->get('/api/v1/tasks?filter[search]=postgresql search');
+        $response = $this->get($this->tasks.'?filter[search]=postgresql search');
         $data = $this->jsonData($response);
 
         self::assertResponseIsSuccessful();
@@ -325,10 +330,10 @@ final class TaskControllerTest extends ApiTestCase
     #[TestWith(['deploy', 'Deployment checklist'])]
     public function getAllShouldFindOtherFormsOfTheSearchedWord(string $search, string $title): void
     {
-        TaskFactory::createOne(['user' => $this->user, 'title' => $title]);
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Buy bread']);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => $title]);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Buy bread']);
 
-        $response = $this->get('/api/v1/tasks?filter[search]='.$search);
+        $response = $this->get($this->tasks.'?filter[search]='.$search);
         $data = $this->jsonData($response);
 
         self::assertResponseIsSuccessful();
@@ -339,10 +344,10 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function getAllShouldIgnoreStopWordsInTheSearchTerm(): void
     {
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Call bank']);
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Call mom']);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Call bank']);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Call mom']);
 
-        $response = $this->get('/api/v1/tasks?filter[search]=call the bank');
+        $response = $this->get($this->tasks.'?filter[search]=call the bank');
         $data = $this->jsonData($response);
 
         self::assertResponseIsSuccessful();
@@ -353,9 +358,9 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function getAllWhenNoTaskMatchesTheSearchShouldReturnEmptyArray(): void
     {
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Buy milk']);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Buy milk']);
 
-        $response = $this->get('/api/v1/tasks?filter[search]=coffee');
+        $response = $this->get($this->tasks.'?filter[search]=coffee');
 
         self::assertResponseIsSuccessful();
         self::assertSame([], $this->jsonData($response));
@@ -364,9 +369,9 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function getAllShouldNotFindOtherUsersTasks(): void
     {
-        TaskFactory::createOne(['user' => UserFactory::createOne(), 'title' => 'Buy milk']);
+        TaskFactory::createOne(['title' => 'Buy milk']);
 
-        $response = $this->get('/api/v1/tasks?filter[search]=milk');
+        $response = $this->get($this->tasks.'?filter[search]=milk');
 
         self::assertResponseIsSuccessful();
         self::assertSame([], $this->jsonData($response));
@@ -375,10 +380,10 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function getAllWhenSearchTermIsBlankShouldNotFilter(): void
     {
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Buy milk']);
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Read book']);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Buy milk']);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Read book']);
 
-        $response = $this->get('/api/v1/tasks?filter[search]='.urlencode('   '));
+        $response = $this->get($this->tasks.'?filter[search]='.urlencode('   '));
 
         self::assertResponseIsSuccessful();
         self::assertCount(2, $this->jsonData($response));
@@ -391,9 +396,9 @@ final class TaskControllerTest extends ApiTestCase
     #[TestWith(['milk & | !', ['Buy milk']])]
     public function getAllWhenSearchTermHasQuerySyntaxCharactersShouldNotFail(string $search, array $expectedTitles): void
     {
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Buy milk']);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Buy milk']);
 
-        $response = $this->get('/api/v1/tasks?filter[search]='.urlencode($search));
+        $response = $this->get($this->tasks.'?filter[search]='.urlencode($search));
         $titles = $this->titles($response);
 
         self::assertResponseIsSuccessful();
@@ -405,9 +410,9 @@ final class TaskControllerTest extends ApiTestCase
     #[TestWith(['to do'])]
     public function getAllWhenSearchTermHasOnlyStopWordsShouldFindNothing(string $search): void
     {
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Things to do in the morning']);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Things to do in the morning']);
 
-        $response = $this->get('/api/v1/tasks?filter[search]='.$search);
+        $response = $this->get($this->tasks.'?filter[search]='.$search);
         $json = $this->json($response);
 
         self::assertResponseIsSuccessful();
@@ -421,11 +426,11 @@ final class TaskControllerTest extends ApiTestCase
     #[TestWith(['"buy milk"', ['Buy milk']])]
     public function getAllShouldSupportWebSearchSyntax(string $search, array $expectedTitles): void
     {
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Buy milk']);
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Buy bread']);
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Sell milk', 'description' => 'Then buy more']);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Buy milk']);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Buy bread']);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Sell milk', 'description' => 'Then buy more']);
 
-        $response = $this->get('/api/v1/tasks?filter[search]='.urlencode($search));
+        $response = $this->get($this->tasks.'?filter[search]='.urlencode($search));
         $titles = $this->titles($response);
         sort($titles);
 
@@ -436,10 +441,10 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function getAllShouldRankTitleMatchesHigherThanDescriptionMatches(): void
     {
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Milk plan', 'description' => 'Weekly groceries']);
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Workout', 'description' => 'Drink milk after gym']);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Milk plan', 'description' => 'Weekly groceries']);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Workout', 'description' => 'Drink milk after gym']);
 
-        $response = $this->get('/api/v1/tasks?filter[search]=milk');
+        $response = $this->get($this->tasks.'?filter[search]=milk');
         $data = $this->jsonData($response);
 
         self::assertResponseIsSuccessful();
@@ -451,11 +456,11 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function getAllWhenSearchingShouldSortByTheChosenField(): void
     {
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Milk plan', 'description' => null, 'dueDate' => new \DateTimeImmutable('2026-04-02')]);
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Milk shake', 'description' => null, 'dueDate' => new \DateTimeImmutable('2026-04-03')]);
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Workout', 'description' => 'Drink milk after gym', 'dueDate' => new \DateTimeImmutable('2026-04-01')]);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Milk plan', 'description' => null, 'dueDate' => new \DateTimeImmutable('2026-04-02')]);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Milk shake', 'description' => null, 'dueDate' => new \DateTimeImmutable('2026-04-03')]);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Workout', 'description' => 'Drink milk after gym', 'dueDate' => new \DateTimeImmutable('2026-04-01')]);
 
-        $response = $this->get('/api/v1/tasks?filter[search]=milk&sort=due_date&direction=asc');
+        $response = $this->get($this->tasks.'?filter[search]=milk&sort=due_date&direction=asc');
 
         self::assertResponseIsSuccessful();
         self::assertSame(['Workout', 'Milk plan', 'Milk shake'], $this->titles($response));
@@ -466,7 +471,7 @@ final class TaskControllerTest extends ApiTestCase
     {
         $this->createTasksOfDifferentRelevanceToMilk(['status' => TaskStatus::TODO]);
 
-        $response = $this->get('/api/v1/tasks?filter[search]=milk&sort=status');
+        $response = $this->get($this->tasks.'?filter[search]=milk&sort=status');
 
         self::assertResponseIsSuccessful();
         self::assertSame(['Milk run', 'Milk plan', 'Workout'], $this->titles($response));
@@ -477,7 +482,7 @@ final class TaskControllerTest extends ApiTestCase
     {
         $this->createTasksOfDifferentRelevanceToMilk();
 
-        $response = $this->get('/api/v1/tasks?filter[search]=milk&direction=asc');
+        $response = $this->get($this->tasks.'?filter[search]=milk&direction=asc');
 
         self::assertResponseIsSuccessful();
         self::assertSame(['Workout', 'Milk plan', 'Milk run'], $this->titles($response));
@@ -486,10 +491,10 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function getAllShouldHandleNullableDescriptionInSearchResults(): void
     {
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Buy milk', 'description' => null]);
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Buy bread', 'description' => null]);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Buy milk', 'description' => null]);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Buy bread', 'description' => null]);
 
-        $response = $this->get('/api/v1/tasks?filter[search]=milk');
+        $response = $this->get($this->tasks.'?filter[search]=milk');
         $data = $this->jsonData($response);
 
         self::assertResponseIsSuccessful();
@@ -502,17 +507,17 @@ final class TaskControllerTest extends ApiTestCase
     public function getAllShouldCombineFullTextSearchWithStatusFilter(): void
     {
         TaskFactory::createOne([
-            'user' => $this->user,
+            'workspace' => $this->workspace,
             'title' => 'Buy milk',
             'status' => TaskStatus::COMPLETED,
         ]);
         TaskFactory::createOne([
-            'user' => $this->user,
+            'workspace' => $this->workspace,
             'title' => 'Buy milk tomorrow',
             'status' => TaskStatus::TODO,
         ]);
 
-        $response = $this->get('/api/v1/tasks?filter[search]=milk&filter[status]=completed');
+        $response = $this->get($this->tasks.'?filter[search]=milk&filter[status]=completed');
         $data = $this->jsonData($response);
 
         self::assertResponseIsSuccessful();
@@ -524,11 +529,11 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function getAllShouldPaginateSearchResults(): void
     {
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Milk plan A']);
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Milk plan B']);
-        TaskFactory::createOne(['user' => $this->user, 'title' => 'Milk plan C']);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Milk plan A']);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Milk plan B']);
+        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Milk plan C']);
 
-        $response = $this->get('/api/v1/tasks?filter[search]=milk&page[number]=2&page[size]=2');
+        $response = $this->get($this->tasks.'?filter[search]=milk&page[number]=2&page[size]=2');
         $json = $this->json($response);
 
         self::assertResponseIsSuccessful();
@@ -537,16 +542,16 @@ final class TaskControllerTest extends ApiTestCase
         self::assertSame(2, $json['meta']['page']['size']);
         self::assertSame(3, $json['meta']['page']['total']);
         self::assertSame(2, $json['meta']['page']['last']);
-        self::assertSame('/api/v1/tasks?filter[search]=milk&page[number]=1&page[size]=2', $json['links']['first']);
-        self::assertSame('/api/v1/tasks?filter[search]=milk&page[number]=2&page[size]=2', $json['links']['last']);
-        self::assertSame('/api/v1/tasks?filter[search]=milk&page[number]=1&page[size]=2', $json['links']['prev']);
+        self::assertSame($this->tasks.'?filter[search]=milk&page[number]=1&page[size]=2', $json['links']['first']);
+        self::assertSame($this->tasks.'?filter[search]=milk&page[number]=2&page[size]=2', $json['links']['last']);
+        self::assertSame($this->tasks.'?filter[search]=milk&page[number]=1&page[size]=2', $json['links']['prev']);
         self::assertNull($json['links']['next']);
     }
 
     #[Test]
     public function createWhenValidDataShouldReturn201(): void
     {
-        $this->post($this->route('api_task_create'), ['title' => 'Buy milk']);
+        $this->post($this->route('api_workspace_task_create', ['id' => $this->workspace->getId()->toRfc4122()]), ['title' => 'Buy milk']);
 
         self::assertResponseStatusCodeSame(201);
     }
@@ -554,7 +559,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function createShouldPointToTheNewTaskWithTheLocationHeader(): void
     {
-        $response = $this->post($this->route('api_task_create'), ['title' => 'Buy milk']);
+        $response = $this->post($this->route('api_workspace_task_create', ['id' => $this->workspace->getId()->toRfc4122()]), ['title' => 'Buy milk']);
 
         self::assertSame(
             $this->route('api_task_get', ['id' => $this->jsonData($response)['id']]),
@@ -565,7 +570,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function createWhenValidDataShouldReturnTask(): void
     {
-        $response = $this->post($this->route('api_task_create'), ['title' => 'Buy milk']);
+        $response = $this->post($this->route('api_workspace_task_create', ['id' => $this->workspace->getId()->toRfc4122()]), ['title' => 'Buy milk']);
         $data = $this->jsonData($response);
         $attributes = $data['attributes'];
 
@@ -583,7 +588,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function createWhenAllFieldsProvidedShouldReturnTask(): void
     {
-        $response = $this->post($this->route('api_task_create'), [
+        $response = $this->post($this->route('api_workspace_task_create', ['id' => $this->workspace->getId()->toRfc4122()]), [
             'title' => 'Buy milk',
             'description' => '2 liters',
             'due_date' => '2026-04-01',
@@ -600,7 +605,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function createWhenTitleIsEmptyShouldReturn422(): void
     {
-        $this->post($this->route('api_task_create'), ['title' => '']);
+        $this->post($this->route('api_workspace_task_create', ['id' => $this->workspace->getId()->toRfc4122()]), ['title' => '']);
 
         self::assertResponseStatusCodeSame(422);
     }
@@ -608,7 +613,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function createShouldStartInTodoWhateverStatusTheBodyAsksFor(): void
     {
-        $response = $this->post($this->route('api_task_create'), [
+        $response = $this->post($this->route('api_workspace_task_create', ['id' => $this->workspace->getId()->toRfc4122()]), [
             'title' => 'Deprecated task',
             'status' => 'cancelled',
             'cancellation_reason' => 'No longer needed',
@@ -624,7 +629,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function createWhenDescriptionIsTooShortShouldReturn422(): void
     {
-        $this->post($this->route('api_task_create'), ['title' => 'Test', 'description' => 'ab']);
+        $this->post($this->route('api_workspace_task_create', ['id' => $this->workspace->getId()->toRfc4122()]), ['title' => 'Test', 'description' => 'ab']);
 
         self::assertResponseStatusCodeSame(422);
     }
@@ -632,7 +637,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function createWhenDescriptionIsTooLongShouldReturn422(): void
     {
-        $this->post($this->route('api_task_create'), ['title' => 'Test', 'description' => str_repeat('a', 2001)]);
+        $this->post($this->route('api_workspace_task_create', ['id' => $this->workspace->getId()->toRfc4122()]), ['title' => 'Test', 'description' => str_repeat('a', 2001)]);
 
         self::assertResponseStatusCodeSame(422);
     }
@@ -640,7 +645,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function createWhenDueDateIsInvalidShouldReturn422(): void
     {
-        $this->post($this->route('api_task_create'), ['title' => 'Test', 'due_date' => 'tomorrow']);
+        $this->post($this->route('api_workspace_task_create', ['id' => $this->workspace->getId()->toRfc4122()]), ['title' => 'Test', 'due_date' => 'tomorrow']);
 
         self::assertResponseStatusCodeSame(422);
     }
@@ -650,7 +655,7 @@ final class TaskControllerTest extends ApiTestCase
     {
         $task = TaskFactory::createOne([
             'title' => 'Buy milk',
-            'user' => $this->user,
+            'workspace' => $this->workspace,
             'dueDate' => new \DateTimeImmutable('2026-04-01'),
         ]);
 
@@ -678,10 +683,9 @@ final class TaskControllerTest extends ApiTestCase
     }
 
     #[Test]
-    public function getWhenTaskBelongsToAnotherUserShouldReturn404(): void
+    public function getWhenTaskIsInAWorkspaceOfStrangersShouldReturn404(): void
     {
-        $otherUser = UserFactory::createOne();
-        $task = TaskFactory::createOne(['user' => $otherUser]);
+        $task = TaskFactory::createOne();
 
         $this->get($this->route('api_task_get', ['id' => $this->taskId($task)]));
 
@@ -689,10 +693,9 @@ final class TaskControllerTest extends ApiTestCase
     }
 
     #[Test]
-    public function getWhenTaskBelongsToAnotherUserShouldAnswerLikeAMissingTask(): void
+    public function getWhenTaskIsInAWorkspaceOfStrangersShouldAnswerLikeAMissingTask(): void
     {
-        $otherUser = UserFactory::createOne();
-        $task = TaskFactory::createOne(['user' => $otherUser]);
+        $task = TaskFactory::createOne();
 
         $missing = $this->json($this->get($this->route('api_task_get', ['id' => $this->missingTaskId()])));
         $foreign = $this->json($this->get($this->route('api_task_get', ['id' => $this->taskId($task)])));
@@ -703,7 +706,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function updateWhenValidDataShouldReturnUpdatedTask(): void
     {
-        $task = TaskFactory::createOne(['user' => $this->user]);
+        $task = TaskFactory::createOne(['workspace' => $this->workspace]);
 
         $response = $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), [
             'title' => 'Updated title',
@@ -721,7 +724,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function updateShouldLeaveTheStatusAloneWhateverStatusTheBodyAsksFor(): void
     {
-        $task = TaskFactory::new()->inProgress()->create(['user' => $this->user]);
+        $task = TaskFactory::new()->inProgress()->create(['workspace' => $this->workspace]);
 
         $response = $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), [
             'title' => 'Renamed task',
@@ -736,7 +739,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function updateWhenTitleIsEmptyShouldReturn422(): void
     {
-        $task = TaskFactory::createOne(['user' => $this->user]);
+        $task = TaskFactory::createOne(['workspace' => $this->workspace]);
 
         $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), ['title' => '']);
 
@@ -746,7 +749,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function updateWhenDescriptionIsTooShortShouldReturn422(): void
     {
-        $task = TaskFactory::createOne(['user' => $this->user]);
+        $task = TaskFactory::createOne(['workspace' => $this->workspace]);
 
         $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), ['title' => 'Test', 'description' => 'ab']);
 
@@ -756,7 +759,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function updateWhenDescriptionIsTooLongShouldReturn422(): void
     {
-        $task = TaskFactory::createOne(['user' => $this->user]);
+        $task = TaskFactory::createOne(['workspace' => $this->workspace]);
 
         $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), [
             'title' => 'Test',
@@ -769,7 +772,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function updateWhenDueDateIsInvalidShouldReturn422(): void
     {
-        $task = TaskFactory::createOne(['user' => $this->user]);
+        $task = TaskFactory::createOne(['workspace' => $this->workspace]);
 
         $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), [
             'title' => 'Test',
@@ -782,7 +785,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function getAllWhenDueFromIsInvalidShouldReturn422(): void
     {
-        $response = $this->get('/api/v1/tasks?filter[due_from]=tomorrow');
+        $response = $this->get($this->tasks.'?filter[due_from]=tomorrow');
         $json = $this->json($response);
 
         self::assertResponseStatusCodeSame(422);
@@ -793,7 +796,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function getAllWhenDueRangeIsInvalidShouldReturn422(): void
     {
-        $response = $this->get('/api/v1/tasks?filter[due_from]=2026-04-05&filter[due_to]=2026-04-01');
+        $response = $this->get($this->tasks.'?filter[due_from]=2026-04-05&filter[due_to]=2026-04-01');
         $json = $this->json($response);
 
         self::assertResponseStatusCodeSame(422);
@@ -803,7 +806,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function getAllWhenDueToIsInvalidShouldReturn422(): void
     {
-        $response = $this->get('/api/v1/tasks?filter[due_to]=tomorrow');
+        $response = $this->get($this->tasks.'?filter[due_to]=tomorrow');
         $json = $this->json($response);
 
         self::assertResponseStatusCodeSame(422);
@@ -819,10 +822,9 @@ final class TaskControllerTest extends ApiTestCase
     }
 
     #[Test]
-    public function updateWhenTaskBelongsToAnotherUserShouldReturn404(): void
+    public function updateWhenTaskIsInAWorkspaceOfStrangersShouldReturn404(): void
     {
-        $otherUser = UserFactory::createOne();
-        $task = TaskFactory::createOne(['user' => $otherUser]);
+        $task = TaskFactory::createOne();
 
         $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), ['title' => 'Hacked']);
 
@@ -830,10 +832,9 @@ final class TaskControllerTest extends ApiTestCase
     }
 
     #[Test]
-    public function updateWhenTaskBelongsToAnotherUserAndBodyIsInvalidShouldReturn404(): void
+    public function updateWhenTaskIsInAWorkspaceOfStrangersAndBodyIsInvalidShouldReturn404(): void
     {
-        $otherUser = UserFactory::createOne();
-        $task = TaskFactory::createOne(['user' => $otherUser]);
+        $task = TaskFactory::createOne();
 
         $this->put($this->route('api_task_update', ['id' => $this->taskId($task)]), ['title' => '']);
 
@@ -843,7 +844,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function deleteWhenTaskExistsShouldReturn204(): void
     {
-        $task = TaskFactory::createOne(['user' => $this->user]);
+        $task = TaskFactory::createOne(['workspace' => $this->workspace]);
 
         $this->delete($this->route('api_task_delete', ['id' => $this->taskId($task)]));
 
@@ -853,7 +854,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function deleteWhenTaskDeletedShouldReturn404OnGet(): void
     {
-        $task = TaskFactory::createOne(['user' => $this->user]);
+        $task = TaskFactory::createOne(['workspace' => $this->workspace]);
         $taskId = $this->taskId($task);
 
         $this->delete($this->route('api_task_delete', ['id' => $taskId]));
@@ -871,10 +872,9 @@ final class TaskControllerTest extends ApiTestCase
     }
 
     #[Test]
-    public function deleteWhenTaskBelongsToAnotherUserShouldReturn404(): void
+    public function deleteWhenTaskIsInAWorkspaceOfStrangersShouldReturn404(): void
     {
-        $otherUser = UserFactory::createOne();
-        $task = TaskFactory::createOne(['user' => $otherUser]);
+        $task = TaskFactory::createOne();
 
         $this->delete($this->route('api_task_delete', ['id' => $this->taskId($task)]));
 
@@ -884,7 +884,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function createWhenValidDataShouldCreateAuditLogEntry(): void
     {
-        $response = $this->post($this->route('api_task_create'), ['title' => 'Buy milk']);
+        $response = $this->post($this->route('api_workspace_task_create', ['id' => $this->workspace->getId()->toRfc4122()]), ['title' => 'Buy milk']);
         $taskId = $this->jsonData($response)['id'];
 
         $activities = static::getContainer()->get(AuditLogRepository::class)->findForEntity(AuditLogEntityType::TASK, $taskId);
@@ -900,7 +900,7 @@ final class TaskControllerTest extends ApiTestCase
     public function updateWhenTaskIsChangedShouldCreateAuditLogEntryForEachChangedField(): void
     {
         $task = TaskFactory::createOne([
-            'user' => $this->user,
+            'workspace' => $this->workspace,
             'title' => 'Buy milk',
             'description' => null,
             'status' => TaskStatus::TODO,
@@ -935,7 +935,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function getAuditLogsShouldReturnTaskHistory(): void
     {
-        $createResponse = $this->post($this->route('api_task_create'), ['title' => 'Buy milk']);
+        $createResponse = $this->post($this->route('api_workspace_task_create', ['id' => $this->workspace->getId()->toRfc4122()]), ['title' => 'Buy milk']);
         $taskId = $this->jsonData($createResponse)['id'];
 
         $this->put($this->route('api_task_update', ['id' => $taskId]), [
@@ -958,10 +958,9 @@ final class TaskControllerTest extends ApiTestCase
     }
 
     #[Test]
-    public function getAuditLogsWhenTaskBelongsToAnotherUserShouldReturn404(): void
+    public function getAuditLogsWhenTaskIsInAWorkspaceOfStrangersShouldReturn404(): void
     {
-        $otherUser = UserFactory::createOne();
-        $task = TaskFactory::createOne(['user' => $otherUser]);
+        $task = TaskFactory::createOne();
 
         $this->get($this->route('api_task_get_audit_logs', ['id' => $this->taskId($task)]));
 
@@ -971,7 +970,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function getAuditLogsShouldLinkTheUserAndTheTaskAsRelationships(): void
     {
-        $taskId = $this->jsonData($this->post($this->route('api_task_create'), ['title' => 'Buy milk']))['id'];
+        $taskId = $this->jsonData($this->post($this->route('api_workspace_task_create', ['id' => $this->workspace->getId()->toRfc4122()]), ['title' => 'Buy milk']))['id'];
 
         $entry = $this->jsonData($this->get($this->route('api_task_get_audit_logs', ['id' => $taskId])))[0];
 
@@ -988,7 +987,7 @@ final class TaskControllerTest extends ApiTestCase
     public function deleteWhenTaskExistsShouldCreateDeletedAuditLogEntry(): void
     {
         $task = TaskFactory::createOne([
-            'user' => $this->user,
+            'workspace' => $this->workspace,
             'title' => 'Buy milk',
         ]);
         $taskId = $this->taskId($task);
@@ -1010,7 +1009,7 @@ final class TaskControllerTest extends ApiTestCase
     {
         $this->failAuditLogEventDispatching();
 
-        $response = $this->post($this->route('api_task_create'), ['title' => 'Buy milk']);
+        $response = $this->post($this->route('api_workspace_task_create', ['id' => $this->workspace->getId()->toRfc4122()]), ['title' => 'Buy milk']);
 
         self::assertResponseStatusCodeSame(500);
 
@@ -1026,7 +1025,7 @@ final class TaskControllerTest extends ApiTestCase
     public function updateShouldRollbackChangesWhenEventDispatchFails(): void
     {
         $task = TaskFactory::createOne([
-            'user' => $this->user,
+            'workspace' => $this->workspace,
             'title' => 'Buy milk',
             'description' => null,
             'status' => TaskStatus::TODO,
@@ -1058,7 +1057,7 @@ final class TaskControllerTest extends ApiTestCase
     public function deleteShouldRollbackRemovalWhenEventDispatchFails(): void
     {
         $task = TaskFactory::createOne([
-            'user' => $this->user,
+            'workspace' => $this->workspace,
             'title' => 'Buy milk',
         ]);
         $taskId = $this->taskId($task);
@@ -1078,7 +1077,7 @@ final class TaskControllerTest extends ApiTestCase
     #[TestWith(['completed', ['self']])]
     public function getShouldLinkOnlyTheTransitionsTheStatusAllows(string $status, array $expectedLinks): void
     {
-        $task = TaskFactory::createOne(['user' => $this->user, 'status' => TaskStatus::from($status)]);
+        $task = TaskFactory::createOne(['workspace' => $this->workspace, 'status' => TaskStatus::from($status)]);
 
         $response = $this->get($this->route('api_task_get', ['id' => $this->taskId($task)]));
 
@@ -1088,9 +1087,9 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function getAllShouldLinkEveryTask(): void
     {
-        $task = TaskFactory::createOne(['user' => $this->user]);
+        $task = TaskFactory::createOne(['workspace' => $this->workspace]);
 
-        $data = $this->jsonData($this->get('/api/v1/tasks'));
+        $data = $this->jsonData($this->get($this->tasks));
 
         self::assertSame('/api/v1/tasks/'.$this->taskId($task).'/start', $data[0]['links']['start']);
     }

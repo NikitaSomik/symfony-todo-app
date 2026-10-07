@@ -17,6 +17,8 @@ use App\Task\Query\Specification\TaskSortSpecification;
 use App\Task\Query\Specification\TaskStatusSpecification;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Bridge\Doctrine\Types\UuidType;
+use Symfony\Component\Uid\Uuid;
 
 /**
  * @extends ServiceEntityRepository<Task>
@@ -33,7 +35,7 @@ class TaskRepository extends ServiceEntityRepository
     /**
      * @return Task[]
      */
-    public function findForUserList(int $userId, TaskListQueryDTO $query): array
+    public function findForWorkspaceList(Uuid $workspaceId, TaskListQueryDTO $query): array
     {
         $search = $query->filter->searchQuery();
         $field = $query->sortField();
@@ -45,8 +47,8 @@ class TaskRepository extends ServiceEntityRepository
         }
 
         $queryBuilder = $this->createQueryBuilder('t')
-            ->where('t.creatorId = :userId')
-            ->setParameter('userId', $userId)
+            ->where('t.workspace = :workspaceId')
+            ->setParameter('workspaceId', $workspaceId, UuidType::NAME)
             ->setFirstResult(($query->page->number - 1) * $query->page->size)
             ->setMaxResults($query->page->size);
 
@@ -69,12 +71,12 @@ class TaskRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    public function countForUserList(int $userId, TaskListQueryDTO $query): int
+    public function countForWorkspaceList(Uuid $workspaceId, TaskListQueryDTO $query): int
     {
         $queryBuilder = $this->createQueryBuilder('t')
             ->select('COUNT(t.id)')
-            ->where('t.creatorId = :userId')
-            ->setParameter('userId', $userId);
+            ->where('t.workspace = :workspaceId')
+            ->setParameter('workspaceId', $workspaceId, UuidType::NAME);
 
         $this->specificationApplier->apply($queryBuilder, [
             new TaskSearchSpecification($query->filter->searchQuery()),

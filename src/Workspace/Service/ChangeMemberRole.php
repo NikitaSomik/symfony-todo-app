@@ -22,8 +22,13 @@ final readonly class ChangeMemberRole
 
     public function handle(Workspace $workspace, int $userId, WorkspaceRole $role, int $actorId): Membership
     {
-        return $this->em->wrapInTransaction(function () use ($workspace, $userId, $role, $actorId): Membership {
-            $previousRole = $workspace->roleOf($userId) ?? throw new MemberNotFoundException();
+        $previousRole = $workspace->roleOf($userId);
+
+        if (null === $previousRole) {
+            throw new MemberNotFoundException();
+        }
+
+        return $this->em->wrapInTransaction(function () use ($workspace, $userId, $role, $previousRole, $actorId): Membership {
             $membership = $workspace->changeRole($userId, $role);
 
             if ($previousRole !== $role) {

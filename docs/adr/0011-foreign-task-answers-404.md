@@ -49,3 +49,9 @@ REST API answers private repositories the same way.
 - Ownership is checked by the query itself, so a new task endpoint is protected as soon
   as it takes its `Task` argument through the resolver — and unprotected if it loads the
   task any other way.
+
+Since #78 a task belongs to a workspace, not to a user
+([0020](0020-a-task-belongs-to-a-workspace.md)). The rule here stands — a task the caller
+may not see answers `404` — with "someone else's" now meaning "in a workspace the caller
+is not a member of". The resolver is `MemberTaskValueResolver`, and a `TaskVoter` answers
+`403` again, to a member, never to a stranger.

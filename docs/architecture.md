@@ -67,6 +67,7 @@ flowchart TB
     end
 
     Task -->|contract only| Auth
+    Task -->|contract only| Workspace
     Task -->|writes and reads its history| AuditLog
     Workspace -->|contract only| Auth
     Workspace -->|writes its history| AuditLog
@@ -82,7 +83,8 @@ module, and the audit log on none of the modules that write to it: a record name
 actor by id ([0017](adr/0017-audit-log-as-its-own-module.md)). The allowed
 dependencies are declared in `deptrac.php` and checked in CI. `Task` and `Workspace` use
 only `Auth`'s contract — an interface for the current user, a lookup by email and the
-registration event ([0018](adr/0018-modules-meet-through-contracts.md)).
+registration event — and `Task` only `Workspace`'s: a member's role and a reference to
+the workspace ([0018](adr/0018-modules-meet-through-contracts.md)).
 
 ## Authentication
 
@@ -100,7 +102,7 @@ sequenceDiagram
     A-->>C: 204 + cookies: access_token (15 min), refresh_token (30 days)
 
     Note over C,R: A request
-    C->>A: GET /tasks (access_token cookie)
+    C->>A: GET /tasks/{id} (access_token cookie)
     A->>R: is this token blocklisted?
     A-->>C: 200
 
@@ -127,7 +129,7 @@ so a stale access token cannot block a login or a refresh.
 
 ```mermaid
 stateDiagram-v2
-    [*] --> todo: POST /tasks
+    [*] --> todo: POST /workspaces/{id}/tasks
     todo --> in_progress: start
     in_progress --> in_review: submit-for-review
     in_progress --> blocked: block (reason)
@@ -161,10 +163,10 @@ sequenceDiagram
     participant DB as PostgreSQL
 
     C->>Ctl: POST /tasks/{id}/cancel {"reason": "…"}
-    Ctl->>DB: load the task among the caller's own
-    Note right of Ctl: not found or someone else's → 404
-    Ctl->>Ctl: validate the body
-    Note right of Ctl: no usable reason → 422
+    Ctl->>DB: load the task and the caller's role in its workspace
+    Note right of Ctl: not found or not a member → 404
+    Ctl->>Ctl: ask the voter, validate the body
+    Note right of Ctl: a viewer → 403, no usable reason → 422
     Ctl->>S: handle(task, reason, actor id)
     activate S
     Note over S,DB: one transaction
@@ -178,8 +180,9 @@ sequenceDiagram
     Ctl-->>C: 200 + the task
 ```
 
-The order of the first two steps is deliberate: an invalid body sent to someone else's task
-answers `404`, not a `422` that would confirm the task exists
-([0011](adr/0011-foreign-task-answers-404.md)). The audit entries are written in the same
+The order of the first two steps is deliberate: an invalid body sent to a task of a
+workspace the caller is not in answers `404`, not a `422` that would confirm the task
+exists ([0011](adr/0011-foreign-task-answers-404.md),
+[0020](adr/0020-a-task-belongs-to-a-workspace.md)). The audit entries are written in the same
 transaction as the change, so the history cannot disagree with the data
 ([0012](adr/0012-synchronous-audit-log-one-transaction.md)).

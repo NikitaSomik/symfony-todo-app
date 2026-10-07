@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Application\Error;
 
 use App\Fixtures\Auth\UserFactory;
+use App\Fixtures\Workspace\WorkspaceFactory;
 use App\Tests\ApiTestCase;
 use App\Tests\Support\AuditLogFailureToggle;
 use PHPUnit\Framework\Attributes\Test;
@@ -62,10 +63,12 @@ final class ErrorRequestIdTest extends ApiTestCase
     #[Test]
     public function serverErrorShouldCarryTheRequestId(): void
     {
-        $this->actingAs(UserFactory::createOne());
+        $user = UserFactory::createOne();
+        $this->actingAs($user);
+        $workspace = WorkspaceFactory::createOne(['owner' => $user]);
         static::getContainer()->get(AuditLogFailureToggle::class)->enable();
 
-        $this->assertRequestIdHeader($this->post($this->route('api_task_create'), ['title' => 'Buy milk']), 500);
+        $this->assertRequestIdHeader($this->post($this->route('api_workspace_task_create', ['id' => $workspace->getId()->toRfc4122()]), ['title' => 'Buy milk']), 500);
     }
 
     private function assertRequestIdHeader(Response $response, int $status): void

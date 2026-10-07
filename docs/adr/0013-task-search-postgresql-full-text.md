@@ -81,6 +81,10 @@ The API contract did not change: the search stays one parameter, `filter[search]
   tasks the planner reads them through `idx_tasks_user_id` and checks the stored vector
   row by row — the GIN index is not used at all. It starts to matter only for a user with
   far more tasks than that.
+- Since #78 the filter is the workspace, not the owner
+  ([0020](0020-a-task-belongs-to-a-workspace.md)), and the index is
+  `idx_tasks_workspace_id`. The numbers here are per number of tasks behind that filter
+  and read the same way for a workspace.
 - Relevance order has a ceiling. To return the 20 best matches PostgreSQL ranks every
   match: about 300 ms when one user has 29,000 matching tasks. No index here removes
   that. It is the signal to cap the ranked set, or to move to an index that stores

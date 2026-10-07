@@ -10,6 +10,7 @@ use App\Task\Exception\TaskTransitionNotAllowedException;
 use App\Task\Repository\TaskRepository;
 use App\Task\ValueObject\BlockReason;
 use App\Task\ValueObject\CancellationReason;
+use App\Workspace\Contract\WorkspaceReference;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -19,11 +20,13 @@ use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: TaskRepository::class)]
 #[ORM\Table(name: 'tasks')]
-#[ORM\Index(name: 'idx_tasks_creator_id', columns: ['creator_id'])]
+#[ORM\Index(name: 'idx_tasks_workspace_id', columns: ['workspace_id'])]
 #[ORM\Index(name: 'idx_tasks_search_vector', columns: ['search_vector'])]
 #[ORM\HasLifecycleCallbacks]
 class Task
 {
+    public const int TITLE_MAX_LENGTH = 255;
+
     public const string FIELD_ID = 'id';
     public const string FIELD_TITLE = 'title';
     public const string FIELD_DESCRIPTION = 'description';
@@ -41,7 +44,7 @@ class Task
     #[ORM\Column(type: UuidType::NAME, unique: true)]
     private Uuid $id;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: self::TITLE_MAX_LENGTH)]
     private string $title;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
@@ -84,6 +87,10 @@ class Task
     )]
     private ?string $searchVector = null;
 
+    #[ORM\ManyToOne(targetEntity: WorkspaceReference::class)]
+    #[ORM\JoinColumn(nullable: false)]
+    private WorkspaceReference $workspace; // @phpstan-ignore doctrine.associationType
+
     #[ORM\Column]
     private int $creatorId;
 
@@ -96,9 +103,10 @@ class Task
     #[ORM\OneToMany(targetEntity: TaskStatusChange::class, mappedBy: 'task', cascade: ['persist'], fetch: 'EXTRA_LAZY')]
     private Collection $statusChanges;
 
-    public function __construct(Uuid $id, int $creatorId)
+    public function __construct(Uuid $id, WorkspaceReference $workspace, int $creatorId)
     {
         $this->id = $id;
+        $this->workspace = $workspace;
         $this->creatorId = $creatorId;
         $this->statusChanges = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable();
@@ -218,6 +226,11 @@ class Task
     public function getUpdatedAt(): \DateTimeImmutable
     {
         return $this->updatedAt;
+    }
+
+    public function getWorkspaceId(): Uuid
+    {
+        return $this->workspace->getId();
     }
 
     public function getCreatorId(): int

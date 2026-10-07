@@ -4,8 +4,14 @@ declare(strict_types=1);
 
 namespace App\Fixtures\Task;
 
+use App\Workspace\Contract\WorkspaceRole;
+use App\Workspace\Entity\Membership;
+use App\Workspace\Entity\Workspace;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Uid\Uuid;
 use Zenstruck\Foundry\Story;
+
+use function Zenstruck\Foundry\Persistence\flush_after;
 
 final class TaskStory extends Story
 {
@@ -21,22 +27,30 @@ final class TaskStory extends Story
         $lastId = 0;
 
         while (true) {
-            $users = $this->em->createQuery(
-                'SELECT u FROM App\Auth\Entity\User u WHERE u.id > :lastId ORDER BY u.id ASC'
+            /** @var list<array{id: int, workspaceId: string, userId: int}> $owners */
+            $owners = $this->em->createQuery(
+                'SELECT m.id, IDENTITY(m.workspace) AS workspaceId, IDENTITY(m.user) AS userId FROM '.Membership::class.' m WHERE m.role = :owner AND m.id > :lastId ORDER BY m.id ASC'
             )
+                ->setParameter('owner', WorkspaceRole::OWNER)
                 ->setParameter('lastId', $lastId)
                 ->setMaxResults(self::BATCH_SIZE)
-                ->getResult();
+                ->getArrayResult();
 
-            if (empty($users)) {
+            if ([] === $owners) {
                 break;
             }
 
-            foreach ($users as $user) {
-                TaskFactory::createMany(random_int(1, 3), ['user' => $user]);
-            }
+            // One flush per batch of workspaces instead of one per task.
+            flush_after(function () use ($owners): void {
+                foreach ($owners as $owner) {
+                    TaskFactory::createMany(random_int(1, 3), [
+                        'workspace' => $this->em->getReference(Workspace::class, Uuid::fromString($owner['workspaceId'])),
+                        'creatorId' => (int) $owner['userId'],
+                    ]);
+                }
+            });
 
-            $lastId = end($users)->getId();
+            $lastId = $owners[array_key_last($owners)]['id'];
             $this->em->clear();
         }
     }

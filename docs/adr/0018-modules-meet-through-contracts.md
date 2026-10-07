@@ -72,6 +72,8 @@ touched, not for its own sake.
   query strings. The rule about joins is kept by review, not by a check.
 - Fetching through a contract is one more query where a join would be none.
 - Showing a member's email takes a call to `Auth`'s contract.
+- `Task` uses `Workspace` through its contract as well since #78: `WorkspaceAccess` for a
+  member's role and `WorkspaceReference` for the relation.
 - `Task` moved to `Auth`'s contract in #77: it keeps its creator as an id, and Deptrac
   no longer lets it import `Auth`'s internals. It still imports eight `AuditLog` classes;
   no planned work changes that.

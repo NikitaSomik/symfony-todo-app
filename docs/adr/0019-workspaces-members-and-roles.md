@@ -38,7 +38,7 @@ moved the boards people had kept personally into workspaces when it made that ru
 - **Membership changes are history**: created, renamed, member added, role changed,
   member removed, member left go to the audit log in the same transaction
   ([0012](0012-synchronous-audit-log-one-transaction.md)).
-- Tasks are not in workspaces yet; that is the next step.
+- Tasks moved into workspaces in #78 ([0020](0020-a-task-belongs-to-a-workspace.md)).
 
 ## Alternatives considered
 

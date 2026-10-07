@@ -2,11 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Workspace\Security;
+namespace App\Task\Security;
 
 use App\Auth\Contract\AuthenticatedUser;
-use App\Workspace\Entity\Workspace;
-use App\Workspace\Repository\WorkspaceRepository;
+use App\Workspace\Contract\WorkspaceAccess;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Attribute\AsTargetedValueResolver;
@@ -16,21 +15,17 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Uid\Uuid;
 
-/**
- * Loads a workspace only among those the current user is a member of, so a workspace of
- * strangers answers like a missing one. What a member may do in it is the voter's question.
- */
 #[AsTargetedValueResolver]
-final readonly class MemberWorkspaceValueResolver implements ValueResolverInterface
+final readonly class WorkspaceMembershipValueResolver implements ValueResolverInterface
 {
     public function __construct(
-        private WorkspaceRepository $workspaces,
+        private WorkspaceAccess $workspaces,
         private Security $security,
     ) {
     }
 
     /**
-     * @return iterable<Workspace>
+     * @return iterable<WorkspaceMembership>
      */
     public function resolve(Request $request, ArgumentMetadata $argument): iterable
     {
@@ -41,12 +36,12 @@ final readonly class MemberWorkspaceValueResolver implements ValueResolverInterf
         }
 
         $id = (string) $request->attributes->get('id');
-        $workspace = Uuid::isValid($id) ? $this->workspaces->findOneForMember(Uuid::fromString($id), $user->id()) : null;
+        $role = Uuid::isValid($id) ? $this->workspaces->roleOf(Uuid::fromString($id), $user->id()) : null;
 
-        if (null === $workspace) {
+        if (null === $role) {
             throw new NotFoundHttpException(sprintf('Workspace "%s" not found.', $id));
         }
 
-        return [$workspace];
+        return [new WorkspaceMembership(Uuid::fromString($id), $role)];
     }
 }

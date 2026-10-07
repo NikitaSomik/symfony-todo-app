@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Workspace;
 
+use App\Workspace\Contract\WorkspaceAccess;
+use App\Workspace\Repository\WorkspaceRepository;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 return static function (ContainerConfigurator $di): void {
@@ -18,4 +20,6 @@ return static function (ContainerConfigurator $di): void {
                 __DIR__.'/Entity/',
                 __DIR__.'/{di,routing}.php',
             ]);
+
+    $di->services()->alias(WorkspaceAccess::class, WorkspaceRepository::class);
 };

@@ -186,13 +186,489 @@
                 }
             }
         },
-        "/api/v1/tasks": {
+        "/api/v1/tasks/{id}": {
             "get": {
                 "tags": [
                     "Tasks"
                 ],
-                "summary": "Get all tasks (paginated)",
-                "operationId": "get_api_task_get_all",
+                "summary": "Get a task",
+                "operationId": "get_api_task_get",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Task details",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TaskResponseSchema"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Task not found, or the user is not a member of its workspace"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Tasks"
+                ],
+                "summary": "Update the title, description and due date of a task",
+                "description": "The status is not part of the body: a task moves through its lifecycle with the transition endpoints.",
+                "operationId": "put_api_task_update",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateTaskDetailsDTO"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Task updated",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TaskResponseSchema"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user is a viewer in the workspace of the task"
+                    },
+                    "404": {
+                        "description": "Task not found, or the user is not a member of its workspace"
+                    },
+                    "415": {
+                        "description": "Body is not sent as application/json"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Tasks"
+                ],
+                "summary": "Delete a task",
+                "operationId": "delete_api_task_delete",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Task deleted"
+                    },
+                    "403": {
+                        "description": "The user is a viewer in the workspace of the task"
+                    },
+                    "404": {
+                        "description": "Task not found, or the user is not a member of its workspace"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    }
+                }
+            }
+        },
+        "/api/v1/tasks/{id}/audit-logs": {
+            "get": {
+                "tags": [
+                    "Tasks"
+                ],
+                "summary": "Get task audit log history",
+                "operationId": "get_api_task_get_audit_logs",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Task audit log history",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AuditLogCollectionResponseSchema"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Task not found, or the user is not a member of its workspace"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    }
+                }
+            }
+        },
+        "/api/v1/tasks/{id}/start": {
+            "post": {
+                "tags": [
+                    "Task lifecycle"
+                ],
+                "summary": "Start a task",
+                "description": "`todo` \u2192 `in_progress`",
+                "operationId": "post_api_task_start",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The task in its new status",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TaskResponseSchema"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user is a viewer in the workspace of the task"
+                    },
+                    "404": {
+                        "description": "Task not found, or the user is not a member of its workspace"
+                    },
+                    "409": {
+                        "description": "The task cannot make this transition from its current status"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    }
+                }
+            }
+        },
+        "/api/v1/tasks/{id}/submit-for-review": {
+            "post": {
+                "tags": [
+                    "Task lifecycle"
+                ],
+                "summary": "Submit a task for review",
+                "description": "`in_progress` \u2192 `in_review`",
+                "operationId": "post_api_task_submit_for_review",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The task in its new status",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TaskResponseSchema"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user is a viewer in the workspace of the task"
+                    },
+                    "404": {
+                        "description": "Task not found, or the user is not a member of its workspace"
+                    },
+                    "409": {
+                        "description": "The task cannot make this transition from its current status"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    }
+                }
+            }
+        },
+        "/api/v1/tasks/{id}/complete": {
+            "post": {
+                "tags": [
+                    "Task lifecycle"
+                ],
+                "summary": "Complete a task",
+                "description": "`in_review` \u2192 `completed`. A completed task is final.",
+                "operationId": "post_api_task_complete",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The task in its new status",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TaskResponseSchema"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user is a viewer in the workspace of the task"
+                    },
+                    "404": {
+                        "description": "Task not found, or the user is not a member of its workspace"
+                    },
+                    "409": {
+                        "description": "The task cannot make this transition from its current status"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    }
+                }
+            }
+        },
+        "/api/v1/tasks/{id}/block": {
+            "post": {
+                "tags": [
+                    "Task lifecycle"
+                ],
+                "summary": "Block a task",
+                "description": "`in_progress` \u2192 `blocked`. The reason stays with the task until it is unblocked.",
+                "operationId": "post_api_task_block",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BlockTaskDTO"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "415": {
+                        "description": "Body is not sent as application/json"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "200": {
+                        "description": "The task in its new status",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TaskResponseSchema"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user is a viewer in the workspace of the task"
+                    },
+                    "404": {
+                        "description": "Task not found, or the user is not a member of its workspace"
+                    },
+                    "409": {
+                        "description": "The task cannot make this transition from its current status"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    }
+                }
+            }
+        },
+        "/api/v1/tasks/{id}/unblock": {
+            "post": {
+                "tags": [
+                    "Task lifecycle"
+                ],
+                "summary": "Unblock a task",
+                "description": "`blocked` \u2192 `in_progress`",
+                "operationId": "post_api_task_unblock",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The task in its new status",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TaskResponseSchema"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user is a viewer in the workspace of the task"
+                    },
+                    "404": {
+                        "description": "Task not found, or the user is not a member of its workspace"
+                    },
+                    "409": {
+                        "description": "The task cannot make this transition from its current status"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    }
+                }
+            }
+        },
+        "/api/v1/tasks/{id}/cancel": {
+            "post": {
+                "tags": [
+                    "Task lifecycle"
+                ],
+                "summary": "Cancel a task",
+                "description": "`todo`, `in_progress`, `blocked` or `in_review` \u2192 `cancelled`. A cancelled task is final.",
+                "operationId": "post_api_task_cancel",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CancelTaskDTO"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "415": {
+                        "description": "Body is not sent as application/json"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "200": {
+                        "description": "The task in its new status",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TaskResponseSchema"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user is a viewer in the workspace of the task"
+                    },
+                    "404": {
+                        "description": "Task not found, or the user is not a member of its workspace"
+                    },
+                    "409": {
+                        "description": "The task cannot make this transition from its current status"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    }
+                }
+            }
+        },
+        "/api/v1/workspaces/{id}/tasks": {
+            "get": {
+                "tags": [
+                    "Tasks"
+                ],
+                "summary": "Get the tasks of a workspace (paginated)",
+                "operationId": "get_api_workspace_task_get_all",
                 "parameters": [
                     {
                         "name": "page",
@@ -286,6 +762,16 @@
                                 "desc"
                             ]
                         }
+                    },
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
                     }
                 ],
                 "responses": {
@@ -301,6 +787,9 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/UnauthorizedError"
+                    },
+                    "404": {
+                        "description": "Workspace not found, or the user is not a member of it"
                     }
                 }
             },
@@ -308,9 +797,21 @@
                 "tags": [
                     "Tasks"
                 ],
-                "summary": "Create a task",
-                "description": "A new task always starts in `todo`.",
-                "operationId": "post_api_task_create",
+                "summary": "Create a task in a workspace",
+                "description": "A new task always starts in `todo`. Owners and members only.",
+                "operationId": "post_api_workspace_task_create",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -340,98 +841,8 @@
                             }
                         }
                     },
-                    "415": {
-                        "description": "Body is not sent as application/json"
-                    },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationError"
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/UnauthorizedError"
-                    }
-                }
-            }
-        },
-        "/api/v1/tasks/{id}": {
-            "get": {
-                "tags": [
-                    "Tasks"
-                ],
-                "summary": "Get a task",
-                "operationId": "get_api_task_get",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "format": "uuid",
-                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Task details",
-                        "content": {
-                            "application/vnd.api+json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/TaskResponseSchema"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Task not found"
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/UnauthorizedError"
-                    }
-                }
-            },
-            "put": {
-                "tags": [
-                    "Tasks"
-                ],
-                "summary": "Update the title, description and due date of a task",
-                "description": "The status is not part of the body: a task moves through its lifecycle with the transition endpoints.",
-                "operationId": "put_api_task_update",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "format": "uuid",
-                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/UpdateTaskDetailsDTO"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Task updated",
-                        "content": {
-                            "application/vnd.api+json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/TaskResponseSchema"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Task not found"
+                    "403": {
+                        "description": "The user is a viewer in the workspace"
                     },
                     "415": {
                         "description": "Body is not sent as application/json"
@@ -441,365 +852,9 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/UnauthorizedError"
-                    }
-                }
-            },
-            "delete": {
-                "tags": [
-                    "Tasks"
-                ],
-                "summary": "Delete a task",
-                "operationId": "delete_api_task_delete",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "format": "uuid",
-                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "Task deleted"
                     },
                     "404": {
-                        "description": "Task not found"
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/UnauthorizedError"
-                    }
-                }
-            }
-        },
-        "/api/v1/tasks/{id}/audit-logs": {
-            "get": {
-                "tags": [
-                    "Tasks"
-                ],
-                "summary": "Get task audit log history",
-                "operationId": "get_api_task_get_audit_logs",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "format": "uuid",
-                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Task audit log history",
-                        "content": {
-                            "application/vnd.api+json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/AuditLogCollectionResponseSchema"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Task not found"
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/UnauthorizedError"
-                    }
-                }
-            }
-        },
-        "/api/v1/tasks/{id}/start": {
-            "post": {
-                "tags": [
-                    "Task lifecycle"
-                ],
-                "summary": "Start a task",
-                "description": "`todo` \u2192 `in_progress`",
-                "operationId": "post_api_task_start",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "format": "uuid",
-                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "The task in its new status",
-                        "content": {
-                            "application/vnd.api+json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/TaskResponseSchema"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Task not found"
-                    },
-                    "409": {
-                        "description": "The task cannot make this transition from its current status"
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/UnauthorizedError"
-                    }
-                }
-            }
-        },
-        "/api/v1/tasks/{id}/submit-for-review": {
-            "post": {
-                "tags": [
-                    "Task lifecycle"
-                ],
-                "summary": "Submit a task for review",
-                "description": "`in_progress` \u2192 `in_review`",
-                "operationId": "post_api_task_submit_for_review",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "format": "uuid",
-                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "The task in its new status",
-                        "content": {
-                            "application/vnd.api+json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/TaskResponseSchema"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Task not found"
-                    },
-                    "409": {
-                        "description": "The task cannot make this transition from its current status"
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/UnauthorizedError"
-                    }
-                }
-            }
-        },
-        "/api/v1/tasks/{id}/complete": {
-            "post": {
-                "tags": [
-                    "Task lifecycle"
-                ],
-                "summary": "Complete a task",
-                "description": "`in_review` \u2192 `completed`. A completed task is final.",
-                "operationId": "post_api_task_complete",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "format": "uuid",
-                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "The task in its new status",
-                        "content": {
-                            "application/vnd.api+json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/TaskResponseSchema"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Task not found"
-                    },
-                    "409": {
-                        "description": "The task cannot make this transition from its current status"
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/UnauthorizedError"
-                    }
-                }
-            }
-        },
-        "/api/v1/tasks/{id}/block": {
-            "post": {
-                "tags": [
-                    "Task lifecycle"
-                ],
-                "summary": "Block a task",
-                "description": "`in_progress` \u2192 `blocked`. The reason stays with the task until it is unblocked.",
-                "operationId": "post_api_task_block",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "format": "uuid",
-                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/BlockTaskDTO"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "415": {
-                        "description": "Body is not sent as application/json"
-                    },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationError"
-                    },
-                    "200": {
-                        "description": "The task in its new status",
-                        "content": {
-                            "application/vnd.api+json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/TaskResponseSchema"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Task not found"
-                    },
-                    "409": {
-                        "description": "The task cannot make this transition from its current status"
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/UnauthorizedError"
-                    }
-                }
-            }
-        },
-        "/api/v1/tasks/{id}/unblock": {
-            "post": {
-                "tags": [
-                    "Task lifecycle"
-                ],
-                "summary": "Unblock a task",
-                "description": "`blocked` \u2192 `in_progress`",
-                "operationId": "post_api_task_unblock",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "format": "uuid",
-                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "The task in its new status",
-                        "content": {
-                            "application/vnd.api+json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/TaskResponseSchema"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Task not found"
-                    },
-                    "409": {
-                        "description": "The task cannot make this transition from its current status"
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/UnauthorizedError"
-                    }
-                }
-            }
-        },
-        "/api/v1/tasks/{id}/cancel": {
-            "post": {
-                "tags": [
-                    "Task lifecycle"
-                ],
-                "summary": "Cancel a task",
-                "description": "`todo`, `in_progress`, `blocked` or `in_review` \u2192 `cancelled`. A cancelled task is final.",
-                "operationId": "post_api_task_cancel",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "format": "uuid",
-                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/CancelTaskDTO"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "415": {
-                        "description": "Body is not sent as application/json"
-                    },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationError"
-                    },
-                    "200": {
-                        "description": "The task in its new status",
-                        "content": {
-                            "application/vnd.api+json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/TaskResponseSchema"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Task not found"
-                    },
-                    "409": {
-                        "description": "The task cannot make this transition from its current status"
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/UnauthorizedError"
+                        "description": "Workspace not found, or the user is not a member of it"
                     }
                 }
             }
@@ -1301,6 +1356,62 @@
                 },
                 "type": "object"
             },
+            "UpdateTaskDetailsDTO": {
+                "required": [
+                    "title"
+                ],
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "example": "Buy milk",
+                        "maxLength": 255
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "2 liters",
+                        "nullable": true,
+                        "default": null,
+                        "maxLength": 2000,
+                        "minLength": 3
+                    },
+                    "due_date": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-04-01",
+                        "nullable": true,
+                        "default": null
+                    }
+                },
+                "type": "object"
+            },
+            "BlockTaskDTO": {
+                "required": [
+                    "reason"
+                ],
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "example": "Waiting for access from the client",
+                        "maxLength": 500,
+                        "minLength": 3
+                    }
+                },
+                "type": "object"
+            },
+            "CancelTaskDTO": {
+                "required": [
+                    "reason"
+                ],
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "example": "Task is no longer relevant",
+                        "maxLength": 500,
+                        "minLength": 3
+                    }
+                },
+                "type": "object"
+            },
             "PageQueryDTO": {
                 "properties": {
                     "number": {
@@ -1406,62 +1517,6 @@
                         "example": "2026-04-01",
                         "nullable": true,
                         "default": null
-                    }
-                },
-                "type": "object"
-            },
-            "UpdateTaskDetailsDTO": {
-                "required": [
-                    "title"
-                ],
-                "properties": {
-                    "title": {
-                        "type": "string",
-                        "example": "Buy milk",
-                        "maxLength": 255
-                    },
-                    "description": {
-                        "type": "string",
-                        "example": "2 liters",
-                        "nullable": true,
-                        "default": null,
-                        "maxLength": 2000,
-                        "minLength": 3
-                    },
-                    "due_date": {
-                        "type": "string",
-                        "format": "date",
-                        "example": "2026-04-01",
-                        "nullable": true,
-                        "default": null
-                    }
-                },
-                "type": "object"
-            },
-            "BlockTaskDTO": {
-                "required": [
-                    "reason"
-                ],
-                "properties": {
-                    "reason": {
-                        "type": "string",
-                        "example": "Waiting for access from the client",
-                        "maxLength": 500,
-                        "minLength": 3
-                    }
-                },
-                "type": "object"
-            },
-            "CancelTaskDTO": {
-                "required": [
-                    "reason"
-                ],
-                "properties": {
-                    "reason": {
-                        "type": "string",
-                        "example": "Task is no longer relevant",
-                        "maxLength": 500,
-                        "minLength": 3
                     }
                 },
                 "type": "object"
@@ -1584,38 +1639,12 @@
                     "cancelled"
                 ]
             },
-            "PaginationLinksSchema": {
-                "required": [
-                    "first",
-                    "last"
-                ],
-                "properties": {
-                    "first": {
-                        "type": "string",
-                        "example": "/api/v1/tasks?page[number]=1&page[size]=20"
-                    },
-                    "last": {
-                        "type": "string",
-                        "example": "/api/v1/tasks?page[number]=8&page[size]=20"
-                    },
-                    "prev": {
-                        "type": "string",
-                        "example": "/api/v1/tasks?page[number]=1&page[size]=20",
-                        "nullable": true
-                    },
-                    "next": {
-                        "type": "string",
-                        "example": "/api/v1/tasks?page[number]=2&page[size]=20",
-                        "nullable": true
-                    }
-                },
-                "type": "object"
-            },
             "TaskResource": {
                 "required": [
                     "type",
                     "id",
                     "attributes",
+                    "relationships",
                     "links"
                 ],
                 "properties": {
@@ -1669,6 +1698,47 @@
                         },
                         "type": "object"
                     },
+                    "relationships": {
+                        "properties": {
+                            "workspace": {
+                                "properties": {
+                                    "data": {
+                                        "properties": {
+                                            "type": {
+                                                "type": "string",
+                                                "example": "workspaces"
+                                            },
+                                            "id": {
+                                                "type": "string",
+                                                "format": "uuid"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "creator": {
+                                "properties": {
+                                    "data": {
+                                        "properties": {
+                                            "type": {
+                                                "type": "string",
+                                                "example": "users"
+                                            },
+                                            "id": {
+                                                "type": "string",
+                                                "example": "7"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        },
+                        "type": "object"
+                    },
                     "links": {
                         "description": "The task itself and the transitions its current status allows; a transition that is not allowed has no link",
                         "properties": {
@@ -1698,70 +1768,6 @@
                             }
                         },
                         "type": "object"
-                    }
-                },
-                "type": "object"
-            },
-            "PageMetaSchema": {
-                "required": [
-                    "current",
-                    "size",
-                    "total",
-                    "last"
-                ],
-                "properties": {
-                    "current": {
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "size": {
-                        "type": "integer",
-                        "example": 20
-                    },
-                    "total": {
-                        "type": "integer",
-                        "example": 156
-                    },
-                    "last": {
-                        "type": "integer",
-                        "example": 8
-                    }
-                },
-                "type": "object"
-            },
-            "PaginatedMetaSchema": {
-                "required": [
-                    "page"
-                ],
-                "properties": {
-                    "page": {
-                        "$ref": "#/components/schemas/PageMetaSchema"
-                    }
-                },
-                "type": "object"
-            },
-            "TaskCollectionResponseSchema": {
-                "required": [
-                    "jsonapi",
-                    "links",
-                    "data",
-                    "meta"
-                ],
-                "properties": {
-                    "jsonapi": {
-                        "$ref": "#/components/schemas/JsonApiObjectSchema"
-                    },
-                    "links": {
-                        "$ref": "#/components/schemas/PaginationLinksSchema"
-                    },
-                    "data": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/TaskResource"
-                        }
-                    },
-                    "meta": {
-                        "$ref": "#/components/schemas/PaginatedMetaSchema"
                     }
                 },
                 "type": "object"
@@ -1933,6 +1939,97 @@
                         "items": {
                             "$ref": "#/components/schemas/AuditLogResource"
                         }
+                    }
+                },
+                "type": "object"
+            },
+            "PaginationLinksSchema": {
+                "required": [
+                    "first",
+                    "last"
+                ],
+                "properties": {
+                    "first": {
+                        "type": "string",
+                        "example": "/api/v1/tasks?page[number]=1&page[size]=20"
+                    },
+                    "last": {
+                        "type": "string",
+                        "example": "/api/v1/tasks?page[number]=8&page[size]=20"
+                    },
+                    "prev": {
+                        "type": "string",
+                        "example": "/api/v1/tasks?page[number]=1&page[size]=20",
+                        "nullable": true
+                    },
+                    "next": {
+                        "type": "string",
+                        "example": "/api/v1/tasks?page[number]=2&page[size]=20",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "PageMetaSchema": {
+                "required": [
+                    "current",
+                    "size",
+                    "total",
+                    "last"
+                ],
+                "properties": {
+                    "current": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "size": {
+                        "type": "integer",
+                        "example": 20
+                    },
+                    "total": {
+                        "type": "integer",
+                        "example": 156
+                    },
+                    "last": {
+                        "type": "integer",
+                        "example": 8
+                    }
+                },
+                "type": "object"
+            },
+            "PaginatedMetaSchema": {
+                "required": [
+                    "page"
+                ],
+                "properties": {
+                    "page": {
+                        "$ref": "#/components/schemas/PageMetaSchema"
+                    }
+                },
+                "type": "object"
+            },
+            "TaskCollectionResponseSchema": {
+                "required": [
+                    "jsonapi",
+                    "links",
+                    "data",
+                    "meta"
+                ],
+                "properties": {
+                    "jsonapi": {
+                        "$ref": "#/components/schemas/JsonApiObjectSchema"
+                    },
+                    "links": {
+                        "$ref": "#/components/schemas/PaginationLinksSchema"
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/TaskResource"
+                        }
+                    },
+                    "meta": {
+                        "$ref": "#/components/schemas/PaginatedMetaSchema"
                     }
                 },
                 "type": "object"

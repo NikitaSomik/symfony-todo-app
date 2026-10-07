@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Fixtures\Task;
 
-use App\Auth\Entity\User;
-use App\Fixtures\Auth\UserFactory;
+use App\Fixtures\Workspace\WorkspaceFactory;
 use App\Task\Entity\Task;
 use App\Task\Enum\TaskStatus;
+use App\Workspace\Entity\Workspace;
 use Symfony\Component\Uid\Uuid;
 use Zenstruck\Foundry\Persistence\PersistentObjectFactory;
 
@@ -34,8 +34,9 @@ final class TaskFactory extends PersistentObjectFactory
             'cancellationReason' => null,
             'blockReason' => null,
             'createdAt' => new \DateTimeImmutable(),
-            // Created at once, not together with the task: the task names its creator by id.
-            'user' => lazy(static fn (): User => UserFactory::createOne()),
+            'workspace' => lazy(static fn (): Workspace => WorkspaceFactory::createOne()),
+            // Null means the owner of the workspace.
+            'creatorId' => null,
         ];
     }
 
@@ -74,7 +75,10 @@ final class TaskFactory extends PersistentObjectFactory
     protected function initialize(): static
     {
         return $this->instantiateWith(function (array $attributes): Task {
-            $task = new Task(Uuid::v7(), $attributes['user']->id());
+            $workspace = $attributes['workspace'];
+            \assert($workspace instanceof Workspace);
+
+            $task = new Task(Uuid::v7(), $workspace, $attributes['creatorId'] ?? $workspace->getMembers()[0]->getUserId());
             $task->setTitle($attributes['title']);
             $task->setDescription($attributes['description']);
             $task->setDueDate($attributes['dueDate']);
