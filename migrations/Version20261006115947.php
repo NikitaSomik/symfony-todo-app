@@ -21,7 +21,8 @@ final class Version20261006115947 extends AbstractMigration
             !$this->connection->getDatabasePlatform() instanceof PostgreSQLPlatform,
             'Migration can only be executed safely on PostgreSQL.',
         );
-        // A task cannot be given a workspace after the fact: which one is a decision nobody made.
+        // Existing tasks belonged to a user and have no workspace to go to, so the column
+        // cannot be added to a table that already holds tasks.
         $this->abortIf(
             (bool) $this->connection->fetchOne('SELECT EXISTS (SELECT 1 FROM tasks)'),
             'The tasks table is not empty. Recreate the development database with "make db-fresh".',

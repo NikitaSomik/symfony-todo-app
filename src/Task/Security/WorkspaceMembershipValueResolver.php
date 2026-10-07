@@ -15,9 +15,6 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Uid\Uuid;
 
-/**
- * Answers 404 for a workspace the current user is not a member of, like a missing one.
- */
 #[AsTargetedValueResolver]
 final readonly class WorkspaceMembershipValueResolver implements ValueResolverInterface
 {
