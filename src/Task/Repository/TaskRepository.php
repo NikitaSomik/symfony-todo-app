@@ -10,6 +10,7 @@ use App\Shared\Query\SortDirection;
 use App\Task\DTO\TaskListQueryDTO;
 use App\Task\Entity\Task;
 use App\Task\Enum\TaskSortField;
+use App\Task\Enum\TaskStatus;
 use App\Task\Query\Specification\TaskDueRangeSpecification;
 use App\Task\Query\Specification\TaskSearchRankSpecification;
 use App\Task\Query\Specification\TaskSearchSpecification;
@@ -67,6 +68,22 @@ class TaskRepository extends ServiceEntityRepository
         $queryBuilder->addOrderBy('t.id', $direction->uppercased());
 
         return $queryBuilder
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @return Task[]
+     */
+    public function findUnfinishedAssignedTo(Uuid $workspaceId, int $userId): array
+    {
+        return $this->createQueryBuilder('t')
+            ->where('t.workspace = :workspaceId')
+            ->andWhere('t.assigneeId = :userId')
+            ->andWhere('t.status NOT IN (:final)')
+            ->setParameter('workspaceId', $workspaceId, UuidType::NAME)
+            ->setParameter('userId', $userId)
+            ->setParameter('final', [TaskStatus::COMPLETED, TaskStatus::CANCELLED])
             ->getQuery()
             ->getResult();
     }

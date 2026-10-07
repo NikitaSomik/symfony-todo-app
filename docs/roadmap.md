@@ -166,7 +166,7 @@ Each decision, with the alternatives that lost and what it costs, is an
 - [x] Symfony Voter — `403` for a member without the right, `404` for a stranger
 - [x] `Task` keeps its creator as an id and uses `Auth` only through its contract
 - [x] `Task` in a workspace; access by membership, a viewer only reads ([ADR 0020](adr/0020-a-task-belongs-to-a-workspace.md))
-- [ ] Assign a task to a member
+- [x] Assign a task to an owner or a member; losing the role takes unfinished tasks off them ([ADR 0021](adr/0021-a-task-has-an-assignee-who-can-work.md))
 - [ ] Projects inside a workspace
 
 ---

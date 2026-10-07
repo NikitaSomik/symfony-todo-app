@@ -6,6 +6,7 @@ namespace App\Task\Entity;
 
 use App\Task\Enum\TaskStatus;
 use App\Task\Enum\TaskTransition;
+use App\Task\Exception\FinishedTaskAssigneeException;
 use App\Task\Exception\TaskTransitionNotAllowedException;
 use App\Task\Repository\TaskRepository;
 use App\Task\ValueObject\BlockReason;
@@ -34,6 +35,7 @@ class Task
     public const string FIELD_CANCELLATION_REASON = 'cancellation_reason';
     public const string FIELD_BLOCK_REASON = 'block_reason';
     public const string FIELD_DUE_DATE = 'due_date';
+    public const string FIELD_ASSIGNEE_ID = 'assignee_id';
     public const string FIELD_CREATED_AT = 'created_at';
     public const string FIELD_UPDATED_AT = 'updated_at';
 
@@ -93,6 +95,9 @@ class Task
 
     #[ORM\Column]
     private int $creatorId;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $assigneeId = null;
 
     /**
      * Write-only on purpose: a transition adds its row here and nothing reads the collection, so
@@ -226,6 +231,30 @@ class Task
     public function getUpdatedAt(): \DateTimeImmutable
     {
         return $this->updatedAt;
+    }
+
+    public function getAssigneeId(): ?int
+    {
+        return $this->assigneeId;
+    }
+
+    public function assignTo(int $userId): void
+    {
+        $this->changeAssignee($userId);
+    }
+
+    public function unassign(): void
+    {
+        $this->changeAssignee(null);
+    }
+
+    private function changeAssignee(?int $userId): void
+    {
+        if ($this->status->isFinal()) {
+            throw new FinishedTaskAssigneeException($this->status);
+        }
+
+        $this->assigneeId = $userId;
     }
 
     public function getWorkspaceId(): Uuid

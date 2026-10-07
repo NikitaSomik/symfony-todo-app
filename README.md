@@ -19,6 +19,10 @@ The rules it enforces now:
   nobody else can read it, change it, or learn that it exists
   ([0020](docs/adr/0020-a-task-belongs-to-a-workspace.md),
   [0011](docs/adr/0011-foreign-task-answers-404.md)).
+- **A task is held by someone who can work on it.** It is assigned to an owner or a
+  member, never to a viewer, and whoever leaves, is removed or becomes a viewer is taken
+  off their unfinished tasks
+  ([0021](docs/adr/0021-a-task-has-an-assignee-who-can-work.md)).
 - **Work moves one way:** to do → in progress → in review → completed. Finished work stays
   finished — a completed or cancelled task cannot be reopened
   ([0015](docs/adr/0015-task-lifecycle-as-explicit-transitions.md)).
@@ -39,8 +43,9 @@ The rules it enforces now:
   always at least one owner, and every user starts with a personal one
   ([0019](docs/adr/0019-workspaces-members-and-roles.md)).
 
-What comes next ([roadmap](docs/roadmap.md)): a task gets an assignee and each role its
-own rights; then limits on work in progress and deadlines with consequences.
+What comes next ([roadmap](docs/roadmap.md)): each role gets its own rights and everyone
+a list of their own tasks; then limits on work in progress and deadlines with
+consequences.
 
 ## Where to look
 

@@ -13,6 +13,11 @@ enum TaskStatus: string
     case COMPLETED = 'completed';
     case CANCELLED = 'cancelled';
 
+    public function isFinal(): bool
+    {
+        return self::COMPLETED === $this || self::CANCELLED === $this;
+    }
+
     /** @return string[] */
     public static function values(): array
     {

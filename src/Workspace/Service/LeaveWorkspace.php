@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Workspace\Service;
 
+use App\Workspace\Contract\MembershipChanged;
 use App\Workspace\Entity\Workspace;
 use App\Workspace\Event\MemberLeft;
 use Doctrine\ORM\EntityManagerInterface;
@@ -23,6 +24,7 @@ final readonly class LeaveWorkspace
             $membership = $workspace->removeMember($userId);
 
             $this->eventDispatcher->dispatch(new MemberLeft($workspace->getId()->toRfc4122(), $workspace->getName(), $userId, $membership->getRole()));
+            $this->eventDispatcher->dispatch(new MembershipChanged($workspace->getId(), $userId, null, $userId));
         });
     }
 }
