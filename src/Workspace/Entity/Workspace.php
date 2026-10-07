@@ -92,7 +92,13 @@ class Workspace implements WorkspaceReference
 
     public function getMember(int $userId): Membership
     {
-        return $this->membershipOf($userId) ?? throw new MemberNotFoundException();
+        $membership = $this->membershipOf($userId);
+
+        if (null === $membership) {
+            throw new MemberNotFoundException();
+        }
+
+        return $membership;
     }
 
     public function changeRole(int $userId, WorkspaceRole $role): Membership

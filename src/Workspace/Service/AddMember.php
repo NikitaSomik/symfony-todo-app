@@ -28,10 +28,14 @@ final readonly class AddMember
 
     public function handle(Workspace $workspace, string $email, WorkspaceRole $role, int $actorId): Membership
     {
-        try {
-            return $this->em->wrapInTransaction(function () use ($workspace, $email, $role, $actorId): Membership {
-                $userId = $this->users->findIdByEmail($email) ?? throw new UserNotRegisteredException();
+        $userId = $this->users->findIdByEmail($email);
 
+        if (null === $userId) {
+            throw new UserNotRegisteredException();
+        }
+
+        try {
+            return $this->em->wrapInTransaction(function () use ($workspace, $userId, $role, $actorId): Membership {
                 $membership = $workspace->addMember($this->users->reference($userId), $role, $this->clock->now());
 
                 $this->eventDispatcher->dispatch(new MemberAdded($workspace->getId()->toRfc4122(), $workspace->getName(), $userId, $role, $actorId));

@@ -43,6 +43,10 @@ final readonly class MemberWorkspaceValueResolver implements ValueResolverInterf
         $id = (string) $request->attributes->get('id');
         $workspace = Uuid::isValid($id) ? $this->workspaces->findOneForMember(Uuid::fromString($id), $user->id()) : null;
 
-        return [$workspace ?? throw new NotFoundHttpException(sprintf('Workspace "%s" not found.', $id))];
+        if (null === $workspace) {
+            throw new NotFoundHttpException(sprintf('Workspace "%s" not found.', $id));
+        }
+
+        return [$workspace];
     }
 }
