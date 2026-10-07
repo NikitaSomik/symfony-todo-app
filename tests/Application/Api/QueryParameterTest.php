@@ -5,17 +5,22 @@ declare(strict_types=1);
 namespace App\Tests\Application\Api;
 
 use App\Fixtures\Auth\UserFactory;
+use App\Fixtures\Workspace\WorkspaceFactory;
 use App\Tests\ApiTestCase;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 
 final class QueryParameterTest extends ApiTestCase
 {
+    private string $tasks;
+
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->actingAs(UserFactory::createOne());
+        $user = UserFactory::createOne();
+        $this->actingAs($user);
+        $this->tasks = $this->route('api_workspace_task_get_all', ['id' => WorkspaceFactory::createOne(['owner' => $user])->getId()->toRfc4122()]);
     }
 
     /**
@@ -28,7 +33,7 @@ final class QueryParameterTest extends ApiTestCase
     #[TestWith(['filter[foo]=1'])]
     public function unknownParameterShouldBeIgnored(string $query): void
     {
-        $this->get('/api/v1/tasks?'.$query);
+        $this->get($this->tasks.'?'.$query);
 
         self::assertResponseIsSuccessful();
     }
@@ -36,7 +41,7 @@ final class QueryParameterTest extends ApiTestCase
     #[Test]
     public function knownParameterWithAnInvalidValueShouldBeA422(): void
     {
-        $response = $this->get('/api/v1/tasks?filter[status]=wrong');
+        $response = $this->get($this->tasks.'?filter[status]=wrong');
 
         self::assertResponseStatusCodeSame(422);
         self::assertSame(['parameter' => 'filter[status]'], $this->json($response)['errors'][0]['source']);
@@ -48,7 +53,7 @@ final class QueryParameterTest extends ApiTestCase
     #[TestWith(['9223372036854775808'])]
     public function pageNumberBeyondTheLimitShouldBeA422(string $number): void
     {
-        $response = $this->get('/api/v1/tasks?page[number]='.$number);
+        $response = $this->get($this->tasks.'?page[number]='.$number);
 
         self::assertResponseStatusCodeSame(422);
         self::assertSame(['parameter' => 'page[number]'], $this->json($response)['errors'][0]['source']);

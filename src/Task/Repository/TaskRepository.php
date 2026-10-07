@@ -16,8 +16,8 @@ use App\Task\Query\Specification\TaskSearchSpecification;
 use App\Task\Query\Specification\TaskSortSpecification;
 use App\Task\Query\Specification\TaskStatusSpecification;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Uid\Uuid;
 
 /**
@@ -33,16 +33,10 @@ class TaskRepository extends ServiceEntityRepository
     }
 
     /**
-     * @param list<Uuid> $workspaceIds
-     *
      * @return Task[]
      */
-    public function findForWorkspacesList(array $workspaceIds, TaskListQueryDTO $query): array
+    public function findForWorkspaceList(Uuid $workspaceId, TaskListQueryDTO $query): array
     {
-        if ([] === $workspaceIds) {
-            return [];
-        }
-
         $search = $query->filter->searchQuery();
         $field = $query->sortField();
         $direction = $query->direction();
@@ -53,8 +47,8 @@ class TaskRepository extends ServiceEntityRepository
         }
 
         $queryBuilder = $this->createQueryBuilder('t')
-            ->where('IDENTITY(t.workspace) IN (:workspaceIds)')
-            ->setParameter('workspaceIds', array_map(static fn (Uuid $id): string => $id->toRfc4122(), $workspaceIds), ArrayParameterType::STRING)
+            ->where('t.workspace = :workspaceId')
+            ->setParameter('workspaceId', $workspaceId, UuidType::NAME)
             ->setFirstResult(($query->page->number - 1) * $query->page->size)
             ->setMaxResults($query->page->size);
 
@@ -77,19 +71,12 @@ class TaskRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    /**
-     * @param list<Uuid> $workspaceIds
-     */
-    public function countForWorkspacesList(array $workspaceIds, TaskListQueryDTO $query): int
+    public function countForWorkspaceList(Uuid $workspaceId, TaskListQueryDTO $query): int
     {
-        if ([] === $workspaceIds) {
-            return 0;
-        }
-
         $queryBuilder = $this->createQueryBuilder('t')
             ->select('COUNT(t.id)')
-            ->where('IDENTITY(t.workspace) IN (:workspaceIds)')
-            ->setParameter('workspaceIds', array_map(static fn (Uuid $id): string => $id->toRfc4122(), $workspaceIds), ArrayParameterType::STRING);
+            ->where('t.workspace = :workspaceId')
+            ->setParameter('workspaceId', $workspaceId, UuidType::NAME);
 
         $this->specificationApplier->apply($queryBuilder, [
             new TaskSearchSpecification($query->filter->searchQuery()),

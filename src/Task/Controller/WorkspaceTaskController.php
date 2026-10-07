@@ -65,8 +65,8 @@ final class WorkspaceTaskController extends AbstractController
         #[ValueResolver(WorkspaceMembershipValueResolver::class)]
         WorkspaceMembership $membership,
     ): JsonResponse {
-        $tasks = $this->taskRepository->findForWorkspacesList([$membership->workspaceId], $query);
-        $total = $this->taskRepository->countForWorkspacesList([$membership->workspaceId], $query);
+        $tasks = $this->taskRepository->findForWorkspaceList($membership->workspaceId, $query);
+        $total = $this->taskRepository->countForWorkspaceList($membership->workspaceId, $query);
 
         return JsonApiResponse::collection(
             new PaginatedCollection(

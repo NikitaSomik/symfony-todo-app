@@ -100,24 +100,6 @@ final class TaskWorkspaceAccessTest extends ApiTestCase
     }
 
     #[Test]
-    public function listOfAllTasksShouldSpanEveryWorkspaceOfTheUserAndNoOther(): void
-    {
-        TaskFactory::createOne(['workspace' => $this->workspaceWhereUserIs(WorkspaceRole::MEMBER), 'title' => 'Team task']);
-        TaskFactory::createOne(['workspace' => WorkspaceFactory::createOne(['owner' => $this->user]), 'title' => 'Personal task']);
-        TaskFactory::createOne(['title' => 'Task of strangers']);
-
-        self::assertSame(['Personal task', 'Team task'], $this->titles($this->route('api_task_get_all')));
-    }
-
-    #[Test]
-    public function listOfAllTasksOfAUserWithoutWorkspacesShouldBeEmpty(): void
-    {
-        TaskFactory::createOne();
-
-        self::assertSame([], $this->titles($this->route('api_task_get_all')));
-    }
-
-    #[Test]
     public function memberShouldWorkOnATaskSomeoneElseCreated(): void
     {
         $task = TaskFactory::createOne(['workspace' => $this->workspaceWhereUserIs(WorkspaceRole::MEMBER)]);
@@ -155,7 +137,8 @@ final class TaskWorkspaceAccessTest extends ApiTestCase
     #[TestWith(['POST', 'api_task_cancel', []])]
     public function viewerShouldNotChangeATask(string $method, string $route, array $body): void
     {
-        $task = TaskFactory::createOne(['workspace' => $this->workspaceWhereUserIs(WorkspaceRole::VIEWER), 'title' => 'Buy milk']);
+        $workspace = $this->workspaceWhereUserIs(WorkspaceRole::VIEWER);
+        $task = TaskFactory::createOne(['workspace' => $workspace, 'title' => 'Buy milk']);
         $uri = $this->route($route, ['id' => $task->getId()->toRfc4122()]);
 
         match ($method) {
@@ -165,7 +148,7 @@ final class TaskWorkspaceAccessTest extends ApiTestCase
         };
 
         self::assertResponseStatusCodeSame(403);
-        self::assertSame(['Buy milk'], $this->titles($this->route('api_task_get_all')));
+        self::assertSame(['Buy milk'], $this->titles($this->tasksOf($workspace)));
     }
 
     #[Test]

@@ -43,8 +43,8 @@ class UserRepository extends ServiceEntityRepository implements UserLoaderInterf
 
     public function reference(int $id): AuthenticatedUser
     {
+        /** @var User $user */
         $user = $this->getEntityManager()->getReference(User::class, $id);
-        \assert(null !== $user);
 
         return $user;
     }

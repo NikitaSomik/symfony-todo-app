@@ -39,7 +39,6 @@ final readonly class AddMember
                 return $membership;
             });
         } catch (UniqueConstraintViolationException) {
-            // Someone added the same user between this request's read and its write.
             throw new MemberAlreadyExistsException();
         }
     }

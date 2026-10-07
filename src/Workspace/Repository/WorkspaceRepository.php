@@ -69,22 +69,9 @@ final class WorkspaceRepository extends ServiceEntityRepository implements Works
 
     public function reference(Uuid $workspaceId): WorkspaceReference
     {
+        /** @var Workspace $workspace */
         $workspace = $this->getEntityManager()->getReference(Workspace::class, $workspaceId);
-        \assert(null !== $workspace);
 
         return $workspace;
-    }
-
-    public function workspaceIdsOf(int $userId): array
-    {
-        $ids = $this->getEntityManager()->createQueryBuilder()
-            ->select('IDENTITY(m.workspace)')
-            ->from(Membership::class, 'm')
-            ->where('IDENTITY(m.user) = :userId')
-            ->setParameter('userId', $userId)
-            ->getQuery()
-            ->getSingleColumnResult();
-
-        return array_values(array_map(Uuid::fromString(...), $ids));
     }
 }

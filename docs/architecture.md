@@ -102,7 +102,7 @@ sequenceDiagram
     A-->>C: 204 + cookies: access_token (15 min), refresh_token (30 days)
 
     Note over C,R: A request
-    C->>A: GET /tasks (access_token cookie)
+    C->>A: GET /tasks/{id} (access_token cookie)
     A->>R: is this token blocklisted?
     A-->>C: 200
 

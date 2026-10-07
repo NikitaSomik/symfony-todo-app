@@ -186,125 +186,6 @@
                 }
             }
         },
-        "/api/v1/tasks": {
-            "get": {
-                "tags": [
-                    "Tasks"
-                ],
-                "summary": "Get the tasks of every workspace the user is a member of (paginated)",
-                "operationId": "get_api_task_get_all",
-                "parameters": [
-                    {
-                        "name": "page",
-                        "in": "query",
-                        "required": false,
-                        "style": "deepObject",
-                        "explode": true,
-                        "schema": {
-                            "properties": {
-                                "number": {
-                                    "type": "integer",
-                                    "example": 1,
-                                    "default": 1,
-                                    "maximum": 10000,
-                                    "minimum": 1
-                                },
-                                "size": {
-                                    "type": "integer",
-                                    "example": 20,
-                                    "default": 20,
-                                    "maximum": 100,
-                                    "minimum": 1
-                                }
-                            },
-                            "type": "object"
-                        }
-                    },
-                    {
-                        "name": "filter",
-                        "in": "query",
-                        "required": false,
-                        "style": "deepObject",
-                        "explode": true,
-                        "schema": {
-                            "properties": {
-                                "status": {
-                                    "oneOf": [
-                                        {
-                                            "$ref": "#/components/schemas/TaskStatus"
-                                        }
-                                    ],
-                                    "nullable": true
-                                },
-                                "due_from": {
-                                    "type": "string",
-                                    "format": "date",
-                                    "example": "2026-04-01",
-                                    "nullable": true
-                                },
-                                "due_to": {
-                                    "type": "string",
-                                    "format": "date",
-                                    "example": "2026-04-30",
-                                    "nullable": true
-                                },
-                                "search": {
-                                    "description": "Full-text search across task title and description. Without `sort`, results are ranked by relevance.",
-                                    "type": "string",
-                                    "example": "milk",
-                                    "nullable": true,
-                                    "maxLength": 100
-                                }
-                            },
-                            "type": "object"
-                        }
-                    },
-                    {
-                        "name": "sort",
-                        "in": "query",
-                        "description": "Defaults to relevance when `filter[search]` is given, otherwise to `created_at`. With a search, tasks that tie on the chosen field are ranked by relevance.",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "enum": [
-                                "created_at",
-                                "status",
-                                "due_date"
-                            ]
-                        }
-                    },
-                    {
-                        "name": "direction",
-                        "in": "query",
-                        "description": "Applies to the chosen sort, or to relevance when a search has no `sort`.",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "default": "desc",
-                            "enum": [
-                                "asc",
-                                "desc"
-                            ]
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Paginated list of tasks",
-                        "content": {
-                            "application/vnd.api+json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/TaskCollectionResponseSchema"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/UnauthorizedError"
-                    }
-                }
-            }
-        },
         "/api/v1/tasks/{id}": {
             "get": {
                 "tags": [
@@ -1475,6 +1356,62 @@
                 },
                 "type": "object"
             },
+            "UpdateTaskDetailsDTO": {
+                "required": [
+                    "title"
+                ],
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "example": "Buy milk",
+                        "maxLength": 255
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "2 liters",
+                        "nullable": true,
+                        "default": null,
+                        "maxLength": 2000,
+                        "minLength": 3
+                    },
+                    "due_date": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-04-01",
+                        "nullable": true,
+                        "default": null
+                    }
+                },
+                "type": "object"
+            },
+            "BlockTaskDTO": {
+                "required": [
+                    "reason"
+                ],
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "example": "Waiting for access from the client",
+                        "maxLength": 500,
+                        "minLength": 3
+                    }
+                },
+                "type": "object"
+            },
+            "CancelTaskDTO": {
+                "required": [
+                    "reason"
+                ],
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "example": "Task is no longer relevant",
+                        "maxLength": 500,
+                        "minLength": 3
+                    }
+                },
+                "type": "object"
+            },
             "PageQueryDTO": {
                 "properties": {
                     "number": {
@@ -1552,62 +1489,6 @@
                     },
                     "filter": {
                         "$ref": "#/components/schemas/TaskFilterDTO"
-                    }
-                },
-                "type": "object"
-            },
-            "UpdateTaskDetailsDTO": {
-                "required": [
-                    "title"
-                ],
-                "properties": {
-                    "title": {
-                        "type": "string",
-                        "example": "Buy milk",
-                        "maxLength": 255
-                    },
-                    "description": {
-                        "type": "string",
-                        "example": "2 liters",
-                        "nullable": true,
-                        "default": null,
-                        "maxLength": 2000,
-                        "minLength": 3
-                    },
-                    "due_date": {
-                        "type": "string",
-                        "format": "date",
-                        "example": "2026-04-01",
-                        "nullable": true,
-                        "default": null
-                    }
-                },
-                "type": "object"
-            },
-            "BlockTaskDTO": {
-                "required": [
-                    "reason"
-                ],
-                "properties": {
-                    "reason": {
-                        "type": "string",
-                        "example": "Waiting for access from the client",
-                        "maxLength": 500,
-                        "minLength": 3
-                    }
-                },
-                "type": "object"
-            },
-            "CancelTaskDTO": {
-                "required": [
-                    "reason"
-                ],
-                "properties": {
-                    "reason": {
-                        "type": "string",
-                        "example": "Task is no longer relevant",
-                        "maxLength": 500,
-                        "minLength": 3
                     }
                 },
                 "type": "object"
@@ -1758,33 +1639,6 @@
                     "cancelled"
                 ]
             },
-            "PaginationLinksSchema": {
-                "required": [
-                    "first",
-                    "last"
-                ],
-                "properties": {
-                    "first": {
-                        "type": "string",
-                        "example": "/api/v1/tasks?page[number]=1&page[size]=20"
-                    },
-                    "last": {
-                        "type": "string",
-                        "example": "/api/v1/tasks?page[number]=8&page[size]=20"
-                    },
-                    "prev": {
-                        "type": "string",
-                        "example": "/api/v1/tasks?page[number]=1&page[size]=20",
-                        "nullable": true
-                    },
-                    "next": {
-                        "type": "string",
-                        "example": "/api/v1/tasks?page[number]=2&page[size]=20",
-                        "nullable": true
-                    }
-                },
-                "type": "object"
-            },
             "TaskResource": {
                 "required": [
                     "type",
@@ -1914,70 +1768,6 @@
                             }
                         },
                         "type": "object"
-                    }
-                },
-                "type": "object"
-            },
-            "PageMetaSchema": {
-                "required": [
-                    "current",
-                    "size",
-                    "total",
-                    "last"
-                ],
-                "properties": {
-                    "current": {
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "size": {
-                        "type": "integer",
-                        "example": 20
-                    },
-                    "total": {
-                        "type": "integer",
-                        "example": 156
-                    },
-                    "last": {
-                        "type": "integer",
-                        "example": 8
-                    }
-                },
-                "type": "object"
-            },
-            "PaginatedMetaSchema": {
-                "required": [
-                    "page"
-                ],
-                "properties": {
-                    "page": {
-                        "$ref": "#/components/schemas/PageMetaSchema"
-                    }
-                },
-                "type": "object"
-            },
-            "TaskCollectionResponseSchema": {
-                "required": [
-                    "jsonapi",
-                    "links",
-                    "data",
-                    "meta"
-                ],
-                "properties": {
-                    "jsonapi": {
-                        "$ref": "#/components/schemas/JsonApiObjectSchema"
-                    },
-                    "links": {
-                        "$ref": "#/components/schemas/PaginationLinksSchema"
-                    },
-                    "data": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/TaskResource"
-                        }
-                    },
-                    "meta": {
-                        "$ref": "#/components/schemas/PaginatedMetaSchema"
                     }
                 },
                 "type": "object"
@@ -2149,6 +1939,97 @@
                         "items": {
                             "$ref": "#/components/schemas/AuditLogResource"
                         }
+                    }
+                },
+                "type": "object"
+            },
+            "PaginationLinksSchema": {
+                "required": [
+                    "first",
+                    "last"
+                ],
+                "properties": {
+                    "first": {
+                        "type": "string",
+                        "example": "/api/v1/tasks?page[number]=1&page[size]=20"
+                    },
+                    "last": {
+                        "type": "string",
+                        "example": "/api/v1/tasks?page[number]=8&page[size]=20"
+                    },
+                    "prev": {
+                        "type": "string",
+                        "example": "/api/v1/tasks?page[number]=1&page[size]=20",
+                        "nullable": true
+                    },
+                    "next": {
+                        "type": "string",
+                        "example": "/api/v1/tasks?page[number]=2&page[size]=20",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "PageMetaSchema": {
+                "required": [
+                    "current",
+                    "size",
+                    "total",
+                    "last"
+                ],
+                "properties": {
+                    "current": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "size": {
+                        "type": "integer",
+                        "example": 20
+                    },
+                    "total": {
+                        "type": "integer",
+                        "example": 156
+                    },
+                    "last": {
+                        "type": "integer",
+                        "example": 8
+                    }
+                },
+                "type": "object"
+            },
+            "PaginatedMetaSchema": {
+                "required": [
+                    "page"
+                ],
+                "properties": {
+                    "page": {
+                        "$ref": "#/components/schemas/PageMetaSchema"
+                    }
+                },
+                "type": "object"
+            },
+            "TaskCollectionResponseSchema": {
+                "required": [
+                    "jsonapi",
+                    "links",
+                    "data",
+                    "meta"
+                ],
+                "properties": {
+                    "jsonapi": {
+                        "$ref": "#/components/schemas/JsonApiObjectSchema"
+                    },
+                    "links": {
+                        "$ref": "#/components/schemas/PaginationLinksSchema"
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/TaskResource"
+                        }
+                    },
+                    "meta": {
+                        "$ref": "#/components/schemas/PaginatedMetaSchema"
                     }
                 },
                 "type": "object"

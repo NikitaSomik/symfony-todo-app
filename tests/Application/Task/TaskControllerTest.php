@@ -27,6 +27,7 @@ final class TaskControllerTest extends ApiTestCase
 {
     private User $user;
     private Workspace $workspace;
+    private string $tasks;
 
     protected function setUp(): void
     {
@@ -34,6 +35,7 @@ final class TaskControllerTest extends ApiTestCase
         $this->user = UserFactory::createOne();
         $this->actingAs($this->user);
         $this->workspace = WorkspaceFactory::createOne(['owner' => $this->user]);
+        $this->tasks = $this->route('api_workspace_task_get_all', ['id' => $this->workspace->getId()->toRfc4122()]);
     }
 
     /**
@@ -94,7 +96,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function getAllWhenNoTasksShouldReturnEmptyArray(): void
     {
-        $response = $this->get($this->route('api_task_get_all'));
+        $response = $this->get($this->tasks);
         $json = $this->json($response);
 
         self::assertResponseIsSuccessful();
@@ -113,7 +115,7 @@ final class TaskControllerTest extends ApiTestCase
     {
         TaskFactory::createMany(3, ['workspace' => $this->workspace]);
 
-        $response = $this->get($this->route('api_task_get_all'));
+        $response = $this->get($this->tasks);
         $data = $this->jsonData($response);
 
         self::assertResponseIsSuccessful();
@@ -126,7 +128,7 @@ final class TaskControllerTest extends ApiTestCase
         TaskFactory::createOne();
         TaskFactory::createMany(2, ['workspace' => $this->workspace]);
 
-        $response = $this->get($this->route('api_task_get_all'));
+        $response = $this->get($this->tasks);
         $data = $this->jsonData($response);
 
         self::assertResponseIsSuccessful();
@@ -138,7 +140,7 @@ final class TaskControllerTest extends ApiTestCase
     {
         TaskFactory::createMany(25, ['workspace' => $this->workspace]);
 
-        $response = $this->get('/api/v1/tasks?page[number]=2&page[size]=10');
+        $response = $this->get($this->tasks.'?page[number]=2&page[size]=10');
         $json = $this->json($response);
 
         self::assertResponseIsSuccessful();
@@ -148,10 +150,10 @@ final class TaskControllerTest extends ApiTestCase
         self::assertSame(25, $json['meta']['page']['total']);
         self::assertSame(3, $json['meta']['page']['last']);
         self::assertArrayNotHasKey('self', $json['links']);
-        self::assertSame('/api/v1/tasks?page[number]=1&page[size]=10', $json['links']['first']);
-        self::assertSame('/api/v1/tasks?page[number]=3&page[size]=10', $json['links']['last']);
-        self::assertSame('/api/v1/tasks?page[number]=1&page[size]=10', $json['links']['prev']);
-        self::assertSame('/api/v1/tasks?page[number]=3&page[size]=10', $json['links']['next']);
+        self::assertSame($this->tasks.'?page[number]=1&page[size]=10', $json['links']['first']);
+        self::assertSame($this->tasks.'?page[number]=3&page[size]=10', $json['links']['last']);
+        self::assertSame($this->tasks.'?page[number]=1&page[size]=10', $json['links']['prev']);
+        self::assertSame($this->tasks.'?page[number]=3&page[size]=10', $json['links']['next']);
     }
 
     #[Test]
@@ -160,7 +162,7 @@ final class TaskControllerTest extends ApiTestCase
         TaskFactory::createOne(['workspace' => $this->workspace, 'status' => TaskStatus::TODO]);
         TaskFactory::createOne(['workspace' => $this->workspace, 'status' => TaskStatus::COMPLETED]);
 
-        $response = $this->get('/api/v1/tasks?filter[status]=completed');
+        $response = $this->get($this->tasks.'?filter[status]=completed');
         $data = $this->jsonData($response);
 
         self::assertResponseIsSuccessful();
@@ -181,7 +183,7 @@ final class TaskControllerTest extends ApiTestCase
         TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Newest', 'createdAt' => new \DateTimeImmutable('2026-04-01 10:02:00')]);
         TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Oldest', 'createdAt' => new \DateTimeImmutable('2026-04-01 10:00:00')]);
 
-        $response = $this->get('/api/v1/tasks'.$query);
+        $response = $this->get($this->tasks.$query);
 
         self::assertResponseIsSuccessful();
         self::assertSame($expectedTitles, $this->titles($response));
@@ -194,7 +196,7 @@ final class TaskControllerTest extends ApiTestCase
         TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Todo', 'status' => TaskStatus::TODO]);
         TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Completed', 'status' => TaskStatus::COMPLETED]);
 
-        $response = $this->get('/api/v1/tasks?sort=status&direction=asc');
+        $response = $this->get($this->tasks.'?sort=status&direction=asc');
 
         self::assertResponseIsSuccessful();
         self::assertSame(['Completed', 'In progress', 'Todo'], $this->titles($response));
@@ -207,7 +209,7 @@ final class TaskControllerTest extends ApiTestCase
         TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'No deadline', 'dueDate' => null]);
         TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Sooner', 'dueDate' => new \DateTimeImmutable('2026-04-01')]);
 
-        $response = $this->get('/api/v1/tasks?sort=due_date&direction=asc');
+        $response = $this->get($this->tasks.'?sort=due_date&direction=asc');
 
         self::assertResponseIsSuccessful();
         self::assertSame(['Sooner', 'Later', 'No deadline'], $this->titles($response));
@@ -229,7 +231,7 @@ final class TaskControllerTest extends ApiTestCase
 
         $pages = [];
         foreach ([1, 2, 3] as $number) {
-            $pages[] = $this->jsonData($this->get('/api/v1/tasks?sort=status&direction='.$direction.'&page[size]=1&page[number]='.$number))[0]['id'];
+            $pages[] = $this->jsonData($this->get($this->tasks.'?sort=status&direction='.$direction.'&page[size]=1&page[number]='.$number))[0]['id'];
         }
 
         self::assertSame($expected, $pages);
@@ -240,11 +242,11 @@ final class TaskControllerTest extends ApiTestCase
     {
         TaskFactory::createMany(3, ['workspace' => $this->workspace]);
 
-        $json = $this->json($this->get('/api/v1/tasks?page[number]=5&page[size]=2'));
+        $json = $this->json($this->get($this->tasks.'?page[number]=5&page[size]=2'));
 
         self::assertSame([], $json['data']);
-        self::assertSame('/api/v1/tasks?page[number]=2&page[size]=2', $json['links']['prev']);
-        self::assertSame('/api/v1/tasks?page[number]=2&page[size]=2', $json['links']['last']);
+        self::assertSame($this->tasks.'?page[number]=2&page[size]=2', $json['links']['prev']);
+        self::assertSame($this->tasks.'?page[number]=2&page[size]=2', $json['links']['last']);
         self::assertNull($json['links']['next']);
     }
 
@@ -255,7 +257,7 @@ final class TaskControllerTest extends ApiTestCase
     #[TestWith([''])]
     public function getAllWhenSortFieldIsNotSupportedShouldReturn422(string $sort): void
     {
-        $response = $this->get('/api/v1/tasks?sort='.$sort);
+        $response = $this->get($this->tasks.'?sort='.$sort);
 
         self::assertResponseStatusCodeSame(422);
         self::assertSame(['parameter' => 'sort'], $this->json($response)['errors'][0]['source']);
@@ -264,7 +266,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function getAllWhenSearchTermIsTooLongShouldReturn422(): void
     {
-        $response = $this->get('/api/v1/tasks?filter[search]='.str_repeat('a', 101));
+        $response = $this->get($this->tasks.'?filter[search]='.str_repeat('a', 101));
 
         self::assertResponseStatusCodeSame(422);
         self::assertSame(['parameter' => 'filter[search]'], $this->json($response)['errors'][0]['source']);
@@ -277,7 +279,7 @@ final class TaskControllerTest extends ApiTestCase
         TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Inside range', 'dueDate' => new \DateTimeImmutable('2026-04-02')]);
         TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'After range', 'dueDate' => new \DateTimeImmutable('2026-04-06')]);
 
-        $response = $this->get('/api/v1/tasks?filter[due_from]=2026-04-01&filter[due_to]=2026-04-05');
+        $response = $this->get($this->tasks.'?filter[due_from]=2026-04-01&filter[due_to]=2026-04-05');
         $data = $this->jsonData($response);
 
         self::assertResponseIsSuccessful();
@@ -292,7 +294,7 @@ final class TaskControllerTest extends ApiTestCase
         TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Workout', 'description' => 'Drink milk after gym']);
         TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Read book', 'description' => 'Evening routine']);
 
-        $response = $this->get('/api/v1/tasks?filter[search]=milk');
+        $response = $this->get($this->tasks.'?filter[search]=milk');
         $data = $this->jsonData($response);
 
         self::assertResponseIsSuccessful();
@@ -313,7 +315,7 @@ final class TaskControllerTest extends ApiTestCase
             'description' => 'Compare search options later',
         ]);
 
-        $response = $this->get('/api/v1/tasks?filter[search]=postgresql search');
+        $response = $this->get($this->tasks.'?filter[search]=postgresql search');
         $data = $this->jsonData($response);
 
         self::assertResponseIsSuccessful();
@@ -331,7 +333,7 @@ final class TaskControllerTest extends ApiTestCase
         TaskFactory::createOne(['workspace' => $this->workspace, 'title' => $title]);
         TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Buy bread']);
 
-        $response = $this->get('/api/v1/tasks?filter[search]='.$search);
+        $response = $this->get($this->tasks.'?filter[search]='.$search);
         $data = $this->jsonData($response);
 
         self::assertResponseIsSuccessful();
@@ -345,7 +347,7 @@ final class TaskControllerTest extends ApiTestCase
         TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Call bank']);
         TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Call mom']);
 
-        $response = $this->get('/api/v1/tasks?filter[search]=call the bank');
+        $response = $this->get($this->tasks.'?filter[search]=call the bank');
         $data = $this->jsonData($response);
 
         self::assertResponseIsSuccessful();
@@ -358,7 +360,7 @@ final class TaskControllerTest extends ApiTestCase
     {
         TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Buy milk']);
 
-        $response = $this->get('/api/v1/tasks?filter[search]=coffee');
+        $response = $this->get($this->tasks.'?filter[search]=coffee');
 
         self::assertResponseIsSuccessful();
         self::assertSame([], $this->jsonData($response));
@@ -369,7 +371,7 @@ final class TaskControllerTest extends ApiTestCase
     {
         TaskFactory::createOne(['title' => 'Buy milk']);
 
-        $response = $this->get('/api/v1/tasks?filter[search]=milk');
+        $response = $this->get($this->tasks.'?filter[search]=milk');
 
         self::assertResponseIsSuccessful();
         self::assertSame([], $this->jsonData($response));
@@ -381,7 +383,7 @@ final class TaskControllerTest extends ApiTestCase
         TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Buy milk']);
         TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Read book']);
 
-        $response = $this->get('/api/v1/tasks?filter[search]='.urlencode('   '));
+        $response = $this->get($this->tasks.'?filter[search]='.urlencode('   '));
 
         self::assertResponseIsSuccessful();
         self::assertCount(2, $this->jsonData($response));
@@ -396,7 +398,7 @@ final class TaskControllerTest extends ApiTestCase
     {
         TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Buy milk']);
 
-        $response = $this->get('/api/v1/tasks?filter[search]='.urlencode($search));
+        $response = $this->get($this->tasks.'?filter[search]='.urlencode($search));
         $titles = $this->titles($response);
 
         self::assertResponseIsSuccessful();
@@ -410,7 +412,7 @@ final class TaskControllerTest extends ApiTestCase
     {
         TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Things to do in the morning']);
 
-        $response = $this->get('/api/v1/tasks?filter[search]='.$search);
+        $response = $this->get($this->tasks.'?filter[search]='.$search);
         $json = $this->json($response);
 
         self::assertResponseIsSuccessful();
@@ -428,7 +430,7 @@ final class TaskControllerTest extends ApiTestCase
         TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Buy bread']);
         TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Sell milk', 'description' => 'Then buy more']);
 
-        $response = $this->get('/api/v1/tasks?filter[search]='.urlencode($search));
+        $response = $this->get($this->tasks.'?filter[search]='.urlencode($search));
         $titles = $this->titles($response);
         sort($titles);
 
@@ -442,7 +444,7 @@ final class TaskControllerTest extends ApiTestCase
         TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Milk plan', 'description' => 'Weekly groceries']);
         TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Workout', 'description' => 'Drink milk after gym']);
 
-        $response = $this->get('/api/v1/tasks?filter[search]=milk');
+        $response = $this->get($this->tasks.'?filter[search]=milk');
         $data = $this->jsonData($response);
 
         self::assertResponseIsSuccessful();
@@ -458,7 +460,7 @@ final class TaskControllerTest extends ApiTestCase
         TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Milk shake', 'description' => null, 'dueDate' => new \DateTimeImmutable('2026-04-03')]);
         TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Workout', 'description' => 'Drink milk after gym', 'dueDate' => new \DateTimeImmutable('2026-04-01')]);
 
-        $response = $this->get('/api/v1/tasks?filter[search]=milk&sort=due_date&direction=asc');
+        $response = $this->get($this->tasks.'?filter[search]=milk&sort=due_date&direction=asc');
 
         self::assertResponseIsSuccessful();
         self::assertSame(['Workout', 'Milk plan', 'Milk shake'], $this->titles($response));
@@ -469,7 +471,7 @@ final class TaskControllerTest extends ApiTestCase
     {
         $this->createTasksOfDifferentRelevanceToMilk(['status' => TaskStatus::TODO]);
 
-        $response = $this->get('/api/v1/tasks?filter[search]=milk&sort=status');
+        $response = $this->get($this->tasks.'?filter[search]=milk&sort=status');
 
         self::assertResponseIsSuccessful();
         self::assertSame(['Milk run', 'Milk plan', 'Workout'], $this->titles($response));
@@ -480,7 +482,7 @@ final class TaskControllerTest extends ApiTestCase
     {
         $this->createTasksOfDifferentRelevanceToMilk();
 
-        $response = $this->get('/api/v1/tasks?filter[search]=milk&direction=asc');
+        $response = $this->get($this->tasks.'?filter[search]=milk&direction=asc');
 
         self::assertResponseIsSuccessful();
         self::assertSame(['Workout', 'Milk plan', 'Milk run'], $this->titles($response));
@@ -492,7 +494,7 @@ final class TaskControllerTest extends ApiTestCase
         TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Buy milk', 'description' => null]);
         TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Buy bread', 'description' => null]);
 
-        $response = $this->get('/api/v1/tasks?filter[search]=milk');
+        $response = $this->get($this->tasks.'?filter[search]=milk');
         $data = $this->jsonData($response);
 
         self::assertResponseIsSuccessful();
@@ -515,7 +517,7 @@ final class TaskControllerTest extends ApiTestCase
             'status' => TaskStatus::TODO,
         ]);
 
-        $response = $this->get('/api/v1/tasks?filter[search]=milk&filter[status]=completed');
+        $response = $this->get($this->tasks.'?filter[search]=milk&filter[status]=completed');
         $data = $this->jsonData($response);
 
         self::assertResponseIsSuccessful();
@@ -531,7 +533,7 @@ final class TaskControllerTest extends ApiTestCase
         TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Milk plan B']);
         TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Milk plan C']);
 
-        $response = $this->get('/api/v1/tasks?filter[search]=milk&page[number]=2&page[size]=2');
+        $response = $this->get($this->tasks.'?filter[search]=milk&page[number]=2&page[size]=2');
         $json = $this->json($response);
 
         self::assertResponseIsSuccessful();
@@ -540,9 +542,9 @@ final class TaskControllerTest extends ApiTestCase
         self::assertSame(2, $json['meta']['page']['size']);
         self::assertSame(3, $json['meta']['page']['total']);
         self::assertSame(2, $json['meta']['page']['last']);
-        self::assertSame('/api/v1/tasks?filter[search]=milk&page[number]=1&page[size]=2', $json['links']['first']);
-        self::assertSame('/api/v1/tasks?filter[search]=milk&page[number]=2&page[size]=2', $json['links']['last']);
-        self::assertSame('/api/v1/tasks?filter[search]=milk&page[number]=1&page[size]=2', $json['links']['prev']);
+        self::assertSame($this->tasks.'?filter[search]=milk&page[number]=1&page[size]=2', $json['links']['first']);
+        self::assertSame($this->tasks.'?filter[search]=milk&page[number]=2&page[size]=2', $json['links']['last']);
+        self::assertSame($this->tasks.'?filter[search]=milk&page[number]=1&page[size]=2', $json['links']['prev']);
         self::assertNull($json['links']['next']);
     }
 
@@ -783,7 +785,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function getAllWhenDueFromIsInvalidShouldReturn422(): void
     {
-        $response = $this->get('/api/v1/tasks?filter[due_from]=tomorrow');
+        $response = $this->get($this->tasks.'?filter[due_from]=tomorrow');
         $json = $this->json($response);
 
         self::assertResponseStatusCodeSame(422);
@@ -794,7 +796,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function getAllWhenDueRangeIsInvalidShouldReturn422(): void
     {
-        $response = $this->get('/api/v1/tasks?filter[due_from]=2026-04-05&filter[due_to]=2026-04-01');
+        $response = $this->get($this->tasks.'?filter[due_from]=2026-04-05&filter[due_to]=2026-04-01');
         $json = $this->json($response);
 
         self::assertResponseStatusCodeSame(422);
@@ -804,7 +806,7 @@ final class TaskControllerTest extends ApiTestCase
     #[Test]
     public function getAllWhenDueToIsInvalidShouldReturn422(): void
     {
-        $response = $this->get('/api/v1/tasks?filter[due_to]=tomorrow');
+        $response = $this->get($this->tasks.'?filter[due_to]=tomorrow');
         $json = $this->json($response);
 
         self::assertResponseStatusCodeSame(422);
@@ -1087,7 +1089,7 @@ final class TaskControllerTest extends ApiTestCase
     {
         $task = TaskFactory::createOne(['workspace' => $this->workspace]);
 
-        $data = $this->jsonData($this->get('/api/v1/tasks'));
+        $data = $this->jsonData($this->get($this->tasks));
 
         self::assertSame('/api/v1/tasks/'.$this->taskId($task).'/start', $data[0]['links']['start']);
     }

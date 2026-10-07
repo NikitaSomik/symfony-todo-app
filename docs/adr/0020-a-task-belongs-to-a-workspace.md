@@ -27,8 +27,7 @@ user.
   use: `404`, `403`, `422`, `409`.
 - **The workspace is in the address where it is the subject.** A task is created and
   listed at `/workspaces/{id}/tasks`. One task and its transitions stay at `/tasks/{id}`:
-  the id is unique by itself. `GET /tasks` lists the tasks of every workspace the user is
-  a member of.
+  the id is unique by itself.
 
 ## Alternatives considered
 
@@ -43,6 +42,10 @@ user.
   or filters by a foreign field; this is neither.
 - **Leave the viewer unrestricted until the table of rights is built.** Smaller change,
   and `main` would hold a viewer who can delete tasks.
+- **Keep `GET /tasks` as the tasks of every workspace the user is in.** Built, then
+  removed before the merge: tasks of several teams in one list answer no question a
+  member has. The list that crosses workspaces is "assigned to me", and it needs an
+  assignee first.
 - **Move the existing tasks into their creator's personal workspace.** A data migration
   for a database that holds only generated data. The migration stops on a non-empty
   `tasks` table instead and says how to recreate it.
@@ -55,8 +58,6 @@ user.
   removed, and with it a `TaskVoter`. It now tells a member what is not theirs to do; it
   never tells a stranger that a task exists.
 - A member who leaves a workspace loses the tasks they created there.
-- `GET /tasks` first reads the ids of the user's workspaces and filters by them. Fine for
-  a user in a handful of workspaces.
 - The rule "a viewer only reads" lives in `Task`, in the voter; `Workspace` only names the
   roles. A member may still delete a task: who may do what beyond reading and writing is
   the next step.

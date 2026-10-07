@@ -13,7 +13,4 @@ interface WorkspaceAccess
 
     /** Stands for the workspace with this id in a relation; the workspace is not loaded. */
     public function reference(Uuid $workspaceId): WorkspaceReference;
-
-    /** @return list<Uuid> */
-    public function workspaceIdsOf(int $userId): array;
 }
