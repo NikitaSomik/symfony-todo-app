@@ -72,9 +72,11 @@ touched, not for its own sake.
   query strings. The rule about joins is kept by review, not by a check.
 - Fetching through a contract is one more query where a join would be none.
 - Showing a member's email takes a call to `Auth`'s contract.
-- Since #81 a relation points at `Auth\Contract\UserReference` — a user known by id —
-  and `AuthenticatedUser` extends it for the one who made the request: a member of a
-  workspace is not "authenticated".
+- Since #81 a relation points at `Auth\Contract\UserReference`, a user a record names,
+  and `AuthenticatedUser` is only the one who made the request: a member of a workspace
+  is not "authenticated". The two are separate interfaces that `User` implements with one
+  method; neither extends the other, because who is asking and whom a row points at are
+  different things.
 - A second event crosses modules since #79: `Workspace` announces
   `Contract\MembershipChanged`, and `Task` takes someone who can no longer work off their
   tasks ([0021](0021-a-task-has-an-assignee-who-can-work.md)).
