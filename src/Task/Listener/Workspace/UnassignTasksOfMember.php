@@ -25,7 +25,7 @@ final readonly class UnassignTasksOfMember
     #[AsEventListener]
     public function membershipEnded(MembershipEnded $event): void
     {
-        $this->unassign($event->workspaceId, $event->userId, $event->actorId);
+        $this->unassign($event->workspaceId, userId: $event->userId, actorId: $event->actorId);
     }
 
     #[AsEventListener]
@@ -35,7 +35,7 @@ final readonly class UnassignTasksOfMember
             return;
         }
 
-        $this->unassign($event->workspaceId, $event->userId, $event->actorId);
+        $this->unassign($event->workspaceId, userId: $event->userId, actorId: $event->actorId);
     }
 
     /**

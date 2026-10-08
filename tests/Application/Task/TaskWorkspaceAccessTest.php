@@ -15,6 +15,7 @@ use App\Workspace\Entity\Workspace;
 use App\Workspace\Enum\WorkspaceRole;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
+use Symfony\Component\Uid\Uuid;
 
 final class TaskWorkspaceAccessTest extends ApiTestCase
 {
@@ -89,6 +90,18 @@ final class TaskWorkspaceAccessTest extends ApiTestCase
         TaskFactory::createOne(['workspace' => WorkspaceFactory::createOne(['owner' => $this->user]), 'title' => 'Personal task']);
 
         self::assertSame(['Team task'], $this->titles($this->tasksOf($workspace)));
+    }
+
+    #[Test]
+    public function workspaceThatDoesNotExistShouldAnswerLikeOneOfStrangers(): void
+    {
+        $uri = $this->route('api_workspace_task_get_all', ['id' => Uuid::v7()->toRfc4122()]);
+
+        $this->get($uri);
+        self::assertResponseStatusCodeSame(404);
+
+        $this->post($uri, ['title' => 'Buy milk']);
+        self::assertResponseStatusCodeSame(404);
     }
 
     #[Test]

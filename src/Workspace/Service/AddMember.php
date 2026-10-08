@@ -38,7 +38,13 @@ final readonly class AddMember
             return $this->em->wrapInTransaction(function () use ($workspace, $userId, $role, $actorId): Membership {
                 $membership = $workspace->addMember($this->users->reference($userId), $role, $this->clock->now());
 
-                $this->eventDispatcher->dispatch(new MemberAdded($workspace->getId()->toRfc4122(), $workspace->getName(), $userId, $role, $actorId));
+                $this->eventDispatcher->dispatch(new MemberAdded(
+                    workspaceId: $workspace->getId()->toRfc4122(),
+                    workspaceName: $workspace->getName(),
+                    userId: $userId,
+                    role: $role,
+                    actorId: $actorId,
+                ));
 
                 return $membership;
             });

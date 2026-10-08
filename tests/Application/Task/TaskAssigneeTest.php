@@ -416,6 +416,18 @@ final class TaskAssigneeTest extends ApiTestCase
     }
 
     #[Test]
+    public function ownerWhoBecomesAMemberShouldKeepTheirTasks(): void
+    {
+        $workspace = WorkspaceFactory::new()->withMembers([[$this->colleague, WorkspaceRole::OWNER]])->create(['owner' => $this->user]);
+        $task = $this->task($this->colleague, workspace: $workspace);
+
+        $this->put($this->route('api_workspace_member_change_role', ['id' => $workspace->getId()->toRfc4122(), 'userId' => $this->colleague->id()]), ['role' => 'member']);
+        self::assertResponseStatusCodeSame(200);
+
+        self::assertSame((string) $this->colleague->id(), $this->assigneeOf($task));
+    }
+
+    #[Test]
     public function memberShouldStayWhenTheirTasksCannotBeTakenOffThem(): void
     {
         $task = $this->task($this->colleague);

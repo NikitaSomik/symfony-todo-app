@@ -23,8 +23,13 @@ final readonly class LeaveWorkspace
         $this->em->wrapInTransaction(function () use ($workspace, $userId): void {
             $membership = $workspace->removeMember($userId);
 
-            $this->eventDispatcher->dispatch(new MemberLeft($workspace->getId()->toRfc4122(), $workspace->getName(), $userId, $membership->getRole()));
-            $this->eventDispatcher->dispatch(new MembershipEnded($workspace->getId(), $userId, actorId: $userId));
+            $this->eventDispatcher->dispatch(new MemberLeft(
+                workspaceId: $workspace->getId()->toRfc4122(),
+                workspaceName: $workspace->getName(),
+                userId: $userId,
+                role: $membership->getRole(),
+            ));
+            $this->eventDispatcher->dispatch(new MembershipEnded($workspace->getId(), userId: $userId, actorId: $userId));
         });
     }
 }

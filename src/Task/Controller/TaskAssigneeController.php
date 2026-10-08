@@ -51,7 +51,7 @@ final class TaskAssigneeController extends AbstractController
     #[OA\Response(response: 422, description: 'Invalid body, or the user cannot work in the workspace of the task')]
     public function assign(#[MapRequestPayload(acceptFormat: 'json')] AssignTaskDTO $dto, #[ValueResolver(MemberTaskValueResolver::class)] Task $task, #[CurrentUser] AuthenticatedUser $user): JsonResponse
     {
-        return JsonApiResponse::one($this->taskResource->toItem($this->assignTask->handle($task, $dto->user_id, $user->id())));
+        return JsonApiResponse::one($this->taskResource->toItem($this->assignTask->handle($task, assigneeId: $dto->user_id, actorId: $user->id())));
     }
 
     #[Route('', name: 'unassign', methods: ['DELETE'])]
