@@ -28,8 +28,9 @@ could delete a task, because writing and deleting were one check
 
 - **Everyone has a set of permissions in every workspace; a stranger's is empty.** Nothing
   outside `Workspace` is handed a role that may be missing: `WorkspaceAccess` answers
-  `can()` and `permissionsOf()`, and `MembershipChanged` carries what the user may do
-  now — nothing, once they are gone.
+  `can()` and `permissionsOf()`, and `MemberPermissionsChanged` carries what a member may
+  do from now on. Someone who is gone is announced by an event of its own,
+  `MembershipEnded`, not by an empty set that has to be read as "gone".
 - **The role is not part of the contract.** `WorkspaceRole` lives inside `Workspace`.
   Another module cannot compare roles: Deptrac refuses the import.
 - **Voters still refuse the request.** `TaskVoter` and `WorkspaceVoter` map their
@@ -44,6 +45,10 @@ could delete a task, because writing and deleting were one check
 - **Hand other modules the role, `null` for a stranger.** Built first, in this pull
   request. Every reader had to check for the missing role before asking it anything, and
   the checks spread: three of them within a day.
+- **One event for every change of a membership**, with an empty set of permissions for
+  someone removed. Built first, in this pull request. The empty set needed a named
+  constructor to say what it meant, and the constructor needed explaining: two facts were
+  sharing one name.
 - **A role for someone who is not a member** (`none`). No `null`, and a case that must
   never be stored, never offered when a member is added and never documented.
 - **Keep comparing roles.** Nothing to build. Every new action adds one more comparison,

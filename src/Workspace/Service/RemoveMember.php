@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Workspace\Service;
 
-use App\Workspace\Contract\MembershipChanged;
+use App\Workspace\Contract\MembershipEnded;
 use App\Workspace\Entity\Workspace;
 use App\Workspace\Event\MemberRemoved;
 use App\Workspace\Exception\CannotRemoveYourselfException;
@@ -29,7 +29,7 @@ final readonly class RemoveMember
             $membership = $workspace->removeMember($userId);
 
             $this->eventDispatcher->dispatch(new MemberRemoved($workspace->getId()->toRfc4122(), $workspace->getName(), $userId, $membership->getRole(), $actorId));
-            $this->eventDispatcher->dispatch(MembershipChanged::ended($workspace->getId(), $userId, $actorId));
+            $this->eventDispatcher->dispatch(new MembershipEnded($workspace->getId(), $userId, $actorId));
         });
     }
 }

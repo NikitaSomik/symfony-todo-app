@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Workspace\Service;
 
-use App\Workspace\Contract\MembershipChanged;
+use App\Workspace\Contract\MemberPermissionsChanged;
 use App\Workspace\Entity\Membership;
 use App\Workspace\Entity\Workspace;
 use App\Workspace\Enum\WorkspaceRole;
@@ -34,7 +34,7 @@ final readonly class ChangeMemberRole
 
             if ($previousRole !== $role) {
                 $this->eventDispatcher->dispatch(new MemberRoleChanged($workspace->getId()->toRfc4122(), $workspace->getName(), $userId, $previousRole, $role, $actorId));
-                $this->eventDispatcher->dispatch(MembershipChanged::roleChanged($workspace->getId(), $userId, $role->permissions(), $actorId));
+                $this->eventDispatcher->dispatch(new MemberPermissionsChanged($workspace->getId(), $userId, $role->permissions(), $actorId));
             }
 
             return $membership;

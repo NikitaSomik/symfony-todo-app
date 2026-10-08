@@ -77,9 +77,9 @@ touched, not for its own sake.
   is not "authenticated". The two are separate interfaces that `User` implements with one
   method; neither extends the other, because who is asking and whom a row points at are
   different things.
-- A second event crosses modules since #79: `Workspace` announces
-  `Contract\MembershipChanged`, and `Task` takes someone who can no longer work off their
-  tasks ([0021](0021-a-task-has-an-assignee-who-can-work.md)).
+- More events cross modules since #79: `Workspace` announces `Contract\MembershipEnded`
+  and `Contract\MemberPermissionsChanged`, and `Task` takes someone who can no longer work
+  off their tasks ([0021](0021-a-task-has-an-assignee-who-can-work.md)).
 - `Task` uses `Workspace` through its contract as well since #78: `WorkspaceAccess` for a
   member's role and `WorkspaceReference` for the relation.
 - `Task` moved to `Auth`'s contract in #77: it keeps its creator as an id, and Deptrac
