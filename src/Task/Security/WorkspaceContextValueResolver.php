@@ -16,7 +16,7 @@ use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Uid\Uuid;
 
 #[AsTargetedValueResolver]
-final readonly class WorkspaceMembershipValueResolver implements ValueResolverInterface
+final readonly class WorkspaceContextValueResolver implements ValueResolverInterface
 {
     public function __construct(
         private WorkspaceAccess $workspaces,
@@ -25,7 +25,7 @@ final readonly class WorkspaceMembershipValueResolver implements ValueResolverIn
     }
 
     /**
-     * @return iterable<WorkspaceMembership>
+     * @return iterable<WorkspaceContext>
      */
     public function resolve(Request $request, ArgumentMetadata $argument): iterable
     {
@@ -42,6 +42,6 @@ final readonly class WorkspaceMembershipValueResolver implements ValueResolverIn
             throw new NotFoundHttpException(sprintf('Workspace "%s" not found.', $id));
         }
 
-        return [new WorkspaceMembership(Uuid::fromString($id), $role)];
+        return [new WorkspaceContext(Uuid::fromString($id), $role)];
     }
 }

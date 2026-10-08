@@ -13,7 +13,7 @@ use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 #[AsEventListener]
-final readonly class UnassignTasksOfSomeoneWhoCannotWork
+final readonly class UnassignTasksOfMember
 {
     public function __construct(
         private TaskRepository $tasks,

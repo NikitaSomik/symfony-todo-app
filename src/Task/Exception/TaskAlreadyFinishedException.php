@@ -7,7 +7,7 @@ namespace App\Task\Exception;
 use App\Shared\Http\ClientFacingException;
 use App\Task\Enum\TaskStatus;
 
-final class FinishedTaskAssigneeException extends \DomainException implements ClientFacingException
+final class TaskAlreadyFinishedException extends \DomainException implements ClientFacingException
 {
     public function __construct(TaskStatus $status)
     {

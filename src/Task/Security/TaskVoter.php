@@ -13,7 +13,7 @@ use Symfony\Component\Security\Core\Authorization\Voter\Vote;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 
 /**
- * @extends Voter<string, Task|WorkspaceMembership>
+ * @extends Voter<string, Task|WorkspaceContext>
  */
 final class TaskVoter extends Voter
 {
@@ -26,7 +26,7 @@ final class TaskVoter extends Voter
 
     protected function supports(string $attribute, mixed $subject): bool
     {
-        return self::WRITE === $attribute && ($subject instanceof Task || $subject instanceof WorkspaceMembership);
+        return self::WRITE === $attribute && ($subject instanceof Task || $subject instanceof WorkspaceContext);
     }
 
     protected function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token, ?Vote $vote = null): bool

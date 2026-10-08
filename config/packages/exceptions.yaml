@@ -11,7 +11,7 @@ framework:
         App\Task\Exception\AssigneeCannotWorkException:
             status_code: 422
             log_level: info
-        App\Task\Exception\FinishedTaskAssigneeException:
+        App\Task\Exception\TaskAlreadyFinishedException:
             status_code: 409
             log_level: info
         App\Task\Exception\TaskTransitionNotAllowedException:

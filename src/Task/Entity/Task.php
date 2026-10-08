@@ -6,7 +6,7 @@ namespace App\Task\Entity;
 
 use App\Task\Enum\TaskStatus;
 use App\Task\Enum\TaskTransition;
-use App\Task\Exception\FinishedTaskAssigneeException;
+use App\Task\Exception\TaskAlreadyFinishedException;
 use App\Task\Exception\TaskTransitionNotAllowedException;
 use App\Task\Repository\TaskRepository;
 use App\Task\ValueObject\BlockReason;
@@ -251,7 +251,7 @@ class Task
     private function changeAssignee(?int $userId): void
     {
         if ($this->status->isFinal()) {
-            throw new FinishedTaskAssigneeException($this->status);
+            throw new TaskAlreadyFinishedException($this->status);
         }
 
         $this->assigneeId = $userId;
