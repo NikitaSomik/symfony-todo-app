@@ -26,8 +26,9 @@ being able to work on them.
 - **A finished task keeps its assignee.** Once a task is completed or cancelled, who held
   it is history; changing it answers `409`.
 - **Someone who can no longer work is taken off their unfinished tasks.** `Workspace`
-  announces `Contract\MembershipChanged` when a member is removed, leaves or gets another
-  role; `Task` listens, in the same transaction, with an audit entry per task in the name
+  announces `Contract\MembershipEnded` when a member is removed or leaves, and
+  `Contract\MemberPermissionsChanged` when one gets another role; `Task` listens to both,
+  in the same transaction, with an audit entry per task in the name
   of whoever caused the change.
 - **Those tasks go to nobody.** They are left without an assignee, in the status they
   had.

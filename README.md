@@ -19,6 +19,9 @@ The rules it enforces now:
   nobody else can read it, change it, or learn that it exists
   ([0020](docs/adr/0020-a-task-belongs-to-a-workspace.md),
   [0011](docs/adr/0011-foreign-task-answers-404.md)).
+- **A role is a set of permissions.** An owner manages the workspace, works on tasks and
+  deletes them; a member works on them; a viewer reads. Code asks for the permission,
+  never for the role, and someone outside the workspace simply has none ([0022](docs/adr/0022-code-asks-for-a-permission.md)).
 - **A task is held by someone who can work on it.** It is assigned to an owner or a
   member, never to a viewer, and whoever leaves, is removed or becomes a viewer is taken
   off their unfinished tasks; work is handed over to someone else in one request
@@ -43,9 +46,8 @@ The rules it enforces now:
   always at least one owner, and every user starts with a personal one
   ([0019](docs/adr/0019-workspaces-members-and-roles.md)).
 
-What comes next ([roadmap](docs/roadmap.md)): each role gets its own rights and everyone
-a list of their own tasks; then limits on work in progress and deadlines with
-consequences.
+What comes next ([roadmap](docs/roadmap.md)): review by someone other than the assignee
+and a limit on work in progress; then deadlines with consequences.
 
 ## Where to look
 
@@ -58,6 +60,7 @@ consequences.
 | What is logged? | Per request: buffered quietly, written on failure, tagged with request and user ids | [0009](docs/adr/0009-production-logging.md) |
 | What may modules know about each other? | A module's `Contract/` namespace, ids instead of entities, events to break a cycle — checked by Deptrac | [0018](docs/adr/0018-modules-meet-through-contracts.md) |
 | Who reaches a task? | The members of its workspace; a viewer only reads; anyone else gets `404`, exactly like for a missing task | [0020](docs/adr/0020-a-task-belongs-to-a-workspace.md), [0011](docs/adr/0011-foreign-task-answers-404.md) |
+| Who may do what? | A role is a set of permissions, kept in one table in code; roles stored in a database were weighed | [0022](docs/adr/0022-code-asks-for-a-permission.md) |
 | Can the audit log disagree with the data? | No: it is written in the same transaction, one flush per use case | [0012](docs/adr/0012-synchronous-audit-log-one-transaction.md) |
 | Why a stored `tsvector` column for search? | Because results are ranked — measured against an expression index on a million tasks | [0013](docs/adr/0013-task-search-postgresql-full-text.md) |
 | Who decides which status may follow which? | The `Task` entity; Symfony Workflow was built on a branch and compared | [0014](docs/adr/0014-task-status-changed-as-part-of-an-update.md) → [0015](docs/adr/0015-task-lifecycle-as-explicit-transitions.md) |

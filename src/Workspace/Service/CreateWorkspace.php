@@ -28,7 +28,11 @@ final readonly class CreateWorkspace
             $workspace = new Workspace(Uuid::v7(), $name, $this->users->reference($ownerId), $this->clock->now());
             $this->em->persist($workspace);
 
-            $this->eventDispatcher->dispatch(new WorkspaceCreated($workspace->getId()->toRfc4122(), $workspace->getName(), $ownerId));
+            $this->eventDispatcher->dispatch(new WorkspaceCreated(
+                workspaceId: $workspace->getId()->toRfc4122(),
+                name: $workspace->getName(),
+                actorId: $ownerId,
+            ));
 
             return $workspace;
         });

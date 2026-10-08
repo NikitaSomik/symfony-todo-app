@@ -6,8 +6,8 @@ namespace App\Fixtures\Workspace;
 
 use App\Auth\Entity\User;
 use App\Fixtures\Auth\UserFactory;
-use App\Workspace\Contract\WorkspaceRole;
 use App\Workspace\Entity\Workspace;
+use App\Workspace\Enum\WorkspaceRole;
 use Symfony\Component\Uid\Uuid;
 use Zenstruck\Foundry\Persistence\PersistentObjectFactory;
 

@@ -9,7 +9,7 @@ use App\Task\Entity\Task;
 use App\Task\Event\TaskUpdated;
 use App\Task\Exception\AssigneeCannotWorkException;
 use App\Workspace\Contract\WorkspaceAccess;
-use App\Workspace\Contract\WorkspaceRole;
+use App\Workspace\Contract\WorkspacePermission;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
@@ -24,9 +24,7 @@ final readonly class AssignTask
 
     public function handle(Task $task, int $assigneeId, int $actorId): Task
     {
-        $role = $this->workspaces->roleOf($task->getWorkspaceId(), $assigneeId);
-
-        if (null === $role || WorkspaceRole::VIEWER === $role) {
+        if (!$this->workspaces->can($task->getWorkspaceId(), $assigneeId, WorkspacePermission::WORK_ON_TASKS)) {
             throw new AssigneeCannotWorkException();
         }
 

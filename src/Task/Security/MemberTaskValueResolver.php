@@ -8,6 +8,7 @@ use App\Auth\Contract\AuthenticatedUser;
 use App\Task\Entity\Task;
 use App\Task\Repository\TaskRepository;
 use App\Workspace\Contract\WorkspaceAccess;
+use App\Workspace\Contract\WorkspacePermission;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Attribute\AsTargetedValueResolver;
@@ -51,7 +52,7 @@ final readonly class MemberTaskValueResolver implements ValueResolverInterface
         $id = (string) $request->attributes->get('id');
         $task = Uuid::isValid($id) ? $this->taskRepository->find(Uuid::fromString($id)) : null;
 
-        if (null === $task || null === $this->workspaces->roleOf($task->getWorkspaceId(), $user->id())) {
+        if (null === $task || !$this->workspaces->can($task->getWorkspaceId(), $user->id(), WorkspacePermission::VIEW)) {
             throw new NotFoundHttpException(sprintf('Task "%s" not found.', $id));
         }
 

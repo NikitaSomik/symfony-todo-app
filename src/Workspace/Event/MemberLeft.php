@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Workspace\Event;
 
-use App\Workspace\Contract\WorkspaceRole;
+use App\Workspace\Enum\WorkspaceRole;
 
 final readonly class MemberLeft
 {

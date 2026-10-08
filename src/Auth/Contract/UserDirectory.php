@@ -8,5 +8,5 @@ interface UserDirectory
 {
     public function findIdByEmail(string $email): ?int;
 
-    public function reference(int $id): AuthenticatedUser;
+    public function reference(int $id): UserReference;
 }

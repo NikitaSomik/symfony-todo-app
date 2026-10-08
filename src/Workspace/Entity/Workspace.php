@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace App\Workspace\Entity;
 
-use App\Auth\Contract\AuthenticatedUser;
+use App\Auth\Contract\UserReference;
+use App\Workspace\Contract\WorkspacePermission;
 use App\Workspace\Contract\WorkspaceReference;
-use App\Workspace\Contract\WorkspaceRole;
+use App\Workspace\Enum\WorkspaceRole;
 use App\Workspace\Exception\LastOwnerException;
 use App\Workspace\Exception\MemberAlreadyExistsException;
 use App\Workspace\Exception\MemberNotFoundException;
@@ -39,7 +40,7 @@ class Workspace implements WorkspaceReference
     #[ORM\OrderBy(['joinedAt' => 'ASC', 'id' => 'ASC'])]
     private Collection $members;
 
-    public function __construct(Uuid $id, string $name, AuthenticatedUser $owner, \DateTimeImmutable $at)
+    public function __construct(Uuid $id, string $name, UserReference $owner, \DateTimeImmutable $at)
     {
         $this->id = $id;
         $this->name = trim($name);
@@ -78,7 +79,14 @@ class Workspace implements WorkspaceReference
         return $this->membershipOf($userId)?->getRole();
     }
 
-    public function addMember(AuthenticatedUser $user, WorkspaceRole $role, \DateTimeImmutable $at): Membership
+    public function memberCan(int $userId, WorkspacePermission $permission): bool
+    {
+        $role = $this->roleOf($userId);
+
+        return null !== $role && $role->can($permission);
+    }
+
+    public function addMember(UserReference $user, WorkspaceRole $role, \DateTimeImmutable $at): Membership
     {
         if (null !== $this->membershipOf($user->id())) {
             throw new MemberAlreadyExistsException();

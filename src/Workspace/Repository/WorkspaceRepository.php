@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace App\Workspace\Repository;
 
 use App\Workspace\Contract\WorkspaceAccess;
+use App\Workspace\Contract\WorkspacePermission;
 use App\Workspace\Contract\WorkspaceReference;
-use App\Workspace\Contract\WorkspaceRole;
 use App\Workspace\Entity\Membership;
 use App\Workspace\Entity\Workspace;
+use App\Workspace\Enum\WorkspaceRole;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\AbstractQuery;
 use Doctrine\Persistence\ManagerRegistry;
@@ -52,7 +53,7 @@ final class WorkspaceRepository extends ServiceEntityRepository implements Works
             ->getOneOrNullResult();
     }
 
-    public function roleOf(Uuid $workspaceId, int $userId): ?WorkspaceRole
+    private function findRole(Uuid $workspaceId, int $userId): ?WorkspaceRole
     {
         $role = $this->getEntityManager()->createQueryBuilder()
             ->select('m.role')
@@ -65,6 +66,18 @@ final class WorkspaceRepository extends ServiceEntityRepository implements Works
             ->getOneOrNullResult(AbstractQuery::HYDRATE_SINGLE_SCALAR);
 
         return null === $role ? null : WorkspaceRole::from($role);
+    }
+
+    public function permissionsOf(Uuid $workspaceId, int $userId): array
+    {
+        $role = $this->findRole($workspaceId, $userId);
+
+        return null === $role ? [] : $role->permissions();
+    }
+
+    public function can(Uuid $workspaceId, int $userId, WorkspacePermission $permission): bool
+    {
+        return in_array($permission, $this->permissionsOf($workspaceId, $userId), true);
     }
 
     public function reference(Uuid $workspaceId): WorkspaceReference

@@ -123,7 +123,7 @@ final class WorkspaceTaskController extends AbstractController
         #[CurrentUser]
         AuthenticatedUser $user,
     ): JsonResponse {
-        $tasks = $this->reassignTasks->handle($context->workspaceId, $dto->from, $dto->to, $user->id());
+        $tasks = $this->reassignTasks->handle($context->workspaceId, fromUserId: $dto->from, toUserId: $dto->to, actorId: $user->id());
 
         return JsonApiResponse::collection(new ResourceCollection(items: $this->taskResource->toItems($tasks)));
     }

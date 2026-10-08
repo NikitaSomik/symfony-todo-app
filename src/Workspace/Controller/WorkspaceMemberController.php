@@ -94,7 +94,7 @@ final class WorkspaceMemberController extends AbstractController
     #[OA\Response(ref: '#/components/responses/ValidationError', response: 422)]
     public function changeRole(int $userId, #[MapRequestPayload(acceptFormat: 'json')] ChangeMemberRoleDTO $dto, #[ValueResolver(MemberWorkspaceValueResolver::class)] Workspace $workspace, #[CurrentUser] AuthenticatedUser $user): JsonResponse
     {
-        $membership = $this->changeMemberRole->handle($workspace, $userId, $dto->role(), $user->id());
+        $membership = $this->changeMemberRole->handle($workspace, userId: $userId, role: $dto->role(), actorId: $user->id());
 
         return JsonApiResponse::one($this->memberResource->toItem($membership));
     }
@@ -108,7 +108,7 @@ final class WorkspaceMemberController extends AbstractController
     #[OA\Response(response: 409, description: 'An owner cannot remove themselves')]
     public function remove(int $userId, #[ValueResolver(MemberWorkspaceValueResolver::class)] Workspace $workspace, #[CurrentUser] AuthenticatedUser $user): Response
     {
-        $this->removeMember->handle($workspace, $userId, $user->id());
+        $this->removeMember->handle($workspace, userId: $userId, actorId: $user->id());
 
         return JsonApiResponse::noContent();
     }

@@ -2,31 +2,25 @@
 
 declare(strict_types=1);
 
-namespace App\Workspace\Security;
+namespace App\Task\Security;
 
-use App\Auth\Contract\AuthenticatedUser;
 use App\Workspace\Contract\WorkspacePermission;
-use App\Workspace\Entity\Workspace;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Vote;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 
 /**
- * @extends Voter<string, Workspace>
+ * @extends Voter<string, WorkspaceContext>
  */
-final class WorkspaceVoter extends Voter
+final class WorkspaceTaskVoter extends Voter
 {
-    public const string MANAGE = 'WORKSPACE_MANAGE';
-
     protected function supports(string $attribute, mixed $subject): bool
     {
-        return self::MANAGE === $attribute && $subject instanceof Workspace;
+        return TaskVoter::WRITE === $attribute && $subject instanceof WorkspaceContext;
     }
 
     protected function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token, ?Vote $vote = null): bool
     {
-        $user = $token->getUser();
-
-        return $user instanceof AuthenticatedUser && $subject->memberCan($user->id(), WorkspacePermission::MANAGE_WORKSPACE);
+        return $subject->userCan(WorkspacePermission::WORK_ON_TASKS);
     }
 }

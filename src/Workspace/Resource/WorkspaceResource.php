@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Workspace\Resource;
 
 use App\Shared\Api\ResourceItem;
-use App\Workspace\Contract\WorkspaceRole;
 use App\Workspace\Entity\Workspace;
+use App\Workspace\Enum\WorkspaceRole;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
