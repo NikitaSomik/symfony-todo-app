@@ -79,7 +79,7 @@ final class TaskFactory extends PersistentObjectFactory
             $workspace = $attributes['workspace'];
             \assert($workspace instanceof Workspace);
 
-            $task = new Task(Uuid::v7(), $workspace, $attributes['creatorId'] ?? $workspace->getMembers()[0]->getUserId());
+            $task = new Task(id: Uuid::v7(), workspaceId: $workspace->getId(), creatorId: $attributes['creatorId'] ?? $workspace->getMembers()[0]->getUserId());
             $task->setTitle($attributes['title']);
             $task->setDescription($attributes['description']);
             $task->setDueDate($attributes['dueDate']);

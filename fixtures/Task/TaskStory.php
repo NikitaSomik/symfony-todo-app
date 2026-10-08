@@ -29,7 +29,7 @@ final class TaskStory extends Story
         while (true) {
             /** @var list<array{id: int, workspaceId: string, userId: int}> $owners */
             $owners = $this->em->createQuery(
-                'SELECT m.id, IDENTITY(m.workspace) AS workspaceId, IDENTITY(m.user) AS userId FROM '.Membership::class.' m WHERE m.role = :owner AND m.id > :lastId ORDER BY m.id ASC'
+                'SELECT m.id, IDENTITY(m.workspace) AS workspaceId, m.userId FROM '.Membership::class.' m WHERE m.role = :owner AND m.id > :lastId ORDER BY m.id ASC'
             )
                 ->setParameter('owner', WorkspaceRole::OWNER)
                 ->setParameter('lastId', $lastId)

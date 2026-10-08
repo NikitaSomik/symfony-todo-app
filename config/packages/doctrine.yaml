@@ -17,9 +17,6 @@ doctrine:
         identity_generation_preferences:
             Doctrine\DBAL\Platforms\PostgreSQLPlatform: identity
         auto_mapping: true
-        resolve_target_entities:
-            App\Auth\Contract\UserReference: App\Auth\Entity\User
-            App\Workspace\Contract\WorkspaceReference: App\Workspace\Entity\Workspace
         # Only entity directories: the rest of src/ holds code that must not be reflected
         # in prod, e.g. fixtures built on dev-only packages.
         mappings:

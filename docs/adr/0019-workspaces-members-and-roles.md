@@ -65,7 +65,9 @@ moved the boards people had kept personally into workspaces when it made that ru
   Nothing locks the workspace yet; a version column on it would.
 - A user who is a member of a workspace cannot be deleted: the foreign key refuses it
   ([0018](0018-modules-meet-through-contracts.md)). Nothing deletes users today; archiving
-  workspaces and deactivating users is a later stage.
+  workspaces and deactivating users is a later stage. Since #82 that key is gone, and
+  nothing in the database stops such a deletion: whatever removes a user will have to end
+  their memberships.
 - A workspace loads all its members to answer who may do what. Fine for teams of this
   size; a workspace with thousands of members would need the role read by a query.
 - The fixtures give every user a personal workspace and every tenth one a team; the

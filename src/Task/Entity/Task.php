@@ -11,7 +11,6 @@ use App\Task\Exception\TaskTransitionNotAllowedException;
 use App\Task\Repository\TaskRepository;
 use App\Task\ValueObject\BlockReason;
 use App\Task\ValueObject\CancellationReason;
-use App\Workspace\Contract\WorkspaceReference;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -89,9 +88,8 @@ class Task
     )]
     private ?string $searchVector = null;
 
-    #[ORM\ManyToOne(targetEntity: WorkspaceReference::class)]
-    #[ORM\JoinColumn(nullable: false)]
-    private WorkspaceReference $workspace; // @phpstan-ignore doctrine.associationType
+    #[ORM\Column(type: UuidType::NAME)]
+    private Uuid $workspaceId;
 
     #[ORM\Column]
     private int $creatorId;
@@ -108,10 +106,10 @@ class Task
     #[ORM\OneToMany(targetEntity: TaskStatusChange::class, mappedBy: 'task', cascade: ['persist'], fetch: 'EXTRA_LAZY')]
     private Collection $statusChanges;
 
-    public function __construct(Uuid $id, WorkspaceReference $workspace, int $creatorId)
+    public function __construct(Uuid $id, Uuid $workspaceId, int $creatorId)
     {
         $this->id = $id;
-        $this->workspace = $workspace;
+        $this->workspaceId = $workspaceId;
         $this->creatorId = $creatorId;
         $this->statusChanges = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable();
@@ -259,7 +257,7 @@ class Task
 
     public function getWorkspaceId(): Uuid
     {
-        return $this->workspace->getId();
+        return $this->workspaceId;
     }
 
     public function getCreatorId(): int

@@ -40,6 +40,8 @@ touched, not for its own sake.
   `Auth\Contract\AuthenticatedUser`, and Doctrine's `resolve_target_entities` names the
   entity behind it. A record that has to outlive its parent holds a plain id and has no
   key: an audit record states a fact ([0017](0017-audit-log-as-its-own-module.md)).
+  *Withdrawn on 2026-10-08, in #82: no foreign key crosses modules any more — see the
+  last consequence.*
 
 ## Alternatives considered
 
@@ -87,3 +89,17 @@ touched, not for its own sake.
   no planned work changes that.
 - Registration now flushes twice in one transaction: the event carries the user's id,
   and the id comes from the database.
+- Since #82 the rule is one line: between modules an id, and a foreign key only inside a
+  module. `Membership` holds `int $userId` and `Task` holds `Uuid $workspaceId`; the keys
+  `workspace_members.user_id → users` and `tasks.workspace_id → workspaces` are dropped.
+  The relation existed only to produce the key, and its object offered nothing but an
+  id. It cost two interfaces (`UserReference`, `WorkspaceReference`), a `reference()`
+  method on two contracts, two `resolve_target_entities` lines and two ignored PHPStan
+  errors — all removed, so the first three consequences above no longer hold, and DQL
+  cannot join into another module through a relation because there is none. The price:
+  the database no longer refuses a membership of a user that does not exist or a task in
+  a workspace that does not exist. The application does: a member is added by an email
+  looked up through `UserDirectory`, and a task is created only after the caller's
+  permissions in the workspace were found. Nothing deletes a user or a workspace today;
+  when something does, it has to announce it through a contract event, as the end of a
+  membership already is.

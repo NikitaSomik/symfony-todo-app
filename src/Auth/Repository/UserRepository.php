@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Auth\Repository;
 
 use App\Auth\Contract\UserDirectory;
-use App\Auth\Contract\UserReference;
 use App\Auth\Entity\User;
 use App\Auth\ValueObject\Email;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -39,13 +38,5 @@ class UserRepository extends ServiceEntityRepository implements UserLoaderInterf
             ->getOneOrNullResult(AbstractQuery::HYDRATE_SINGLE_SCALAR);
 
         return null === $id ? null : (int) $id;
-    }
-
-    public function reference(int $id): UserReference
-    {
-        /** @var User $user */
-        $user = $this->getEntityManager()->getReference(User::class, $id);
-
-        return $user;
     }
 }

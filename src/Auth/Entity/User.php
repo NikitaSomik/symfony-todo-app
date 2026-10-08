@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Auth\Entity;
 
 use App\Auth\Contract\AuthenticatedUser;
-use App\Auth\Contract\UserReference;
 use App\Auth\Repository\UserRepository;
 use App\Auth\ValueObject\Email;
 use Doctrine\DBAL\Types\Types;
@@ -17,7 +16,7 @@ use Symfony\Component\Security\Core\User\UserInterface;
 #[ORM\Table(name: 'users')]
 #[ORM\UniqueConstraint(name: 'uniq_users_email', columns: ['email'])]
 #[ORM\HasLifecycleCallbacks]
-class User implements UserInterface, PasswordAuthenticatedUserInterface, AuthenticatedUser, UserReference
+class User implements UserInterface, PasswordAuthenticatedUserInterface, AuthenticatedUser
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]

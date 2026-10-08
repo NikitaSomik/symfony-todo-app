@@ -65,3 +65,7 @@ user.
   measurements of [0013](0013-task-search-postgresql-full-text.md) were taken per number
   of tasks sharing that filter, and a team's workspace holds more tasks than one user did.
 - The development database is recreated with `make db-fresh`.
+- Since #82 a task holds its workspace as a plain `workspace_id`, without a relation and
+  without a foreign key ([0018](0018-modules-meet-through-contracts.md)). That the
+  workspace exists is checked where the task is created: the caller must have
+  permissions in it.

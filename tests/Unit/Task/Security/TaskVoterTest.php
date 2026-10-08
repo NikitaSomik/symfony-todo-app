@@ -7,7 +7,6 @@ namespace App\Tests\Unit\Task\Security;
 use App\Task\Entity\Task;
 use App\Task\Security\TaskVoter;
 use App\Workspace\Contract\WorkspaceAccess;
-use App\Workspace\Contract\WorkspaceReference;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Security\Core\Authentication\Token\NullToken;
@@ -25,14 +24,7 @@ final class TaskVoterTest extends TestCase
     {
         $voter = new TaskVoter($this->createStub(WorkspaceAccess::class));
 
-        $workspace = new class implements WorkspaceReference {
-            public function getId(): Uuid
-            {
-                return Uuid::v7();
-            }
-        };
-
-        $vote = $voter->vote(new NullToken(), new Task(Uuid::v7(), $workspace, 1), [TaskVoter::WRITE]);
+        $vote = $voter->vote(new NullToken(), new Task(id: Uuid::v7(), workspaceId: Uuid::v7(), creatorId: 1), [TaskVoter::WRITE]);
 
         self::assertSame(VoterInterface::ACCESS_DENIED, $vote);
     }
