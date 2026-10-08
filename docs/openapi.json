@@ -964,6 +964,65 @@
                 }
             }
         },
+        "/api/v1/workspaces/{id}/tasks/reassign": {
+            "post": {
+                "tags": [
+                    "Tasks"
+                ],
+                "summary": "Hand the unfinished tasks of one user over to another",
+                "description": "Owners and members only. Completed and cancelled tasks keep their assignee.",
+                "operationId": "post_api_workspace_task_reassign",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ReassignTasksDTO"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The tasks that changed hands",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TaskCollectionResponseSchema"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user is a viewer in the workspace"
+                    },
+                    "415": {
+                        "description": "Body is not sent as application/json"
+                    },
+                    "422": {
+                        "description": "Invalid body, or the user named in `to` cannot work in the workspace"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    },
+                    "404": {
+                        "description": "Workspace not found, or the user is not a member of it"
+                    }
+                }
+            }
+        },
         "/api/v1/workspaces": {
             "get": {
                 "tags": [
@@ -1636,6 +1695,29 @@
                         "example": "2026-04-01",
                         "nullable": true,
                         "default": null
+                    }
+                },
+                "type": "object"
+            },
+            "ReassignTasksDTO": {
+                "required": [
+                    "from",
+                    "to"
+                ],
+                "properties": {
+                    "from": {
+                        "description": "Id of the user whose unfinished tasks are handed over",
+                        "type": "integer",
+                        "example": 5,
+                        "minimum": 0,
+                        "exclusiveMinimum": true
+                    },
+                    "to": {
+                        "description": "Id of the owner or member who takes them",
+                        "type": "integer",
+                        "example": 7,
+                        "minimum": 0,
+                        "exclusiveMinimum": true
                     }
                 },
                 "type": "object"

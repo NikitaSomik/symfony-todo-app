@@ -21,7 +21,7 @@ The rules it enforces now:
   [0011](docs/adr/0011-foreign-task-answers-404.md)).
 - **A task is held by someone who can work on it.** It is assigned to an owner or a
   member, never to a viewer, and whoever leaves, is removed or becomes a viewer is taken
-  off their unfinished tasks
+  off their unfinished tasks; work is handed over to someone else in one request
   ([0021](docs/adr/0021-a-task-has-an-assignee-who-can-work.md)).
 - **Work moves one way:** to do → in progress → in review → completed. Finished work stays
   finished — a completed or cancelled task cannot be reopened

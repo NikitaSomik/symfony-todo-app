@@ -27,8 +27,14 @@ being able to work on them.
   it is history; changing it answers `409`.
 - **Someone who can no longer work is taken off their unfinished tasks.** `Workspace`
   announces `Contract\MembershipChanged` when a member is removed, leaves or gets another
-  role; `Task` listens and unassigns, in the same transaction, with an audit entry per
-  task in the name of whoever caused the change.
+  role; `Task` listens, in the same transaction, with an audit entry per task in the name
+  of whoever caused the change.
+- **Those tasks go to nobody.** They are left without an assignee, in the status they
+  had.
+- **Handing work over is an action of its own.** `POST /workspaces/{id}/tasks/reassign`
+  moves the unfinished tasks of one user to another who can work. Anyone who may change a
+  task may do it: a member can already reassign every task one by one, so doing it in one
+  request gives no new power.
 
 ## Alternatives considered
 
@@ -37,6 +43,15 @@ being able to work on them.
   removal is usually urgent.
 - **Leave the tasks assigned.** No code, and tasks stay with someone who cannot open them
   until somebody notices.
+- **Give the tasks to whoever removed the member.** Always someone responsible; an owner
+  would collect work they will not do, with every removal.
+- **Give them back to their creator.** The creator may be the one leaving, or a viewer.
+- **Name the successor while removing a member** (`DELETE …/members/5?reassign_to=7`).
+  Built first, and atomic. But a query parameter carried a command, an endpoint of
+  `Workspace` changed tasks, and handing work over existed only as a side effect of a
+  removal — not for a holiday or a demotion.
+- **Hand over in bulk for owners only.** It would look like a restriction and be none,
+  while a member may reassign each task by hand.
 - **Let a viewer be an assignee.** One rule fewer. The task would be held by the one
   member who is not allowed to move it.
 - **The assignee as a field of the task update.** One endpoint fewer. `PUT /tasks/{id}`
@@ -61,5 +76,12 @@ being able to work on them.
 - A finished task can name an assignee who has since left the workspace. A list of "my
   tasks" has to check membership, not only the assignee.
 - Getting the role back does not bring the tasks back.
+- A task in progress can be left with nobody working on it. Its status says how far the
+  work got, not who does it, so it stays; such tasks have to be found, and a filter for
+  tasks without an assignee is the next step.
+- Handing over and removing are two requests. A task assigned in between is not handed
+  over; the removal leaves it without an assignee, so it is not lost.
+- Accounts cannot be deactivated yet. When they can, a deactivated user has to be taken
+  off unfinished tasks the same way.
 - A task cannot be created with an assignee, and tasks cannot be filtered by assignee
   yet.

@@ -56,6 +56,11 @@ final class TaskAssigneeTest extends ApiTestCase
         return $data['relationships']['assignee']['data']['id'] ?? null;
     }
 
+    private function reassign(?Workspace $workspace = null): string
+    {
+        return $this->route('api_workspace_task_reassign', ['id' => ($workspace ?? $this->workspace)->getId()->toRfc4122()]);
+    }
+
     private function member(User $user): string
     {
         return $this->route('api_workspace_member_remove', ['id' => $this->workspace->getId()->toRfc4122(), 'userId' => $user->id()]);
@@ -200,6 +205,89 @@ final class TaskAssigneeTest extends ApiTestCase
         $auditLogs = static::getContainer()->get(AuditLogRepository::class)->findForEntity(AuditLogEntityType::TASK, $inProgress->getId()->toRfc4122());
         self::assertSame($this->user->id(), $auditLogs[0]->getActorId());
         self::assertEquals(['old' => ['assignee_id' => $this->colleague->id()], 'new' => ['assignee_id' => null]], $auditLogs[0]->getAttributeChanges());
+    }
+
+    #[Test]
+    public function reassignShouldHandUnfinishedTasksOfOneMemberOverToAnother(): void
+    {
+        $inProgress = $this->task($this->colleague, TaskStatus::IN_PROGRESS);
+        $completed = $this->task($this->colleague, TaskStatus::COMPLETED);
+        $ofTheOwner = $this->task($this->user);
+        $elsewhere = $this->task($this->colleague, workspace: WorkspaceFactory::new()->withMembers([[$this->colleague, WorkspaceRole::MEMBER]])->create(['owner' => $this->user]));
+
+        $data = $this->jsonData($this->post($this->reassign(), ['from' => $this->colleague->id(), 'to' => $this->user->id()]));
+
+        self::assertResponseStatusCodeSame(200);
+        self::assertSame([$inProgress->getId()->toRfc4122()], array_column($data, 'id'));
+        self::assertSame((string) $this->user->id(), $this->assigneeOf($inProgress));
+        self::assertSame((string) $this->colleague->id(), $this->assigneeOf($completed));
+        self::assertSame((string) $this->user->id(), $this->assigneeOf($ofTheOwner));
+        self::assertSame((string) $this->colleague->id(), $this->assigneeOf($elsewhere));
+
+        $auditLogs = static::getContainer()->get(AuditLogRepository::class)->findForEntity(AuditLogEntityType::TASK, $inProgress->getId()->toRfc4122());
+        self::assertSame($this->user->id(), $auditLogs[0]->getActorId());
+        self::assertEquals(['old' => ['assignee_id' => $this->colleague->id()], 'new' => ['assignee_id' => $this->user->id()]], $auditLogs[0]->getAttributeChanges());
+    }
+
+    #[Test]
+    public function memberShouldBeAbleToHandTasksOver(): void
+    {
+        $workspace = WorkspaceFactory::new()->withMembers([[$this->user, WorkspaceRole::MEMBER]])->create(['owner' => $this->colleague]);
+        $task = $this->task($this->user, workspace: $workspace);
+
+        $this->post($this->reassign($workspace), ['from' => $this->user->id(), 'to' => $this->colleague->id()]);
+
+        self::assertResponseStatusCodeSame(200);
+        self::assertSame((string) $this->colleague->id(), $this->assigneeOf($task));
+    }
+
+    #[Test]
+    public function reassignWhenNothingIsAssignedShouldChangeNothing(): void
+    {
+        $data = $this->jsonData($this->post($this->reassign(), ['from' => $this->colleague->id(), 'to' => $this->user->id()]));
+
+        self::assertResponseStatusCodeSame(200);
+        self::assertSame([], $data);
+    }
+
+    #[Test]
+    #[TestWith(['viewer'])]
+    #[TestWith(['stranger'])]
+    #[TestWith(['the same user'])]
+    public function tasksShouldBeHandedOverOnlyToSomeoneElseWhoCanWork(string $to): void
+    {
+        $viewer = UserFactory::createOne();
+        $workspace = WorkspaceFactory::new()
+            ->withMembers([[$this->colleague, WorkspaceRole::MEMBER], [$viewer, WorkspaceRole::VIEWER]])
+            ->create(['owner' => $this->user]);
+        $task = $this->task($this->colleague, workspace: $workspace);
+
+        $this->post($this->reassign($workspace), ['from' => $this->colleague->id(), 'to' => match ($to) {
+            'viewer' => $viewer->id(),
+            'stranger' => UserFactory::createOne()->id(),
+            'the same user' => $this->colleague->id(),
+        }]);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSame((string) $this->colleague->id(), $this->assigneeOf($task));
+    }
+
+    #[Test]
+    public function viewerShouldNotHandTasksOver(): void
+    {
+        $workspace = WorkspaceFactory::new()->withMembers([[$this->user, WorkspaceRole::VIEWER]])->create(['owner' => $this->colleague]);
+
+        $this->post($this->reassign($workspace), ['from' => $this->colleague->id(), 'to' => $this->colleague->id()]);
+
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    #[Test]
+    public function reassignInAWorkspaceOfStrangersShouldReturn404(): void
+    {
+        $this->post($this->reassign(WorkspaceFactory::createOne()), ['from' => $this->colleague->id(), 'to' => $this->user->id()]);
+
+        self::assertResponseStatusCodeSame(404);
     }
 
     #[Test]

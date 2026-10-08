@@ -9,10 +9,12 @@ use App\Shared\Api\Documentation\JsonApiContent;
 use App\Shared\Api\JsonApiResponse;
 use App\Shared\Api\PaginatedCollection;
 use App\Shared\Api\PaginationLinksBuilder;
+use App\Shared\Api\ResourceCollection;
 use App\Shared\Http\PageQueryDTO;
 use App\Task\Api\Documentation\TaskCollectionResponseSchema;
 use App\Task\Api\Documentation\TaskResponseSchema;
 use App\Task\DTO\CreateTaskDTO;
+use App\Task\DTO\ReassignTasksDTO;
 use App\Task\DTO\TaskListQueryDTO;
 use App\Task\Enum\TaskSortField;
 use App\Task\Enum\TaskStatus;
@@ -22,6 +24,7 @@ use App\Task\Security\TaskVoter;
 use App\Task\Security\WorkspaceMembership;
 use App\Task\Security\WorkspaceMembershipValueResolver;
 use App\Task\Service\CreateTask;
+use App\Task\Service\ReassignTasks;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -47,6 +50,7 @@ final class WorkspaceTaskController extends AbstractController
         private readonly TaskResource $taskResource,
         private readonly TaskRepository $taskRepository,
         private readonly CreateTask $createTask,
+        private readonly ReassignTasks $reassignTasks,
         private readonly PaginationLinksBuilder $paginationLinksBuilder,
     ) {
     }
@@ -101,5 +105,26 @@ final class WorkspaceTaskController extends AbstractController
             $this->taskResource->toItem($task),
             $this->generateUrl('api_task_get', ['id' => $task->getId()->toRfc4122()]),
         );
+    }
+
+    #[Route('/reassign', name: 'reassign', methods: ['POST'])]
+    #[IsGranted(TaskVoter::WRITE, subject: 'membership')]
+    #[OA\Post(summary: 'Hand the unfinished tasks of one user over to another', description: 'Owners and members only. Completed and cancelled tasks keep their assignee.')]
+    #[OA\RequestBody(required: true, content: new OA\JsonContent(ref: new Model(type: ReassignTasksDTO::class)))]
+    #[OA\Response(response: 200, description: 'The tasks that changed hands', content: new JsonApiContent(ref: new Model(type: TaskCollectionResponseSchema::class)))]
+    #[OA\Response(response: 403, description: 'The user is a viewer in the workspace')]
+    #[OA\Response(response: 415, description: 'Body is not sent as application/json')]
+    #[OA\Response(response: 422, description: 'Invalid body, or the user named in `to` cannot work in the workspace')]
+    public function reassign(
+        #[MapRequestPayload(acceptFormat: 'json')]
+        ReassignTasksDTO $dto,
+        #[ValueResolver(WorkspaceMembershipValueResolver::class)]
+        WorkspaceMembership $membership,
+        #[CurrentUser]
+        AuthenticatedUser $user,
+    ): JsonResponse {
+        $tasks = $this->reassignTasks->handle($membership->workspaceId, $dto->from, $dto->to, $user->id());
+
+        return JsonApiResponse::collection(new ResourceCollection(items: $this->taskResource->toItems($tasks)));
     }
 }
