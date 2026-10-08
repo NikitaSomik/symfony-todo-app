@@ -41,6 +41,7 @@ final class TaskAssigneeTest extends ApiTestCase
             'assigneeId' => $assignee?->id(),
             'status' => $status,
             'cancellationReason' => TaskStatus::CANCELLED === $status ? 'Outdated' : null,
+            'blockReason' => TaskStatus::BLOCKED === $status ? 'Waiting for access' : null,
         ]);
     }
 
@@ -59,6 +60,18 @@ final class TaskAssigneeTest extends ApiTestCase
     private function reassign(?Workspace $workspace = null): string
     {
         return $this->route('api_workspace_task_reassign', ['id' => ($workspace ?? $this->workspace)->getId()->toRfc4122()]);
+    }
+
+    /** @return list<array{old: array<string, mixed>, new: array<string, mixed>}> */
+    private function assigneeChanges(Task $task): array
+    {
+        $auditLogs = static::getContainer()->get(AuditLogRepository::class)->findForEntity(AuditLogEntityType::TASK, $task->getId()->toRfc4122());
+
+        return array_map(static function ($auditLog): array {
+            $changes = $auditLog->getAttributeChanges();
+
+            return ['old' => $changes['old'], 'new' => $changes['new']];
+        }, $auditLogs);
     }
 
     private function member(User $user): string
@@ -99,6 +112,57 @@ final class TaskAssigneeTest extends ApiTestCase
 
         self::assertResponseStatusCodeSame(200);
         self::assertSame((string) $this->user->id(), $this->assigneeOf($task));
+    }
+
+    #[Test]
+    public function assignShouldMoveATaskFromOneMemberToAnother(): void
+    {
+        $task = $this->task($this->colleague);
+
+        $this->put($this->assignee($task), ['user_id' => $this->user->id()]);
+
+        self::assertResponseStatusCodeSame(200);
+        self::assertSame((string) $this->user->id(), $this->assigneeOf($task));
+        self::assertEquals(
+            [['old' => ['assignee_id' => $this->colleague->id()], 'new' => ['assignee_id' => $this->user->id()]]],
+            $this->assigneeChanges($task),
+        );
+    }
+
+    #[Test]
+    #[TestWith([TaskStatus::IN_PROGRESS])]
+    #[TestWith([TaskStatus::IN_REVIEW])]
+    #[TestWith([TaskStatus::BLOCKED])]
+    public function taskThatIsNotFinishedShouldBeAssignableInAnyStatus(TaskStatus $status): void
+    {
+        $task = $this->task(status: $status);
+
+        $this->put($this->assignee($task), ['user_id' => $this->colleague->id()]);
+
+        self::assertResponseStatusCodeSame(200);
+        self::assertSame((string) $this->colleague->id(), $this->assigneeOf($task));
+    }
+
+    #[Test]
+    public function assignToTheSameMemberAgainShouldLeaveNoRecord(): void
+    {
+        $task = $this->task($this->colleague);
+
+        $this->put($this->assignee($task), ['user_id' => $this->colleague->id()]);
+
+        self::assertResponseStatusCodeSame(200);
+        self::assertSame([], $this->assigneeChanges($task));
+    }
+
+    #[Test]
+    public function unassignOfATaskNobodyHoldsShouldLeaveNoRecord(): void
+    {
+        $task = $this->task();
+
+        $this->delete($this->assignee($task));
+
+        self::assertResponseStatusCodeSame(200);
+        self::assertSame([], $this->assigneeChanges($task));
     }
 
     #[Test]
@@ -149,6 +213,10 @@ final class TaskAssigneeTest extends ApiTestCase
 
         self::assertResponseStatusCodeSame(200);
         self::assertNull($data['relationships']['assignee']['data']);
+        self::assertEquals(
+            [['old' => ['assignee_id' => $this->colleague->id()], 'new' => ['assignee_id' => null]]],
+            $this->assigneeChanges($task),
+        );
     }
 
     #[Test]
@@ -193,14 +261,18 @@ final class TaskAssigneeTest extends ApiTestCase
     {
         $inProgress = $this->task($this->colleague, TaskStatus::IN_PROGRESS);
         $completed = $this->task($this->colleague, TaskStatus::COMPLETED);
+        $cancelled = $this->task($this->colleague, TaskStatus::CANCELLED);
         $ofTheOwner = $this->task($this->user);
+        $elsewhere = $this->task($this->colleague, workspace: WorkspaceFactory::new()->withMembers([[$this->colleague, WorkspaceRole::MEMBER]])->create(['owner' => $this->user]));
 
         $this->delete($this->member($this->colleague));
         self::assertResponseStatusCodeSame(204);
 
         self::assertNull($this->assigneeOf($inProgress));
         self::assertSame((string) $this->colleague->id(), $this->assigneeOf($completed));
+        self::assertSame((string) $this->colleague->id(), $this->assigneeOf($cancelled));
         self::assertSame((string) $this->user->id(), $this->assigneeOf($ofTheOwner));
+        self::assertSame((string) $this->colleague->id(), $this->assigneeOf($elsewhere));
 
         $auditLogs = static::getContainer()->get(AuditLogRepository::class)->findForEntity(AuditLogEntityType::TASK, $inProgress->getId()->toRfc4122());
         self::assertSame($this->user->id(), $auditLogs[0]->getActorId());
@@ -270,6 +342,33 @@ final class TaskAssigneeTest extends ApiTestCase
 
         self::assertResponseStatusCodeSame(422);
         self::assertSame((string) $this->colleague->id(), $this->assigneeOf($task));
+    }
+
+    #[Test]
+    #[TestWith([['from' => 5]])]
+    #[TestWith([['to' => 7]])]
+    #[TestWith([['from' => 0, 'to' => 7]])]
+    #[TestWith([['from' => 5, 'to' => 'someone']])]
+    public function reassignWithAnInvalidBodyShouldReturn422(array $body): void
+    {
+        $this->post($this->reassign(), $body);
+
+        self::assertResponseStatusCodeSame(422);
+    }
+
+    #[Test]
+    public function reassignShouldHandOverEverythingOrNothing(): void
+    {
+        $first = $this->task($this->colleague);
+        $second = $this->task($this->colleague, TaskStatus::IN_PROGRESS);
+        static::getContainer()->get(AuditLogFailureToggle::class)->enable();
+
+        $this->post($this->reassign(), ['from' => $this->colleague->id(), 'to' => $this->user->id()]);
+        self::assertResponseStatusCodeSame(500);
+
+        static::getContainer()->get(AuditLogFailureToggle::class)->disable();
+        self::assertSame((string) $this->colleague->id(), $this->assigneeOf($first));
+        self::assertSame((string) $this->colleague->id(), $this->assigneeOf($second));
     }
 
     #[Test]
