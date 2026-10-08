@@ -8,7 +8,7 @@ use App\Task\AuditLog\TaskState;
 use App\Task\Event\TaskUpdated;
 use App\Task\Repository\TaskRepository;
 use App\Workspace\Contract\MembershipChanged;
-use App\Workspace\Contract\WorkspaceRole;
+use App\Workspace\Contract\WorkspacePermission;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
@@ -28,7 +28,7 @@ final readonly class UnassignTasksOfMember
      */
     public function __invoke(MembershipChanged $event): void
     {
-        if (null !== $event->role && WorkspaceRole::VIEWER !== $event->role) {
+        if ($event->userCan(WorkspacePermission::WORK_ON_TASKS)) {
             return;
         }
 

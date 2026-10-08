@@ -14,8 +14,8 @@ use App\Task\Entity\Task;
 use App\Task\Enum\TaskStatus;
 use App\Tests\ApiTestCase;
 use App\Tests\Support\AuditLogFailureToggle;
-use App\Workspace\Contract\WorkspaceRole;
 use App\Workspace\Entity\Workspace;
+use App\Workspace\Enum\WorkspaceRole;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 

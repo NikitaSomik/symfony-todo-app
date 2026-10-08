@@ -11,8 +11,8 @@ use App\Fixtures\Auth\UserFactory;
 use App\Fixtures\Task\TaskFactory;
 use App\Fixtures\Workspace\WorkspaceFactory;
 use App\Tests\ApiTestCase;
-use App\Workspace\Contract\WorkspaceRole;
 use App\Workspace\Entity\Workspace;
+use App\Workspace\Enum\WorkspaceRole;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 
@@ -149,6 +149,33 @@ final class TaskWorkspaceAccessTest extends ApiTestCase
 
         self::assertResponseStatusCodeSame(403);
         self::assertSame(['Buy milk'], $this->titles($this->tasksOf($workspace)));
+    }
+
+    #[Test]
+    public function memberShouldNotDeleteATask(): void
+    {
+        $task = TaskFactory::createOne(['workspace' => $this->workspaceWhereUserIs(WorkspaceRole::MEMBER)]);
+        $uri = $this->route('api_task_delete', ['id' => $task->getId()->toRfc4122()]);
+
+        $this->delete($uri);
+        self::assertResponseStatusCodeSame(403);
+
+        $this->get($uri);
+        self::assertResponseStatusCodeSame(200);
+    }
+
+    #[Test]
+    public function ownerShouldDeleteATaskSomeoneElseCreated(): void
+    {
+        $workspace = WorkspaceFactory::new()->withMembers([[$this->colleague, WorkspaceRole::MEMBER]])->create(['owner' => $this->user]);
+        $task = TaskFactory::createOne(['workspace' => $workspace, 'creatorId' => $this->colleague->id()]);
+        $uri = $this->route('api_task_delete', ['id' => $task->getId()->toRfc4122()]);
+
+        $this->delete($uri);
+        self::assertResponseStatusCodeSame(204);
+
+        $this->get($uri);
+        self::assertResponseStatusCodeSame(404);
     }
 
     #[Test]

@@ -9,13 +9,18 @@ use Symfony\Component\Uid\Uuid;
 final readonly class MembershipChanged
 {
     /**
-     * @param WorkspaceRole|null $role null when the user is no longer a member
+     * @param list<WorkspacePermission> $permissions what the user may do now; empty when they are no longer a member
      */
     public function __construct(
         public Uuid $workspaceId,
         public int $userId,
-        public ?WorkspaceRole $role,
+        public array $permissions,
         public int $actorId,
     ) {
+    }
+
+    public function userCan(WorkspacePermission $permission): bool
+    {
+        return \in_array($permission, $this->permissions, true);
     }
 }

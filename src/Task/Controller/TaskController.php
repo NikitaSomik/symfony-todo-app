@@ -97,11 +97,11 @@ final class TaskController extends AbstractController
     }
 
     #[Route('/{id}', name: 'delete', requirements: ['id' => Requirement::UUID_V7], methods: ['DELETE'])]
-    #[IsGranted(TaskVoter::WRITE, subject: 'task')]
-    #[OA\Delete(summary: 'Delete a task')]
+    #[IsGranted(TaskVoter::DELETE, subject: 'task')]
+    #[OA\Delete(summary: 'Delete a task', description: 'Owners only. A task that is no longer needed is cancelled, with a reason; deleting is for a task created by mistake.')]
     #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))]
     #[OA\Response(response: 204, description: 'Task deleted')]
-    #[OA\Response(response: 403, description: 'The user is a viewer in the workspace of the task')]
+    #[OA\Response(response: 403, description: 'The user is not an owner of the workspace of the task')]
     #[OA\Response(response: 404, description: 'Task not found, or the user is not a member of its workspace')]
     #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
     public function delete(#[ValueResolver(MemberTaskValueResolver::class)] Task $task, #[CurrentUser] AuthenticatedUser $user): Response

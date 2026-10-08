@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Workspace\Service;
 
 use App\Workspace\Contract\MembershipChanged;
-use App\Workspace\Contract\WorkspaceRole;
 use App\Workspace\Entity\Membership;
 use App\Workspace\Entity\Workspace;
+use App\Workspace\Enum\WorkspaceRole;
 use App\Workspace\Event\MemberRoleChanged;
 use App\Workspace\Exception\MemberNotFoundException;
 use Doctrine\ORM\EntityManagerInterface;
@@ -34,7 +34,7 @@ final readonly class ChangeMemberRole
 
             if ($previousRole !== $role) {
                 $this->eventDispatcher->dispatch(new MemberRoleChanged($workspace->getId()->toRfc4122(), $workspace->getName(), $userId, $previousRole, $role, $actorId));
-                $this->eventDispatcher->dispatch(new MembershipChanged($workspace->getId(), $userId, $role, $actorId));
+                $this->eventDispatcher->dispatch(new MembershipChanged($workspace->getId(), $userId, $role->permissions(), $actorId));
             }
 
             return $membership;

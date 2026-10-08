@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Workspace\Service;
 
 use App\Auth\Contract\UserDirectory;
-use App\Workspace\Contract\WorkspaceRole;
 use App\Workspace\Entity\Membership;
 use App\Workspace\Entity\Workspace;
+use App\Workspace\Enum\WorkspaceRole;
 use App\Workspace\Event\MemberAdded;
 use App\Workspace\Exception\MemberAlreadyExistsException;
 use App\Workspace\Exception\UserNotRegisteredException;

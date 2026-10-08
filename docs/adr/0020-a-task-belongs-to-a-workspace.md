@@ -58,9 +58,9 @@ user.
   removed, and with it a `TaskVoter`. It now tells a member what is not theirs to do; it
   never tells a stranger that a task exists.
 - A member who leaves a workspace loses the tasks they created there.
-- The rule "a viewer only reads" lives in `Task`, in the voter; `Workspace` only names the
-  roles. A member may still delete a task: who may do what beyond reading and writing is
-  the next step.
+- The rule "a viewer only reads" lived in `Task`, as a comparison of roles, and a member
+  could delete a task. Since #81 a role is a set of permissions kept in `Workspace`, and
+  deleting has its own ([0022](0022-code-asks-for-a-permission.md)).
 - Search is filtered by the workspace now, through `idx_tasks_workspace_id`. The
   measurements of [0013](0013-task-search-postgresql-full-text.md) were taken per number
   of tasks sharing that filter, and a team's workspace holds more tasks than one user did.

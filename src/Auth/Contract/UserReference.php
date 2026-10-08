@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Auth\Contract;
 
-interface AuthenticatedUser extends UserReference
+interface UserReference
 {
+    public function id(): int;
 }

@@ -10,7 +10,7 @@ use App\Task\Event\TaskUpdated;
 use App\Task\Exception\AssigneeCannotWorkException;
 use App\Task\Repository\TaskRepository;
 use App\Workspace\Contract\WorkspaceAccess;
-use App\Workspace\Contract\WorkspaceRole;
+use App\Workspace\Contract\WorkspacePermission;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Uid\Uuid;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
@@ -30,9 +30,7 @@ final readonly class ReassignTasks
      */
     public function handle(Uuid $workspaceId, int $fromUserId, int $toUserId, int $actorId): array
     {
-        $role = $this->workspaces->roleOf($workspaceId, $toUserId);
-
-        if (null === $role || WorkspaceRole::VIEWER === $role) {
+        if (!$this->workspaces->can($workspaceId, $toUserId, WorkspacePermission::WORK_ON_TASKS)) {
             throw new AssigneeCannotWorkException();
         }
 

@@ -6,6 +6,7 @@ namespace App\Task\Security;
 
 use App\Auth\Contract\AuthenticatedUser;
 use App\Workspace\Contract\WorkspaceAccess;
+use App\Workspace\Contract\WorkspacePermission;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Attribute\AsTargetedValueResolver;
@@ -36,12 +37,12 @@ final readonly class WorkspaceContextValueResolver implements ValueResolverInter
         }
 
         $id = (string) $request->attributes->get('id');
-        $role = Uuid::isValid($id) ? $this->workspaces->roleOf(Uuid::fromString($id), $user->id()) : null;
+        $permissions = Uuid::isValid($id) ? $this->workspaces->permissionsOf(Uuid::fromString($id), $user->id()) : [];
 
-        if (null === $role) {
+        if (!\in_array(WorkspacePermission::VIEW, $permissions, true)) {
             throw new NotFoundHttpException(sprintf('Workspace "%s" not found.', $id));
         }
 
-        return [new WorkspaceContext(Uuid::fromString($id), $role)];
+        return [new WorkspaceContext(Uuid::fromString($id), $permissions)];
     }
 }

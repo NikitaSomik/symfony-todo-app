@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Workspace\Entity;
 
-use App\Auth\Contract\AuthenticatedUser;
-use App\Workspace\Contract\WorkspaceRole;
+use App\Auth\Contract\UserReference;
 use App\Workspace\Entity\Workspace;
+use App\Workspace\Enum\WorkspaceRole;
 use App\Workspace\Exception\LastOwnerException;
 use App\Workspace\Exception\MemberAlreadyExistsException;
 use App\Workspace\Exception\MemberNotFoundException;
@@ -19,9 +19,9 @@ final class WorkspaceTest extends TestCase
     private const int OWNER = 1;
     private const int COLLEAGUE = 2;
 
-    private static function user(int $id): AuthenticatedUser
+    private static function user(int $id): UserReference
     {
-        return new readonly class($id) implements AuthenticatedUser {
+        return new readonly class($id) implements UserReference {
             public function __construct(private int $id)
             {
             }

@@ -167,6 +167,7 @@ Each decision, with the alternatives that lost and what it costs, is an
 - [x] `Task` keeps its creator as an id and uses `Auth` only through its contract
 - [x] `Task` in a workspace; access by membership, a viewer only reads ([ADR 0020](adr/0020-a-task-belongs-to-a-workspace.md))
 - [x] Assign a task to an owner or a member; losing the role takes unfinished tasks off them ([ADR 0021](adr/0021-a-task-has-an-assignee-who-can-work.md))
+- [x] Permissions instead of role comparisons; only an owner deletes a task ([ADR 0022](adr/0022-code-asks-for-a-permission.md))
 - [ ] Filter tasks by assignee, including nobody; a list of the tasks assigned to me
 - [ ] Projects inside a workspace
 

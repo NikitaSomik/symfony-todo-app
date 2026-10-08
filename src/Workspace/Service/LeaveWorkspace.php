@@ -24,7 +24,7 @@ final readonly class LeaveWorkspace
             $membership = $workspace->removeMember($userId);
 
             $this->eventDispatcher->dispatch(new MemberLeft($workspace->getId()->toRfc4122(), $workspace->getName(), $userId, $membership->getRole()));
-            $this->eventDispatcher->dispatch(new MembershipChanged($workspace->getId(), $userId, null, $userId));
+            $this->eventDispatcher->dispatch(new MembershipChanged($workspace->getId(), $userId, [], $userId));
         });
     }
 }

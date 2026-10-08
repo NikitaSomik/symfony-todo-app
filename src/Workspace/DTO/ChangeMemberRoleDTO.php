@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Workspace\DTO;
 
-use App\Workspace\Contract\WorkspaceRole;
+use App\Workspace\Enum\WorkspaceRole;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 use Symfony\Component\Validator\Constraints as Assert;

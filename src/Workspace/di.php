@@ -18,6 +18,7 @@ return static function (ContainerConfigurator $di): void {
                 __DIR__.'/Contract/',
                 __DIR__.'/DTO/',
                 __DIR__.'/Entity/',
+                __DIR__.'/Enum/',
                 __DIR__.'/{di,routing}.php',
             ]);
 

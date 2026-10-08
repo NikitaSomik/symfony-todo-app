@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Fixtures\Workspace;
 
 use App\Auth\Entity\User;
-use App\Workspace\Contract\WorkspaceRole;
+use App\Workspace\Enum\WorkspaceRole;
 use App\Workspace\Listener\CreatePersonalWorkspace;
 use Doctrine\ORM\EntityManagerInterface;
 use Zenstruck\Foundry\Story;

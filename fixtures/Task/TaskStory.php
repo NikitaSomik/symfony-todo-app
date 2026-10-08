@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Fixtures\Task;
 
-use App\Workspace\Contract\WorkspaceRole;
 use App\Workspace\Entity\Membership;
 use App\Workspace\Entity\Workspace;
+use App\Workspace\Enum\WorkspaceRole;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Uid\Uuid;
 use Zenstruck\Foundry\Story;
