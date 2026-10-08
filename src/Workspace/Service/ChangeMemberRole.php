@@ -34,7 +34,7 @@ final readonly class ChangeMemberRole
 
             if ($previousRole !== $role) {
                 $this->eventDispatcher->dispatch(new MemberRoleChanged($workspace->getId()->toRfc4122(), $workspace->getName(), $userId, $previousRole, $role, $actorId));
-                $this->eventDispatcher->dispatch(new MembershipChanged($workspace->getId(), $userId, $role->permissions(), $actorId));
+                $this->eventDispatcher->dispatch(MembershipChanged::roleChanged($workspace->getId(), $userId, $role->permissions(), $actorId));
             }
 
             return $membership;

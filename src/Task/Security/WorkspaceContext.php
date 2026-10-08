@@ -20,6 +20,6 @@ final readonly class WorkspaceContext
 
     public function userCan(WorkspacePermission $permission): bool
     {
-        return \in_array($permission, $this->permissions, true);
+        return in_array($permission, $this->permissions, true);
     }
 }

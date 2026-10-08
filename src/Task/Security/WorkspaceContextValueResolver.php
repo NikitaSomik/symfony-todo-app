@@ -39,7 +39,7 @@ final readonly class WorkspaceContextValueResolver implements ValueResolverInter
         $id = (string) $request->attributes->get('id');
         $permissions = Uuid::isValid($id) ? $this->workspaces->permissionsOf(Uuid::fromString($id), $user->id()) : [];
 
-        if (!\in_array(WorkspacePermission::VIEW, $permissions, true)) {
+        if (!in_array(WorkspacePermission::VIEW, $permissions, true)) {
             throw new NotFoundHttpException(sprintf('Workspace "%s" not found.', $id));
         }
 

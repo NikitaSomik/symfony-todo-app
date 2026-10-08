@@ -9,9 +9,9 @@ use Symfony\Component\Uid\Uuid;
 final readonly class MembershipChanged
 {
     /**
-     * @param list<WorkspacePermission> $permissions what the user may do now; empty when they are no longer a member
+     * @param list<WorkspacePermission> $permissions
      */
-    public function __construct(
+    private function __construct(
         public Uuid $workspaceId,
         public int $userId,
         public array $permissions,
@@ -19,8 +19,21 @@ final readonly class MembershipChanged
     ) {
     }
 
+    /**
+     * @param list<WorkspacePermission> $permissions what the user may do from now on
+     */
+    public static function roleChanged(Uuid $workspaceId, int $userId, array $permissions, int $actorId): self
+    {
+        return new self($workspaceId, $userId, $permissions, $actorId);
+    }
+
+    public static function ended(Uuid $workspaceId, int $userId, int $actorId): self
+    {
+        return new self($workspaceId, $userId, [], $actorId);
+    }
+
     public function userCan(WorkspacePermission $permission): bool
     {
-        return \in_array($permission, $this->permissions, true);
+        return in_array($permission, $this->permissions, true);
     }
 }

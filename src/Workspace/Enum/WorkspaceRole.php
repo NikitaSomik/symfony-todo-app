@@ -24,7 +24,7 @@ enum WorkspaceRole: string
 
     public function can(WorkspacePermission $permission): bool
     {
-        return \in_array($permission, $this->permissions(), true);
+        return in_array($permission, $this->permissions(), true);
     }
 
     /** @return string[] */

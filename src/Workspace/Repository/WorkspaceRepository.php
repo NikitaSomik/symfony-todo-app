@@ -77,7 +77,7 @@ final class WorkspaceRepository extends ServiceEntityRepository implements Works
 
     public function can(Uuid $workspaceId, int $userId, WorkspacePermission $permission): bool
     {
-        return \in_array($permission, $this->permissionsOf($workspaceId, $userId), true);
+        return in_array($permission, $this->permissionsOf($workspaceId, $userId), true);
     }
 
     public function reference(Uuid $workspaceId): WorkspaceReference
