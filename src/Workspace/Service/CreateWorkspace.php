@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Workspace\Service;
 
-use App\Auth\Contract\UserDirectory;
 use App\Workspace\Entity\Workspace;
 use App\Workspace\Event\WorkspaceCreated;
 use Doctrine\ORM\EntityManagerInterface;
@@ -18,14 +17,13 @@ final readonly class CreateWorkspace
         private EntityManagerInterface $em,
         private ClockInterface $clock,
         private EventDispatcherInterface $eventDispatcher,
-        private UserDirectory $users,
     ) {
     }
 
     public function handle(string $name, int $ownerId): Workspace
     {
         return $this->em->wrapInTransaction(function () use ($name, $ownerId): Workspace {
-            $workspace = new Workspace(Uuid::v7(), $name, $this->users->reference($ownerId), $this->clock->now());
+            $workspace = new Workspace(Uuid::v7(), $name, $ownerId, $this->clock->now());
             $this->em->persist($workspace);
 
             $this->eventDispatcher->dispatch(new WorkspaceCreated(

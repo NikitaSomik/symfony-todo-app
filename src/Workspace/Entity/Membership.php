@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Workspace\Entity;
 
-use App\Auth\Contract\UserReference;
 use App\Workspace\Enum\WorkspaceRole;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -25,10 +24,8 @@ final class Membership
         #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
         private Workspace $workspace,
 
-        // @phpstan-ignore doctrine.associationType
-        #[ORM\ManyToOne(targetEntity: UserReference::class)]
-        #[ORM\JoinColumn(nullable: false)]
-        private UserReference $user,
+        #[ORM\Column]
+        private int $userId,
 
         #[ORM\Column(length: 20, enumType: WorkspaceRole::class)]
         private WorkspaceRole $role,
@@ -50,7 +47,7 @@ final class Membership
 
     public function getUserId(): int
     {
-        return $this->user->id();
+        return $this->userId;
     }
 
     public function getRole(): WorkspaceRole

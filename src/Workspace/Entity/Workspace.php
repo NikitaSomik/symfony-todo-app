@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace App\Workspace\Entity;
 
-use App\Auth\Contract\UserReference;
 use App\Workspace\Contract\WorkspacePermission;
-use App\Workspace\Contract\WorkspaceReference;
 use App\Workspace\Enum\WorkspaceRole;
 use App\Workspace\Exception\LastOwnerException;
 use App\Workspace\Exception\MemberAlreadyExistsException;
@@ -21,7 +19,7 @@ use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: WorkspaceRepository::class)]
 #[ORM\Table(name: 'workspaces')]
-class Workspace implements WorkspaceReference
+class Workspace
 {
     public const int NAME_MAX_LENGTH = 100;
 
@@ -40,12 +38,12 @@ class Workspace implements WorkspaceReference
     #[ORM\OrderBy(['joinedAt' => 'ASC', 'id' => 'ASC'])]
     private Collection $members;
 
-    public function __construct(Uuid $id, string $name, UserReference $owner, \DateTimeImmutable $at)
+    public function __construct(Uuid $id, string $name, int $ownerId, \DateTimeImmutable $at)
     {
         $this->id = $id;
         $this->name = trim($name);
         $this->createdAt = $at;
-        $this->members = new ArrayCollection([new Membership($this, $owner, WorkspaceRole::OWNER, $at)]);
+        $this->members = new ArrayCollection([new Membership($this, $ownerId, WorkspaceRole::OWNER, $at)]);
     }
 
     public function getId(): Uuid
@@ -86,13 +84,13 @@ class Workspace implements WorkspaceReference
         return null !== $role && $role->can($permission);
     }
 
-    public function addMember(UserReference $user, WorkspaceRole $role, \DateTimeImmutable $at): Membership
+    public function addMember(int $userId, WorkspaceRole $role, \DateTimeImmutable $at): Membership
     {
-        if (null !== $this->membershipOf($user->id())) {
+        if (null !== $this->membershipOf($userId)) {
             throw new MemberAlreadyExistsException();
         }
 
-        $membership = new Membership($this, $user, $role, $at);
+        $membership = new Membership($this, $userId, $role, $at);
         $this->members->add($membership);
 
         return $membership;

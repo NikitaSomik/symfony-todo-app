@@ -9,7 +9,6 @@ use App\Task\Enum\TaskStatus;
 use App\Task\Exception\TaskTransitionNotAllowedException;
 use App\Task\ValueObject\BlockReason;
 use App\Task\ValueObject\CancellationReason;
-use App\Workspace\Contract\WorkspaceReference;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Uid\Uuid;
@@ -18,14 +17,7 @@ final class TaskTest extends TestCase
 {
     private static function task(): Task
     {
-        $workspace = new class implements WorkspaceReference {
-            public function getId(): Uuid
-            {
-                return Uuid::v7();
-            }
-        };
-
-        return new Task(Uuid::v7(), $workspace, 1);
+        return new Task(id: Uuid::v7(), workspaceId: Uuid::v7(), creatorId: 1);
     }
 
     #[Test]

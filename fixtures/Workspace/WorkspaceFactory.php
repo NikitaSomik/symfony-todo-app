@@ -49,10 +49,10 @@ final class WorkspaceFactory extends PersistentObjectFactory
             \assert($owner instanceof User);
             $at = new \DateTimeImmutable();
 
-            $workspace = new Workspace(Uuid::v7(), $attributes['name'], $owner, $at);
+            $workspace = new Workspace(Uuid::v7(), $attributes['name'], $owner->id(), $at);
 
             foreach ($attributes['members'] as [$user, $role]) {
-                $workspace->addMember($user, $role, $at);
+                $workspace->addMember($user->id(), $role, $at);
             }
 
             return $workspace;

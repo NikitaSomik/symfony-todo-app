@@ -14,6 +14,4 @@ interface WorkspaceAccess
     public function permissionsOf(Uuid $workspaceId, int $userId): array;
 
     public function can(Uuid $workspaceId, int $userId, WorkspacePermission $permission): bool;
-
-    public function reference(Uuid $workspaceId): WorkspaceReference;
 }

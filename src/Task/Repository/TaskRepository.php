@@ -48,7 +48,7 @@ class TaskRepository extends ServiceEntityRepository
         }
 
         $queryBuilder = $this->createQueryBuilder('t')
-            ->where('t.workspace = :workspaceId')
+            ->where('t.workspaceId = :workspaceId')
             ->setParameter('workspaceId', $workspaceId, UuidType::NAME)
             ->setFirstResult(($query->page->number - 1) * $query->page->size)
             ->setMaxResults($query->page->size);
@@ -78,7 +78,7 @@ class TaskRepository extends ServiceEntityRepository
     public function findUnfinishedAssignedTo(Uuid $workspaceId, int $userId): array
     {
         return $this->createQueryBuilder('t')
-            ->where('t.workspace = :workspaceId')
+            ->where('t.workspaceId = :workspaceId')
             ->andWhere('t.assigneeId = :userId')
             ->andWhere('t.status NOT IN (:final)')
             ->setParameter('workspaceId', $workspaceId, UuidType::NAME)
@@ -92,7 +92,7 @@ class TaskRepository extends ServiceEntityRepository
     {
         $queryBuilder = $this->createQueryBuilder('t')
             ->select('COUNT(t.id)')
-            ->where('t.workspace = :workspaceId')
+            ->where('t.workspaceId = :workspaceId')
             ->setParameter('workspaceId', $workspaceId, UuidType::NAME);
 
         $this->specificationApplier->apply($queryBuilder, [

@@ -6,7 +6,6 @@ namespace App\Workspace\Repository;
 
 use App\Workspace\Contract\WorkspaceAccess;
 use App\Workspace\Contract\WorkspacePermission;
-use App\Workspace\Contract\WorkspaceReference;
 use App\Workspace\Entity\Membership;
 use App\Workspace\Entity\Workspace;
 use App\Workspace\Enum\WorkspaceRole;
@@ -33,7 +32,7 @@ final class WorkspaceRepository extends ServiceEntityRepository implements Works
     {
         return $this->createQueryBuilder('w')
             ->join('w.members', 'm')
-            ->where('IDENTITY(m.user) = :userId')
+            ->where('m.userId = :userId')
             ->setParameter('userId', $userId)
             ->orderBy('w.createdAt', 'ASC')
             ->addOrderBy('w.id', 'ASC')
@@ -46,7 +45,7 @@ final class WorkspaceRepository extends ServiceEntityRepository implements Works
         return $this->createQueryBuilder('w')
             ->join('w.members', 'm')
             ->where('w.id = :id')
-            ->andWhere('IDENTITY(m.user) = :userId')
+            ->andWhere('m.userId = :userId')
             ->setParameter('id', $id, UuidType::NAME)
             ->setParameter('userId', $userId)
             ->getQuery()
@@ -59,7 +58,7 @@ final class WorkspaceRepository extends ServiceEntityRepository implements Works
             ->select('m.role')
             ->from(Membership::class, 'm')
             ->where('IDENTITY(m.workspace) = :workspaceId')
-            ->andWhere('IDENTITY(m.user) = :userId')
+            ->andWhere('m.userId = :userId')
             ->setParameter('workspaceId', $workspaceId, UuidType::NAME)
             ->setParameter('userId', $userId)
             ->getQuery()
@@ -78,13 +77,5 @@ final class WorkspaceRepository extends ServiceEntityRepository implements Works
     public function can(Uuid $workspaceId, int $userId, WorkspacePermission $permission): bool
     {
         return in_array($permission, $this->permissionsOf($workspaceId, $userId), true);
-    }
-
-    public function reference(Uuid $workspaceId): WorkspaceReference
-    {
-        /** @var Workspace $workspace */
-        $workspace = $this->getEntityManager()->getReference(Workspace::class, $workspaceId);
-
-        return $workspace;
     }
 }
