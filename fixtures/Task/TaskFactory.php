@@ -37,6 +37,7 @@ final class TaskFactory extends PersistentObjectFactory
             'workspace' => lazy(static fn (): Workspace => WorkspaceFactory::createOne()),
             // Null means the owner of the workspace.
             'creatorId' => null,
+            'assigneeId' => null,
         ];
     }
 
@@ -88,6 +89,7 @@ final class TaskFactory extends PersistentObjectFactory
             set($task, 'cancellationReason', $attributes['cancellationReason']);
             set($task, 'blockReason', $attributes['blockReason']);
             set($task, 'createdAt', $attributes['createdAt']);
+            set($task, 'assigneeId', $attributes['assigneeId']);
 
             return $task;
         });

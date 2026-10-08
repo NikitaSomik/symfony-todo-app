@@ -43,6 +43,11 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
                     properties: [new OA\Property(property: 'data', properties: [new OA\Property(property: 'type', type: 'string', example: 'users'), new OA\Property(property: 'id', type: 'string', example: '7')], type: 'object')],
                     type: 'object',
                 ),
+                new OA\Property(
+                    property: 'assignee',
+                    properties: [new OA\Property(property: 'data', properties: [new OA\Property(property: 'type', type: 'string', example: 'users'), new OA\Property(property: 'id', type: 'string', example: '7')], type: 'object', nullable: true)],
+                    type: 'object',
+                ),
             ],
             type: 'object',
         ),
@@ -87,6 +92,7 @@ final readonly class TaskResource
             relationships: [
                 'workspace' => ['data' => ['type' => 'workspaces', 'id' => $task->getWorkspaceId()->toRfc4122()]],
                 'creator' => ['data' => ['type' => 'users', 'id' => (string) $task->getCreatorId()]],
+                'assignee' => ['data' => null === $task->getAssigneeId() ? null : ['type' => 'users', 'id' => (string) $task->getAssigneeId()]],
             ],
             links: $this->links($task),
         );

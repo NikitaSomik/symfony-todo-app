@@ -48,3 +48,4 @@ Statuses:
 | [0018](0018-modules-meet-through-contracts.md) | Modules meet through contracts, ids and events | accepted | 2026-10-04 |
 | [0019](0019-workspaces-members-and-roles.md) | Work is shared in workspaces: members, three roles, at least one owner | accepted | 2026-10-04 |
 | [0020](0020-a-task-belongs-to-a-workspace.md) | A task belongs to a workspace, and membership decides who reaches it | accepted | 2026-10-06 |
+| [0021](0021-a-task-has-an-assignee-who-can-work.md) | A task has one assignee, and only someone who can work in its workspace | accepted | 2026-10-07 |

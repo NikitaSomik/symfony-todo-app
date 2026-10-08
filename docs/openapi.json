@@ -186,6 +186,111 @@
                 }
             }
         },
+        "/api/v1/tasks/{id}/assignee": {
+            "put": {
+                "tags": [
+                    "Task assignee"
+                ],
+                "summary": "Assign a task",
+                "description": "To an owner or a member of the workspace of the task; a viewer cannot be an assignee.",
+                "operationId": "put_api_task_assign",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AssignTaskDTO"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "415": {
+                        "description": "Body is not sent as application/json"
+                    },
+                    "422": {
+                        "description": "Invalid body, or the user cannot work in the workspace of the task"
+                    },
+                    "200": {
+                        "description": "The task with its assignee",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TaskResponseSchema"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user is a viewer in the workspace of the task"
+                    },
+                    "404": {
+                        "description": "Task not found, or the user is not a member of its workspace"
+                    },
+                    "409": {
+                        "description": "A completed or cancelled task keeps its assignee"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Task assignee"
+                ],
+                "summary": "Take a task off its assignee",
+                "operationId": "delete_api_task_unassign",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The task with its assignee",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TaskResponseSchema"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user is a viewer in the workspace of the task"
+                    },
+                    "404": {
+                        "description": "Task not found, or the user is not a member of its workspace"
+                    },
+                    "409": {
+                        "description": "A completed or cancelled task keeps its assignee"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    }
+                }
+            }
+        },
         "/api/v1/tasks/{id}": {
             "get": {
                 "tags": [
@@ -859,6 +964,65 @@
                 }
             }
         },
+        "/api/v1/workspaces/{id}/tasks/reassign": {
+            "post": {
+                "tags": [
+                    "Tasks"
+                ],
+                "summary": "Hand the unfinished tasks of one user over to another",
+                "description": "Owners and members only. Completed and cancelled tasks keep their assignee.",
+                "operationId": "post_api_workspace_task_reassign",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ReassignTasksDTO"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The tasks that changed hands",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TaskCollectionResponseSchema"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user is a viewer in the workspace"
+                    },
+                    "415": {
+                        "description": "Body is not sent as application/json"
+                    },
+                    "422": {
+                        "description": "Invalid body, or the user named in `to` cannot work in the workspace"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    },
+                    "404": {
+                        "description": "Workspace not found, or the user is not a member of it"
+                    }
+                }
+            }
+        },
         "/api/v1/workspaces": {
             "get": {
                 "tags": [
@@ -1356,6 +1520,20 @@
                 },
                 "type": "object"
             },
+            "AssignTaskDTO": {
+                "required": [
+                    "user_id"
+                ],
+                "properties": {
+                    "user_id": {
+                        "type": "integer",
+                        "example": 7,
+                        "minimum": 0,
+                        "exclusiveMinimum": true
+                    }
+                },
+                "type": "object"
+            },
             "UpdateTaskDetailsDTO": {
                 "required": [
                     "title"
@@ -1517,6 +1695,29 @@
                         "example": "2026-04-01",
                         "nullable": true,
                         "default": null
+                    }
+                },
+                "type": "object"
+            },
+            "ReassignTasksDTO": {
+                "required": [
+                    "from",
+                    "to"
+                ],
+                "properties": {
+                    "from": {
+                        "description": "Id of the user whose unfinished tasks are handed over",
+                        "type": "integer",
+                        "example": 5,
+                        "minimum": 0,
+                        "exclusiveMinimum": true
+                    },
+                    "to": {
+                        "description": "Id of the owner or member who takes them",
+                        "type": "integer",
+                        "example": 7,
+                        "minimum": 0,
+                        "exclusiveMinimum": true
                     }
                 },
                 "type": "object"
@@ -1732,6 +1933,25 @@
                                             }
                                         },
                                         "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "assignee": {
+                                "properties": {
+                                    "data": {
+                                        "properties": {
+                                            "type": {
+                                                "type": "string",
+                                                "example": "users"
+                                            },
+                                            "id": {
+                                                "type": "string",
+                                                "example": "7"
+                                            }
+                                        },
+                                        "type": "object",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -2342,6 +2562,9 @@
         },
         {
             "name": "Profile"
+        },
+        {
+            "name": "Task assignee"
         },
         {
             "name": "Tasks"

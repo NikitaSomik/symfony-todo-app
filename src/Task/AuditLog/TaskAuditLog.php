@@ -21,6 +21,7 @@ final class TaskAuditLog
         Task::FIELD_CANCELLATION_REASON => 'cancellation reason',
         Task::FIELD_BLOCK_REASON => 'block reason',
         Task::FIELD_DUE_DATE => 'due date',
+        Task::FIELD_ASSIGNEE_ID => 'assignee',
     ];
 
     public function __construct(
