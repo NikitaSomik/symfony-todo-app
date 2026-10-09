@@ -134,7 +134,7 @@ Every pull request that changes code runs, against a real PostgreSQL:
 
 ## Stack
 
-PHP 8.5 · Symfony 8.1 · Doctrine ORM · PostgreSQL 18 · Redis · Docker Compose
+PHP 8.5 · Symfony 8.1 · Doctrine ORM · PostgreSQL 18 · Redis · Mailpit · Docker Compose
 
 ## Quick start
 
@@ -147,6 +147,9 @@ make migrate
 
 The OpenAPI description is in [docs/openapi.json](docs/openapi.json); `make generate-openapi`
 regenerates it.
+
+Mail sent in development goes to Mailpit and never leaves the machine: read it at
+<http://127.0.0.1:8025>.
 
 ## Commands
 

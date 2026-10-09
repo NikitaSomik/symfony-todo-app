@@ -48,6 +48,14 @@ services:
     networks:
       - todo-app-network
 
+  mailpit:
+    image: axllent/mailpit:v1.29.3
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${MAILPIT_HOST_PORT:-8025}:8025"
+    networks:
+      - todo-app-network
+
   db:
     image: postgres:18-alpine
     restart: unless-stopped
