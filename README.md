@@ -134,7 +134,7 @@ Every pull request that changes code runs, against a real PostgreSQL:
 
 ## Stack
 
-PHP 8.5 · Symfony 8.1 · Doctrine ORM · PostgreSQL 18 · Redis · Mailpit · Docker Compose
+PHP 8.5 · Symfony 8.1 · Doctrine ORM · PostgreSQL 18 · Redis · RabbitMQ · Mailpit · Docker Compose
 
 ## Quick start
 
@@ -150,6 +150,11 @@ regenerates it.
 
 Mail sent in development goes to Mailpit and never leaves the machine: read it at
 <http://127.0.0.1:8025>.
+
+Messages for background work go to RabbitMQ (<http://127.0.0.1:15672>, `guest` / `guest`) and
+are handled by the `worker` container. A message that still fails after its retries is kept
+in PostgreSQL: `make queue-failed` lists them, `make queue-stats` counts what is waiting. The
+worker runs the code it started with, so `make restart-worker` after changing a handler.
 
 ## Commands
 

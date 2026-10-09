@@ -20,8 +20,17 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     networks:
       - todo-app-network
+
+  worker:
+    extends:
+      service: app
+    command: ["php", "bin/console", "messenger:consume", "async", "--time-limit=3600", "--memory-limit=128M"]
+    environment:
+      XDEBUG_MODE: "off"
 
   nginx:
     image: nginx:alpine
@@ -45,6 +54,22 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    networks:
+      - todo-app-network
+
+  rabbitmq:
+    image: rabbitmq:4.2-management-alpine
+    hostname: rabbitmq
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${RABBITMQ_MANAGEMENT_HOST_PORT:-15672}:15672"
+    healthcheck:
+      test: ["CMD", "nc", "-z", "127.0.0.1", "5672"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
     networks:
       - todo-app-network
 
@@ -79,6 +104,7 @@ services:
 
 volumes:
   db_data:
+  rabbitmq_data:
 
 networks:
   todo-app-network:
