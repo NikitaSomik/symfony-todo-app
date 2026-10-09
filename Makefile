@@ -2,7 +2,7 @@
 .PHONY: help bash build up down logs cache-clear migrate \
         db-create db-drop db-wipe db-reset db-seed db-fresh db-dump db-restore \
         run-phpstan run-deptrac run-cs fix-cs run-tests coverage check-code fix-and-check-code \
-        generate-openapi
+        generate-openapi queue-stats queue-failed restart-worker
 
 EXEC = docker compose exec app
 
@@ -55,6 +55,16 @@ db-dump:        ## Save DB dump (name=mybackup)
 db-restore:     ## Restore from dump (name=mybackup)
 	docker compose exec -T db pg_restore -U todo_app -d todo_app --clean --if-exists < $(or $(name),dump).dump
 	@echo "Database restored from $(or $(name),dump).dump"
+
+## —— Queue ———————————————————————————————————————
+queue-stats:    ## Count the messages waiting in each transport
+	$(EXEC) php bin/console messenger:stats
+
+queue-failed:   ## List the messages that failed for good
+	$(EXEC) php bin/console messenger:failed:show
+
+restart-worker: ## Restart the worker: it keeps the code it started with
+	docker compose restart worker
 
 ## —— Code Quality —————————————————————————————————
 run-phpstan:    ## Run PHPStan static analysis
