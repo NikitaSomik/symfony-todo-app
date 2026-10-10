@@ -46,8 +46,7 @@ final class EmailNewAssigneeTest extends ApiTestCase
     }
 
     /**
-     * What the request left on the queue. Taken out right away: the next request boots a new
-     * container, with an empty in-memory queue.
+     * Read it before the next request: that one boots a new container with an empty queue.
      *
      * @return list<Envelope>
      */
@@ -60,7 +59,7 @@ final class EmailNewAssigneeTest extends ApiTestCase
     }
 
     /**
-     * Handles the messages the way the worker does: received from the queue, on their bus.
+     * As the worker does: the received stamp makes the bus handle the message instead of queueing it again.
      *
      * @param list<Envelope> $envelopes
      */
