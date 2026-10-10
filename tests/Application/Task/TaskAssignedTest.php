@@ -58,7 +58,7 @@ final class TaskAssignedTest extends ApiTestCase
         $this->post($this->route('api_workspace_task_reassign', ['id' => $this->workspace->getId()->toRfc4122()]), ['from' => $from->id(), 'to' => $to->id()]);
     }
 
-    /** @return list<TaskAssigned> what reached the queue */
+    /** @return list<TaskAssigned> */
     private function published(): array
     {
         /** @var InMemoryTransport $queue */

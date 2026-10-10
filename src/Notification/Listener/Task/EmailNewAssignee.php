@@ -11,10 +11,6 @@ use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Mime\Email;
 
-/**
- * Tells someone by email that a task was assigned to them. Runs in the worker, some time after
- * the assignment, so it looks at the task as it is now.
- */
 #[AsMessageHandler(bus: 'event.bus')]
 final readonly class EmailNewAssignee
 {
@@ -27,14 +23,12 @@ final readonly class EmailNewAssignee
 
     public function __invoke(TaskAssigned $event): void
     {
-        // Nobody needs to be told what they did themselves.
         if ($event->assigneeId === $event->actorId) {
             return;
         }
 
-        // The task may have been deleted or handed to someone else since. Whoever left the
-        // workspace or became a viewer was taken off it too, so this also keeps a task's title
-        // from reaching someone who may no longer see it.
+        // The worker runs later: the task may be gone or handed on by now. Whoever lost access
+        // was taken off their tasks too, so this also keeps the title from them.
         $task = $this->tasks->findSummary($event->taskId);
         if (null === $task || $task->assigneeId !== $event->assigneeId) {
             return;
