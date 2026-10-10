@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tests\Support;
 
-/**
- * Listens on the event bus in tests and keeps what was published, in order.
- */
 final class PublishedEvents
 {
     /** @var list<object> */
