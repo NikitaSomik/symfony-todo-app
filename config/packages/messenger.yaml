@@ -5,8 +5,8 @@ framework:
         default_bus: messenger.bus.default
         buses:
             messenger.bus.default: ~
-            # Facts a module announces to the others once its transaction has committed.
-            # Nobody may be listening to a fact yet, and that is not an error.
+            # Events a module publishes for other modules after its transaction commits.
+            # An event may have no handlers yet; Messenger must not treat that as an error.
             event.bus:
                 default_middleware:
                     enabled: true
