@@ -50,3 +50,4 @@ Statuses:
 | [0020](0020-a-task-belongs-to-a-workspace.md) | A task belongs to a workspace, and membership decides who reaches it | accepted | 2026-10-06 |
 | [0021](0021-a-task-has-an-assignee-who-can-work.md) | A task has one assignee, and only someone who can work in its workspace | accepted | 2026-10-07 |
 | [0022](0022-code-asks-for-a-permission.md) | Code asks for a permission; a role is a named set of them | accepted | 2026-10-08 |
+| [0023](0023-facts-announced-after-the-commit.md) | A module announces a fact to the others after its transaction has committed | accepted | 2026-10-10 |

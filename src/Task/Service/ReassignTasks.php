@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Task\Service;
 
+use App\Shared\Messaging\EventPublisher;
 use App\Task\AuditLog\TaskState;
+use App\Task\Contract\TaskAssigned;
 use App\Task\Entity\Task;
 use App\Task\Event\TaskUpdated;
 use App\Task\Exception\AssigneeCannotWorkException;
@@ -22,6 +24,7 @@ final readonly class ReassignTasks
         private EventDispatcherInterface $eventDispatcher,
         private TaskRepository $tasks,
         private WorkspaceAccess $workspaces,
+        private EventPublisher $events,
     ) {
     }
 
@@ -34,7 +37,7 @@ final readonly class ReassignTasks
             throw new AssigneeCannotWorkException();
         }
 
-        return $this->em->wrapInTransaction(function () use ($workspaceId, $fromUserId, $toUserId, $actorId): array {
+        $tasks = $this->em->wrapInTransaction(function () use ($workspaceId, $fromUserId, $toUserId, $actorId): array {
             $tasks = $this->tasks->findUnfinishedAssignedTo($workspaceId, $fromUserId);
 
             foreach ($tasks as $task) {
@@ -46,5 +49,11 @@ final readonly class ReassignTasks
 
             return $tasks;
         });
+
+        foreach ($tasks as $task) {
+            $this->events->publish(new TaskAssigned($task->getId(), $task->getWorkspaceId(), assigneeId: $toUserId, actorId: $actorId));
+        }
+
+        return $tasks;
     }
 }

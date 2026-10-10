@@ -173,6 +173,18 @@ Each decision, with the alternatives that lost and what it costs, is an
 
 ---
 
+## Notifications
+
+> Telling people what happened to their work, without slowing the request or touching consistency.
+
+- [x] `Task\Contract\TaskAssigned`, published after the commit on an event bus ([ADR 0023](adr/0023-facts-announced-after-the-commit.md))
+- [ ] Email to the assignee, through the queue and Mailer — not to the one who assigned, not to someone who has since lost access
+- [ ] A notification recorded once, so a message delivered twice does not send two emails
+- [ ] In-app inbox — `GET /api/v1/notifications`, mark as read
+- [ ] Transactional outbox from Symfony 8.2, so an announcement cannot be lost
+
+---
+
 ## Phase 3 — Business Logic
 
 > Real rules enforced in the Service layer — not just database operations.
