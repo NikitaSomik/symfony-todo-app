@@ -19,12 +19,14 @@ return static function (DeptracConfig $config): void {
             $auth = $internals('Auth'),
             $workspaceContract = $contract('Workspace'),
             $workspace = $internals('Workspace'),
-            $task = $module('Task'),
+            $taskContract = $contract('Task'),
+            $task = $internals('Task'),
             $auditLog = $module('AuditLog'),
             $shared = $module('Shared'),
         )
         ->rulesets(
-            Ruleset::forLayer($task)->accesses($authContract, $workspaceContract, $auditLog, $shared),
+            Ruleset::forLayer($task)->accesses($taskContract, $authContract, $workspaceContract, $auditLog, $shared),
+            Ruleset::forLayer($taskContract),
             Ruleset::forLayer($workspace)->accesses($workspaceContract, $authContract, $auditLog, $shared),
             Ruleset::forLayer($workspaceContract),
             Ruleset::forLayer($auth)->accesses($authContract, $shared),

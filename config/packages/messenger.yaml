@@ -2,6 +2,16 @@ framework:
     messenger:
         failure_transport: failed
 
+        default_bus: messenger.bus.default
+        buses:
+            messenger.bus.default: ~
+            # Events a module publishes for other modules after its transaction commits.
+            # An event may have no handlers yet; Messenger must not treat that as an error.
+            event.bus:
+                default_middleware:
+                    enabled: true
+                    allow_no_handlers: true
+
         transports:
             async: '%env(MESSENGER_TRANSPORT_DSN)%'
             failed: 'doctrine://default?queue_name=failed&auto_setup=0'
