@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Task;
 
+use App\Task\Contract\TaskDirectory;
 use App\Task\Identity\TaskIdGenerator;
 use App\Task\Identity\UuidV7TaskIdGenerator;
+use App\Task\Repository\TaskRepository;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 return static function (ContainerConfigurator $di): void {
@@ -16,6 +18,7 @@ return static function (ContainerConfigurator $di): void {
 
     $services->load('App\Task\\', __DIR__)
         ->exclude([
+            __DIR__.'/Contract/',
             __DIR__.'/DTO/',
             __DIR__.'/Entity/',
             __DIR__.'/Enum/',
@@ -23,4 +26,5 @@ return static function (ContainerConfigurator $di): void {
         ]);
 
     $services->alias(TaskIdGenerator::class, UuidV7TaskIdGenerator::class);
+    $services->alias(TaskDirectory::class, TaskRepository::class);
 };

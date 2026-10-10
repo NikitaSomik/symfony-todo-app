@@ -73,3 +73,6 @@ rollback would leave a listener acting on an assignment that never happened.
   to no handler. The first listener, the email to the assignee, routes it to the queue.
 - Tests read published facts through a handler registered only in the test container,
   `Tests\Support\PublishedEvents`.
+- Since #87 `Notification` listens ([0024](0024-the-assignee-is-told-by-email-from-the-worker.md)):
+  `TaskAssigned` is routed to the `async` queue, and tests read it from the in-memory
+  queue instead; `PublishedEvents` is gone.

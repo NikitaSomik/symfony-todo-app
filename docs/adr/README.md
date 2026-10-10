@@ -51,3 +51,4 @@ Statuses:
 | [0021](0021-a-task-has-an-assignee-who-can-work.md) | A task has one assignee, and only someone who can work in its workspace | accepted | 2026-10-07 |
 | [0022](0022-code-asks-for-a-permission.md) | Code asks for a permission; a role is a named set of them | accepted | 2026-10-08 |
 | [0023](0023-facts-announced-after-the-commit.md) | A module announces a fact to the others after its transaction has committed | accepted | 2026-10-10 |
+| [0024](0024-the-assignee-is-told-by-email-from-the-worker.md) | The assignee is told by email, from the worker, about the task as it is when the email leaves | accepted | 2026-10-11 |
