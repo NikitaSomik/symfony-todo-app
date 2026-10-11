@@ -39,10 +39,15 @@ final readonly class EmailNewAssignee
             return;
         }
 
-        // Not who assigned it: the API never shows one user another's email.
-        $this->mailer->send((new Email())
+        $this->mailer->send($this->email($recipient, $task->title));
+    }
+
+    // Not who assigned it: the API never shows one user another's email.
+    private function email(string $recipient, string $taskTitle): Email
+    {
+        return (new Email())
             ->to($recipient)
-            ->subject(\sprintf('You were assigned "%s"', $task->title))
-            ->text(\sprintf("A task was assigned to you:\n\n%s\n", $task->title)));
+            ->subject(sprintf('You were assigned "%s"', $taskTitle))
+            ->text(sprintf("A task was assigned to you:\n\n%s\n", $taskTitle));
     }
 }
