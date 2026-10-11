@@ -92,6 +92,14 @@ final class RejectedAccessTokenLoggingTest extends ApiTestCase
     }
 
     #[Test]
+    public function tokenThatNamesNoUserShouldBeLogged(): void
+    {
+        $this->requestWithToken(static::getContainer()->get(JWTEncoderInterface::class)->encode(['role' => 'none']));
+
+        $this->assertRejectedBecause('invalid_payload');
+    }
+
+    #[Test]
     public function expiredTokenShouldNotBeLogged(): void
     {
         $user = UserFactory::createOne();
