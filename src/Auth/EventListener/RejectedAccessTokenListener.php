@@ -14,9 +14,6 @@ use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use Symfony\Component\Security\Core\Exception\UserNotFoundException;
 
-/**
- * Not JWT_EXPIRED: an expired token is the normal end of its life, and the client refreshes it.
- */
 #[AsEventListener(event: Events::JWT_INVALID)]
 #[WithMonologChannel('security')]
 final readonly class RejectedAccessTokenListener
