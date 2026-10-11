@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Auth\Security\Authentication\EntryPoint;
 
-use App\Shared\Api\JsonApiError;
 use App\Shared\Api\JsonApiResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -15,9 +14,6 @@ final class ApiAuthenticationEntryPoint implements AuthenticationEntryPointInter
 {
     public function start(Request $request, ?AuthenticationException $authException = null): Response
     {
-        return JsonApiResponse::error(
-            [JsonApiError::of((string) Response::HTTP_UNAUTHORIZED, 'Unauthorized.')],
-            Response::HTTP_UNAUTHORIZED,
-        );
+        return JsonApiResponse::unauthorized();
     }
 }

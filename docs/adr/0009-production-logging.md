@@ -53,3 +53,9 @@ useful if it can be tied to the request — and the user — it came from.
   holds once it opens.
 - A test proves that each of those client errors is logged at `info`. A new client-error
   exception class is logged at `error` until it is added to `framework.exceptions`.
+- Since #89 a rejected access token is logged at `warning` to the `security` channel, with a
+  reason — `malformed`, `bad_signature`, `revoked`, `user_not_found`. The client gets the same
+  `401` for each, and an `info` record would vanish with the buffer; a warning is written at
+  once, so a request id from a support request finds it, and a burst after a deploy shows a
+  changed secret. An expired token is not logged: refreshing it is the normal flow, once
+  every 15 minutes per user.

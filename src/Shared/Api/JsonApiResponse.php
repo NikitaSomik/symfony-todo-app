@@ -74,6 +74,16 @@ final class JsonApiResponse extends JsonResponse
         return new self(null, self::HTTP_NO_CONTENT);
     }
 
+    public static function unauthorized(): self
+    {
+        return self::error([JsonApiError::of((string) self::HTTP_UNAUTHORIZED, 'Unauthorized.')], self::HTTP_UNAUTHORIZED);
+    }
+
+    public static function forbidden(): self
+    {
+        return self::error([JsonApiError::of((string) self::HTTP_FORBIDDEN, 'Forbidden.')], self::HTTP_FORBIDDEN);
+    }
+
     /**
      * @param JsonApiError[] $errors
      */

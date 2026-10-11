@@ -23,10 +23,7 @@ final class AuthenticationFailureHandler implements AuthenticationFailureHandler
             );
         }
 
-        return JsonApiResponse::error(
-            [JsonApiError::of((string) Response::HTTP_UNAUTHORIZED, 'Unauthorized.')],
-            Response::HTTP_UNAUTHORIZED,
-        );
+        return JsonApiResponse::unauthorized();
     }
 
     private function tooManyAttemptsMessage(TooManyLoginAttemptsAuthenticationException $exception): string

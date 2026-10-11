@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace App\Auth\Security\Authentication\Lexik;
 
-use App\Shared\Api\JsonApiError;
 use App\Shared\Api\JsonApiResponse;
 use Lexik\Bundle\JWTAuthenticationBundle\Event\AuthenticationFailureEvent;
 use Lexik\Bundle\JWTAuthenticationBundle\Events;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
-use Symfony\Component\HttpFoundation\Response;
 
 // A request without a token is answered by ApiAuthenticationEntryPoint, the firewall's entry point.
 // JWT_NOT_FOUND is reached only if a firewall has no entry point of its own: then this keeps the answer ours.
@@ -20,11 +18,6 @@ final class JwtFailureListener
 {
     public function __invoke(AuthenticationFailureEvent $event): void
     {
-        $event->setResponse(
-            JsonApiResponse::error(
-                [JsonApiError::of((string) Response::HTTP_UNAUTHORIZED, 'Unauthorized.')],
-                Response::HTTP_UNAUTHORIZED,
-            ),
-        );
+        $event->setResponse(JsonApiResponse::unauthorized());
     }
 }

@@ -151,6 +151,8 @@ Each decision, with the alternatives that lost and what it costs, is an
 - [x] Check whether the password reaches the log context when the buffer is flushed — it does not, a test proves it
 - [ ] Granular rate limits on the remaining sensitive endpoints
 - [ ] A stable machine-readable `code` on every error object (JSON:API `code` member), so clients branch on the code instead of the status or the text
+- [x] A rejected access token is logged at `warning` to the `security` channel with its reason — malformed, bad signature, revoked, unknown user; an expired one is not, its refresh is the normal flow
+- [x] The `401` and `403` bodies come from one place
 - [ ] Metrics for authentication failures (failed logins and refreshes), with an alert on a spike — a sign of guessing or leaked tokens
 - [ ] ADRs for the decisions taken: a normalizer over a subscriber, JSON:API over Problem Details, `404` on someone else's task, `422` for an invalid query filter
 
