@@ -8,12 +8,12 @@ use App\Auth\Contract\AuthenticatedUser;
 use App\Shared\Api\Documentation\JsonApiContent;
 use App\Shared\Api\JsonApiResponse;
 use App\Task\Api\Documentation\TaskResponseSchema;
+use App\Task\Command\AssignTask\AssignTask;
 use App\Task\DTO\AssignTaskDTO;
 use App\Task\Entity\Task;
 use App\Task\Resource\TaskResource;
 use App\Task\Security\MemberTaskValueResolver;
 use App\Task\Security\TaskVoter;
-use App\Task\Service\AssignTask;
 use App\Task\Service\UnassignTask;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
@@ -21,6 +21,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\HttpKernel\Attribute\ValueResolver;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
@@ -39,7 +40,7 @@ final class TaskAssigneeController extends AbstractController
 {
     public function __construct(
         private readonly TaskResource $taskResource,
-        private readonly AssignTask $assignTask,
+        private readonly MessageBusInterface $commandBus,
         private readonly UnassignTask $unassignTask,
     ) {
     }
@@ -51,7 +52,9 @@ final class TaskAssigneeController extends AbstractController
     #[OA\Response(response: 422, description: 'Invalid body, or the user cannot work in the workspace of the task')]
     public function assign(#[MapRequestPayload(acceptFormat: 'json')] AssignTaskDTO $dto, #[ValueResolver(MemberTaskValueResolver::class)] Task $task, #[CurrentUser] AuthenticatedUser $user): JsonResponse
     {
-        return JsonApiResponse::one($this->taskResource->toItem($this->assignTask->handle($task, assigneeId: $dto->user_id, actorId: $user->id())));
+        $this->commandBus->dispatch(new AssignTask($task->getId(), assigneeId: $dto->user_id, actorId: $user->id()));
+
+        return JsonApiResponse::one($this->taskResource->toItem($task));
     }
 
     #[Route('', name: 'unassign', methods: ['DELETE'])]

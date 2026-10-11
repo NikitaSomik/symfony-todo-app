@@ -5,6 +5,11 @@ framework:
         default_bus: messenger.bus.default
         buses:
             messenger.bus.default: ~
+            # A use case that changes data: its handler runs in a transaction the bus opens,
+            # flushes and commits, and the events it dispatches leave only after the commit.
+            command.bus:
+                middleware:
+                    - doctrine_transaction
             # Events a module publishes for other modules after its transaction commits.
             # An event may have no handlers yet; Messenger must not treat that as an error.
             event.bus:
@@ -14,6 +19,7 @@ framework:
                 middleware:
                     # The worker keeps its connection for hours; a database or proxy may have closed it.
                     - doctrine_ping_connection
+                    - App\Shared\Messaging\LogUnsentEventMiddleware
 
         transports:
             async: '%env(MESSENGER_TRANSPORT_DSN)%'
