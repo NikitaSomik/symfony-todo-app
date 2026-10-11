@@ -11,9 +11,6 @@ use App\Workspace\Enum\WorkspaceRole;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 
-/**
- * HTTP requires a 401 to carry a challenge, whichever part of the application answers it.
- */
 final class UnauthorizedChallengeTest extends ApiTestCase
 {
     /**

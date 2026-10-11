@@ -10,8 +10,7 @@ use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 
 /**
- * HTTP requires a 401 to say how to authenticate. Whichever part of the application answered,
- * the access token is the way.
+ * HTTP requires every 401 to carry a WWW-Authenticate challenge.
  */
 #[AsEventListener(event: KernelEvents::RESPONSE)]
 final class UnauthorizedChallengeListener

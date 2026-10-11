@@ -14,9 +14,6 @@ use Monolog\Level;
 use Monolog\LogRecord;
 use PHPUnit\Framework\Attributes\Test;
 
-/**
- * Every rejected access token answers the same 401; the security log says why.
- */
 final class RejectedAccessTokenLoggingTest extends ApiTestCase
 {
     private function tokenFor(User $user): string

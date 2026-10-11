@@ -15,8 +15,7 @@ use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use Symfony\Component\Security\Core\Exception\UserNotFoundException;
 
 /**
- * Every rejected access token answers the same 401, so the client cannot tell why; the log can.
- * An expired token is not logged: it is the normal end of a token's life, and the client refreshes it.
+ * Not JWT_EXPIRED: an expired token is the normal end of its life, and the client refreshes it.
  */
 #[AsEventListener(event: Events::JWT_INVALID)]
 #[WithMonologChannel('security')]
