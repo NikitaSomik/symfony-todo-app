@@ -30,7 +30,13 @@ longer be allowed to read it ([0011](0011-foreign-task-answers-404.md)).
   title from someone who lost access.
 - **Nobody is told what they did themselves.** Assigning a task to oneself sends nothing.
 - **One email per task.** Handing ten tasks over sends ten emails.
+- **The email does not say who assigned the task.** The API never shows one user
+  another's email address, and a user has no other name yet; an email must not reveal more
+  than the API does.
 - **Plain text, built in code**, with the sender set once for all mail (`MAILER_FROM`).
+- **The worker pings the database before each message** (`doctrine_ping_connection` on
+  `event.bus`): it holds its connection for hours, and a database, a pooler or a load
+  balancer may have closed it meanwhile.
 
 ## Alternatives considered
 
@@ -61,6 +67,15 @@ longer be allowed to read it ([0011](0011-foreign-task-answers-404.md)).
   next step on the roadmap.
 - Handing many tasks over floods the new assignee's inbox. One email listing them is the
   fix when it is asked for; the events already arrive one per task.
+- `TaskAssigned` is now a message format. Messenger serializes it with PHP's `serialize`, class
+  name and fields included, and messages may wait in the queue across a deploy. Its class is
+  renamed or its constructor changed only compatibly — a new field with a default — or after
+  the queue has drained.
+- Routing is per message, not per listener: every listener of `TaskAssigned` runs in the
+  worker. A listener that must run in the request needs its own message, or the routing
+  revisited.
+- Naming the one who assigned needs a display name for users, or a decision that members of
+  a workspace see each other's email.
 - `UserDirectory` grows a method, `findEmailById`, and `Task` a contract for reading a
   task, `TaskDirectory`. `Task` is the first module read by another.
 - A test handles the queued message the way the worker does — taken from the in-memory

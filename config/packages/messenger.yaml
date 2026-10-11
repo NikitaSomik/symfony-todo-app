@@ -11,6 +11,9 @@ framework:
                 default_middleware:
                     enabled: true
                     allow_no_handlers: true
+                middleware:
+                    # The worker keeps its connection for hours; a database or proxy may have closed it.
+                    - doctrine_ping_connection
 
         transports:
             async: '%env(MESSENGER_TRANSPORT_DSN)%'

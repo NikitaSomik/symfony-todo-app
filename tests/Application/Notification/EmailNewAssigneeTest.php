@@ -73,7 +73,7 @@ final class EmailNewAssigneeTest extends ApiTestCase
     }
 
     #[Test]
-    public function assigneeShouldBeToldByEmailWhoGaveThemWhichTask(): void
+    public function assigneeShouldBeToldByEmailWhichTaskIsTheirs(): void
     {
         $this->assign($this->task(), $this->colleague);
 
@@ -84,8 +84,20 @@ final class EmailNewAssigneeTest extends ApiTestCase
         self::assertNotNull($email);
         self::assertEmailAddressContains($email, 'To', 'colleague@example.com');
         self::assertEmailHeaderSame($email, 'Subject', 'You were assigned "Prepare the release notes"');
-        self::assertEmailTextBodyContains($email, 'owner@example.com assigned you a task');
+        self::assertEmailTextBodyContains($email, 'Prepare the release notes');
         self::assertEmailAddressContains($email, 'From', 'notifications@todo-app.test');
+    }
+
+    #[Test]
+    public function emailShouldNotRevealWhoAssignedTheTask(): void
+    {
+        $this->assign($this->task(), $this->colleague);
+
+        $this->deliver($this->queued());
+
+        $email = self::getMailerMessage();
+        self::assertNotNull($email);
+        self::assertStringNotContainsString('owner@example.com', $email->toString());
     }
 
     #[Test]

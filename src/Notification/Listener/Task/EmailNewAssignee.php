@@ -39,11 +39,10 @@ final readonly class EmailNewAssignee
             return;
         }
 
-        $actor = $this->users->findEmailById($event->actorId) ?? 'Someone';
-
+        // Not who assigned it: the API never shows one user another's email.
         $this->mailer->send((new Email())
             ->to($recipient)
             ->subject(\sprintf('You were assigned "%s"', $task->title))
-            ->text(\sprintf("%s assigned you a task:\n\n%s\n", $actor, $task->title)));
+            ->text(\sprintf("A task was assigned to you:\n\n%s\n", $task->title)));
     }
 }
