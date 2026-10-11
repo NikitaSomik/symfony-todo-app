@@ -42,6 +42,9 @@ The rules it enforces now:
 - **A session can be ended.** Logging out on one device ends the sessions on all of them,
   within 15 minutes at most ([0005](docs/adr/0005-revocable-sessions.md)).
 
+- **Whoever gets a task hears about it.** The assignee is told by email, shortly after,
+  unless they assigned it themselves — and not if by then the task is gone, held by someone
+  else, or out of their reach ([0024](docs/adr/0024-the-assignee-is-told-by-email-from-the-worker.md)).
 - **People work together in workspaces.** A workspace has owners, members and viewers,
   always at least one owner, and every user starts with a personal one
   ([0019](docs/adr/0019-workspaces-members-and-roles.md)).
@@ -78,11 +81,15 @@ flowchart LR
     Task -->|writes and reads its history| AuditLog
     Workspace -->|contract only| Auth
     Workspace -->|writes its history| AuditLog
+    Notification -->|contract only| Task
+    Notification -->|contract only| Auth
 ```
 
 An arrow reads "depends on". Every module also uses `Shared`, which depends on none. `Auth` — registration, login, refresh, logout. `Task` — tasks, their lifecycle, search and
 history. `Workspace` — who works together and in which role. `AuditLog` — who changed what; modules write to it, and it knows none of them
-([0017](docs/adr/0017-audit-log-as-its-own-module.md)). `Shared` — technical code every
+([0017](docs/adr/0017-audit-log-as-its-own-module.md)). `Notification` — tells people what
+happened to their work, from the worker; nothing depends on it
+([0024](docs/adr/0024-the-assignee-is-told-by-email-from-the-worker.md)). `Shared` — technical code every
 module uses: error rendering, JSON:API responses.
 
 ## Task lifecycle

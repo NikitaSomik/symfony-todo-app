@@ -13,10 +13,11 @@ use App\Task\Entity\Task;
 use App\Task\Enum\TaskStatus;
 use App\Tests\ApiTestCase;
 use App\Tests\Support\AuditLogFailureToggle;
-use App\Tests\Support\PublishedEvents;
 use App\Workspace\Entity\Workspace;
 use App\Workspace\Enum\WorkspaceRole;
 use PHPUnit\Framework\Attributes\Test;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\Transport\InMemory\InMemoryTransport;
 
 final class TaskAssignedTest extends ApiTestCase
 {
@@ -60,7 +61,13 @@ final class TaskAssignedTest extends ApiTestCase
     /** @return list<TaskAssigned> */
     private function published(): array
     {
-        return static::getContainer()->get(PublishedEvents::class)->of(TaskAssigned::class);
+        /** @var InMemoryTransport $queue */
+        $queue = static::getContainer()->get('messenger.transport.async');
+
+        return array_values(array_filter(
+            array_map(static fn (Envelope $envelope): object => $envelope->getMessage(), $queue->getSent()),
+            static fn (object $message): bool => $message instanceof TaskAssigned,
+        ));
     }
 
     #[Test]

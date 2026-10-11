@@ -178,8 +178,9 @@ Each decision, with the alternatives that lost and what it costs, is an
 > Telling people what happened to their work, without slowing the request or touching consistency.
 
 - [x] `Task\Contract\TaskAssigned`, published after the commit on an event bus ([ADR 0023](adr/0023-facts-announced-after-the-commit.md))
-- [ ] Email to the assignee, through the queue and Mailer — not to the one who assigned, not to someone who has since lost access
+- [x] Email to the assignee, through the queue and Mailer — not to the one who assigned, not to someone who has since lost access ([ADR 0024](adr/0024-the-assignee-is-told-by-email-from-the-worker.md))
 - [ ] A notification recorded once, so a message delivered twice does not send two emails
+- [ ] One email for a hand-over of many tasks, instead of one per task
 - [ ] In-app inbox — `GET /api/v1/notifications`, mark as read
 - [ ] Transactional outbox from Symfony 8.2, so an announcement cannot be lost
 

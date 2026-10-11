@@ -39,4 +39,9 @@ class UserRepository extends ServiceEntityRepository implements UserLoaderInterf
 
         return null === $id ? null : (int) $id;
     }
+
+    public function findEmailById(int $id): ?string
+    {
+        return $this->find($id)?->getEmail();
+    }
 }
