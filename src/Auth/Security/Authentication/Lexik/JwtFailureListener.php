@@ -11,6 +11,8 @@ use Lexik\Bundle\JWTAuthenticationBundle\Events;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\Response;
 
+// A request without a token is answered by ApiAuthenticationEntryPoint, the firewall's entry point.
+// JWT_NOT_FOUND is reached only if a firewall has no entry point of its own: then this keeps the answer ours.
 #[AsEventListener(event: Events::JWT_NOT_FOUND)]
 #[AsEventListener(event: Events::JWT_INVALID)]
 #[AsEventListener(event: Events::JWT_EXPIRED)]
