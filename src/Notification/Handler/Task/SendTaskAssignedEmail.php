@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Notification\Listener\Task;
+namespace App\Notification\Handler\Task;
 
 use App\Auth\Contract\UserDirectory;
 use App\Task\Contract\TaskAssigned;
@@ -12,7 +12,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Mime\Email;
 
 #[AsMessageHandler(bus: 'event.bus')]
-final readonly class EmailNewAssignee
+final readonly class SendTaskAssignedEmail
 {
     public function __construct(
         private TaskDirectory $tasks,

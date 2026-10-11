@@ -19,7 +19,7 @@ use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\ReceivedStamp;
 use Symfony\Component\Messenger\Transport\InMemory\InMemoryTransport;
 
-final class EmailNewAssigneeTest extends ApiTestCase
+final class SendTaskAssignedEmailTest extends ApiTestCase
 {
     private User $owner;
     private User $colleague;
