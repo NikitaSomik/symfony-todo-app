@@ -9,7 +9,7 @@ use App\Task\Contract\TaskSummary;
 use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Uid\Uuid;
 
-final readonly class DoctrineTaskDirectory implements TaskDirectory
+final readonly class TaskSummaryRepository implements TaskDirectory
 {
     public function __construct(
         private TaskRepository $tasks,

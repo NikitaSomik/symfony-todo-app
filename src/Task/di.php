@@ -7,7 +7,7 @@ namespace App\Task;
 use App\Task\Contract\TaskDirectory;
 use App\Task\Identity\TaskIdGenerator;
 use App\Task\Identity\UuidV7TaskIdGenerator;
-use App\Task\Repository\DoctrineTaskDirectory;
+use App\Task\Repository\TaskSummaryRepository;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 return static function (ContainerConfigurator $di): void {
@@ -26,5 +26,5 @@ return static function (ContainerConfigurator $di): void {
         ]);
 
     $services->alias(TaskIdGenerator::class, UuidV7TaskIdGenerator::class);
-    $services->alias(TaskDirectory::class, DoctrineTaskDirectory::class);
+    $services->alias(TaskDirectory::class, TaskSummaryRepository::class);
 };
