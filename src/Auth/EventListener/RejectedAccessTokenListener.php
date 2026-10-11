@@ -35,19 +35,26 @@ final readonly class RejectedAccessTokenListener
 
     private function reason(AuthenticationException $exception): string
     {
-        $previous = $exception->getPrevious();
+        $cause = $exception->getPrevious();
 
-        return match (true) {
-            $previous instanceof JWTDecodeFailureException => match ($previous->getReason()) {
-                JWTDecodeFailureException::UNVERIFIED_TOKEN => 'bad_signature',
-                default => 'malformed',
-            },
-            // Lexik's blocklist throws this message for a token revoked at logout.
-            'JWT blocked' === $exception->getMessage() => 'revoked',
-            $exception instanceof InvalidPayloadException => 'invalid_payload',
-            // Symfony hides it behind BadCredentialsException, so the client cannot probe for users.
-            $exception instanceof UserNotFoundException, $previous instanceof UserNotFoundException => 'user_not_found',
-            default => 'invalid',
-        };
+        if ($cause instanceof JWTDecodeFailureException) {
+            return JWTDecodeFailureException::UNVERIFIED_TOKEN === $cause->getReason() ? 'bad_signature' : 'malformed';
+        }
+
+        // Lexik has no exception type for a token revoked at logout, only this message.
+        if ('JWT blocked' === $exception->getMessage()) {
+            return 'revoked';
+        }
+
+        // Symfony wraps it in BadCredentialsException, so the client cannot probe for users.
+        if ($cause instanceof UserNotFoundException) {
+            return 'user_not_found';
+        }
+
+        if ($exception instanceof InvalidPayloadException) {
+            return 'invalid_payload';
+        }
+
+        return 'invalid';
     }
 }
