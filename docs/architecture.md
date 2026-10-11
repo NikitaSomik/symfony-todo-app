@@ -59,6 +59,11 @@ flowchart TB
         l2[Service]
     end
 
+    subgraph Notification
+        direction TB
+        n1[Handler]
+    end
+
     subgraph Shared
         direction TB
         s1[Http — error rendering, request id]
@@ -71,6 +76,8 @@ flowchart TB
     Task -->|writes and reads its history| AuditLog
     Workspace -->|contract only| Auth
     Workspace -->|writes its history| AuditLog
+    Notification -->|contract only| Task
+    Notification -->|contract only| Auth
     Task --> Shared
     Workspace --> Shared
     Auth --> Shared
@@ -84,7 +91,25 @@ actor by id ([0017](adr/0017-audit-log-as-its-own-module.md)). The allowed
 dependencies are declared in `deptrac.php` and checked in CI. `Task` and `Workspace` use
 only `Auth`'s contract — an interface for the current user, a lookup by email and the
 registration event — and `Task` only `Workspace`'s: a member's role and a reference to
-the workspace ([0018](adr/0018-modules-meet-through-contracts.md)).
+the workspace ([0018](adr/0018-modules-meet-through-contracts.md)). `Notification` reads tasks
+and email addresses through contracts and reacts to `Task`'s events in the worker
+([0024](adr/0024-the-assignee-is-told-by-email-from-the-worker.md)).
+
+## Reacting to events
+
+Three kinds of class react to an event, and each is named and placed by what it reacts to.
+
+| Reacts to | Runs | Named | Lives in | Example |
+|---|---|---|---|---|
+| An event of the framework — a request, a response, a login, a JWT | in the request | after what it hooks into, with `Listener` | `EventListener/`, or the folder of its concern in `Shared` | `LogoutListener`, `Shared/Http/RequestIdListener` |
+| An event of the application, through the event dispatcher | in the request, in its transaction | after what it does, as a verb | `Listener/`, one class per event | `Task/Listener/AuditLog/LogUpdated`, `Task/Listener/Workspace/UnassignTasksOfMember` |
+| An event of the application, through `event.bus` | in the worker, after the commit | after what it does, as a verb | `Handler/`, one class per event | `Notification/Handler/Task/SendTaskAssignedEmail` |
+
+Under `Listener/` and `Handler/`, a reaction to another module's event sits in a folder named
+after that module (`Listener/Workspace/`, `Handler/Task/`), and a reaction to the module's own
+events in a folder named after its purpose (`Listener/AuditLog/`). A verb names what happens,
+so a second reaction to the same event gets a name of its own; a class named after the event
+(`TaskAssignedHandler`) would not leave room for it.
 
 ## Authentication
 
