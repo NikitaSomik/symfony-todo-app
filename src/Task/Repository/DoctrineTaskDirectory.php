@@ -18,14 +18,11 @@ final readonly class DoctrineTaskDirectory implements TaskDirectory
 
     public function find(Uuid $taskId): ?TaskSummary
     {
-        /** @var array{title: string, assigneeId: int|null}|null $row */
-        $row = $this->tasks->createQueryBuilder('t')
-            ->select('t.title', 't.assigneeId')
+        return $this->tasks->createQueryBuilder('t')
+            ->select(sprintf('NEW %s(t.id, t.title, t.assigneeId)', TaskSummary::class))
             ->where('t.id = :id')
             ->setParameter('id', $taskId, UuidType::NAME)
             ->getQuery()
             ->getOneOrNullResult();
-
-        return null === $row ? null : new TaskSummary($taskId, $row['title'], $row['assigneeId']);
     }
 }
