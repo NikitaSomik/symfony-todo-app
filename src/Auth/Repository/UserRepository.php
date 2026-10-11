@@ -42,13 +42,6 @@ class UserRepository extends ServiceEntityRepository implements UserLoaderInterf
 
     public function findEmailById(int $id): ?string
     {
-        $email = $this->createQueryBuilder('u')
-            ->select('u.email')
-            ->where('u.id = :id')
-            ->setParameter('id', $id)
-            ->getQuery()
-            ->getOneOrNullResult(AbstractQuery::HYDRATE_SINGLE_SCALAR);
-
-        return null === $email ? null : (string) $email;
+        return $this->find($id)?->getEmail();
     }
 }
