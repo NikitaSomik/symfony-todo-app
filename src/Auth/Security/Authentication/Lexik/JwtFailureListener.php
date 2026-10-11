@@ -8,21 +8,15 @@ use App\Shared\Api\JsonApiError;
 use App\Shared\Api\JsonApiResponse;
 use Lexik\Bundle\JWTAuthenticationBundle\Event\AuthenticationFailureEvent;
 use Lexik\Bundle\JWTAuthenticationBundle\Events;
-use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\Response;
 
-final class JwtFailureSubscriber implements EventSubscriberInterface
+#[AsEventListener(event: Events::JWT_NOT_FOUND)]
+#[AsEventListener(event: Events::JWT_INVALID)]
+#[AsEventListener(event: Events::JWT_EXPIRED)]
+final class JwtFailureListener
 {
-    public static function getSubscribedEvents(): array
-    {
-        return [
-            Events::JWT_NOT_FOUND => 'onFailure',
-            Events::JWT_INVALID => 'onFailure',
-            Events::JWT_EXPIRED => 'onFailure',
-        ];
-    }
-
-    public function onFailure(AuthenticationFailureEvent $event): void
+    public function __invoke(AuthenticationFailureEvent $event): void
     {
         $event->setResponse(
             JsonApiResponse::error(
