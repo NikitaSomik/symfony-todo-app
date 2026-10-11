@@ -8,5 +8,5 @@ use Symfony\Component\Uid\Uuid;
 
 interface TaskDirectory
 {
-    public function findSummary(Uuid $taskId): ?TaskSummary;
+    public function find(Uuid $taskId): ?TaskSummary;
 }

@@ -7,8 +7,6 @@ namespace App\Task\Repository;
 use App\Shared\Persistence\Doctrine\SpecificationApplier;
 use App\Shared\Query\Sort;
 use App\Shared\Query\SortDirection;
-use App\Task\Contract\TaskDirectory;
-use App\Task\Contract\TaskSummary;
 use App\Task\DTO\TaskListQueryDTO;
 use App\Task\Entity\Task;
 use App\Task\Enum\TaskSortField;
@@ -26,7 +24,7 @@ use Symfony\Component\Uid\Uuid;
 /**
  * @extends ServiceEntityRepository<Task>
  */
-class TaskRepository extends ServiceEntityRepository implements TaskDirectory
+class TaskRepository extends ServiceEntityRepository
 {
     public function __construct(
         ManagerRegistry $registry,
@@ -106,12 +104,5 @@ class TaskRepository extends ServiceEntityRepository implements TaskDirectory
         return (int) $queryBuilder
             ->getQuery()
             ->getSingleScalarResult();
-    }
-
-    public function findSummary(Uuid $taskId): ?TaskSummary
-    {
-        $task = $this->find($taskId);
-
-        return null === $task ? null : new TaskSummary($task->getId(), $task->getWorkspaceId(), $task->getTitle(), $task->getAssigneeId());
     }
 }

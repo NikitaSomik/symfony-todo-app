@@ -29,7 +29,7 @@ final readonly class EmailNewAssignee
 
         // The worker runs later: the task may be gone or handed on by now. Whoever lost access
         // was taken off their tasks too, so this also keeps the title from them.
-        $task = $this->tasks->findSummary($event->taskId);
+        $task = $this->tasks->find($event->taskId);
         if (null === $task || $task->assigneeId !== $event->assigneeId) {
             return;
         }

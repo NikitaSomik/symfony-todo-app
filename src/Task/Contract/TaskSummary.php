@@ -10,7 +10,6 @@ final readonly class TaskSummary
 {
     public function __construct(
         public Uuid $id,
-        public Uuid $workspaceId,
         public string $title,
         public ?int $assigneeId,
     ) {
