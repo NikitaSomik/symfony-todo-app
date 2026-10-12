@@ -131,6 +131,7 @@ Each decision, with the alternatives that lost and what it costs, is an
 - [ ] Sign out everywhere — revoke every family of the user
 - [x] A refresh token is exchanged only once, even by requests that arrive together — the exchange locks its row
 - [x] Rate limit `POST /api/v1/auth/register`
+- [x] A new password is refused if it appears in a known breach — Have I Been Pwned, k-anonymity ([ADR 0026](adr/0026-new-passwords-checked-against-known-breaches.md))
 - [x] Normalise emails (lowercase) on registration and lookup — an `Email` value object owns the canonical form
 - [ ] Identify the user in the JWT by immutable id instead of email
 

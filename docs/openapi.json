@@ -1513,8 +1513,9 @@
                         "maxLength": 180
                     },
                     "password": {
+                        "description": "Rejected if it appears in a known data breach. Only the first 5 characters of its SHA-1 hash leave the server (Have I Been Pwned, k-anonymity).",
                         "type": "string",
-                        "example": "secret123",
+                        "example": "plum-anchor-violet-74",
                         "maxLength": 100,
                         "minLength": 8
                     }

@@ -11,6 +11,7 @@ use App\Auth\Repository\RefreshTokenRepository;
 use App\Fixtures\Auth\RefreshTokenFactory;
 use App\Fixtures\Auth\UserFactory;
 use App\Tests\ApiTestCase;
+use App\Tests\Support\PwnedPasswordsStub;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Monolog\Handler\TestHandler;
 use Monolog\Level;
@@ -107,6 +108,34 @@ final class AuthControllerTest extends ApiTestCase
         ]);
 
         self::assertResponseStatusCodeSame(422);
+    }
+
+    #[Test]
+    public function registerWhenPasswordHasLeakedShouldReturn422(): void
+    {
+        $response = $this->post($this->route('api_auth_register'), [
+            'email' => 'user@example.com',
+            'password' => PwnedPasswordsStub::LEAKED_PASSWORD,
+        ]);
+
+        self::assertResponseStatusCodeSame(422);
+        $error = $this->json($response)['errors'][0];
+        self::assertSame('/password', $error['source']['pointer']);
+        self::assertSame('This password has been leaked in a data breach, it must not be used. Please use another password.', $error['detail']);
+        self::assertStringNotContainsString(PwnedPasswordsStub::LEAKED_PASSWORD, (string) $response->getContent());
+    }
+
+    #[Test]
+    public function registerWhenBreachLookupIsUnreachableShouldReturn201(): void
+    {
+        static::getContainer()->get(PwnedPasswordsStub::class)->makeUnreachable();
+
+        $this->post($this->route('api_auth_register'), [
+            'email' => 'user@example.com',
+            'password' => PwnedPasswordsStub::LEAKED_PASSWORD,
+        ]);
+
+        self::assertResponseStatusCodeSame(201);
     }
 
     #[Test]

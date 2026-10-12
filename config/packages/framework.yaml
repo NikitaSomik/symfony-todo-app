@@ -4,6 +4,13 @@ framework:
 
     trusted_proxies: '%env(TRUSTED_PROXIES)%'
 
+    # The one outbound call is the breach lookup at sign-up (ADR 0026): a slow answer must
+    # not hold the request for the default 60 seconds before it is skipped.
+    http_client:
+        default_options:
+            timeout: 2
+            max_duration: 3
+
     # Note that the session will be started ONLY if you read or write from it.
     session: true
 
