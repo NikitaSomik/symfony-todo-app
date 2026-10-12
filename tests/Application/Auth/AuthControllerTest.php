@@ -8,6 +8,7 @@ use App\Auth\Exception\InvalidRefreshTokenException;
 use App\Auth\RefreshToken\RandomRefreshTokenGenerator;
 use App\Auth\RefreshToken\RefreshTokenHash;
 use App\Auth\Repository\RefreshTokenRepository;
+use App\Auth\Service\RefreshAccessToken;
 use App\Fixtures\Auth\RefreshTokenFactory;
 use App\Fixtures\Auth\UserFactory;
 use App\Tests\ApiTestCase;
@@ -422,6 +423,18 @@ final class AuthControllerTest extends ApiTestCase
 
         $repo = static::getContainer()->get(RefreshTokenRepository::class);
         self::assertNull($repo->findValidByToken(RefreshTokenHash::fromPlain($oldToken)));
+    }
+
+    #[Test]
+    public function refreshWithAlreadyExchangedTokenShouldReturn401(): void
+    {
+        $oldToken = $this->createRefreshToken();
+        static::getContainer()->get(RefreshAccessToken::class)->handle($oldToken);
+
+        $this->setCookie('refresh_token', $oldToken);
+        $response = $this->post($this->route('api_auth_refresh'));
+
+        self::assertSame(401, $response->getStatusCode());
     }
 
     #[Test]

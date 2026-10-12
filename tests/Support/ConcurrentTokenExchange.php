@@ -5,14 +5,16 @@ declare(strict_types=1);
 namespace App\Tests\Support;
 
 use App\Auth\Entity\RefreshToken;
+use App\Auth\RefreshToken\RandomRefreshTokenGenerator;
+use App\Auth\RefreshToken\RefreshTokenHash;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Exception\DriverException;
 use Doctrine\ORM\Event\PostLoadEventArgs;
 
 /**
- * Plays a second request that exchanges the same refresh token on its own connection,
- * right after the first one has read it: the moment two browser tabs collide.
+ * Plays a second request that exchanges a refresh token on its own connection,
+ * right after the first one has read its token: the moment two browser tabs collide.
  */
 final class ConcurrentTokenExchange
 {
@@ -50,7 +52,21 @@ final class ConcurrentTokenExchange
         $rival->executeStatement("SET lock_timeout = '200ms'");
 
         try {
-            $this->succeeded = 1 === $rival->executeStatement('DELETE FROM refresh_tokens WHERE token = ?', [$tokenHash]);
+            $this->succeeded = $rival->transactional(static function (Connection $rival) use ($tokenHash): bool {
+                $userId = $rival->fetchOne('DELETE FROM refresh_tokens WHERE token = ? RETURNING user_id', [$tokenHash]);
+                if (false === $userId) {
+                    return false;
+                }
+
+                $rival->insert('refresh_tokens', [
+                    'token' => RefreshTokenHash::fromPlain((new RandomRefreshTokenGenerator())->generate())->value,
+                    'user_id' => $userId,
+                    'expires_at' => (new \DateTimeImmutable('+1 day'))->format(\DATE_ATOM),
+                    'created_at' => (new \DateTimeImmutable())->format(\DATE_ATOM),
+                ]);
+
+                return true;
+            });
         } catch (DriverException $e) {
             if (self::LOCK_NOT_AVAILABLE !== $e->getSQLState()) {
                 throw $e;
