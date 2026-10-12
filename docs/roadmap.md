@@ -126,7 +126,8 @@ Each decision, with the alternatives that lost and what it costs, is an
 - [x] Throttled logins logged to the `security` channel
 - [x] `TRUSTED_PROXIES` so IP-based limits see the real client behind a proxy
 - [x] `app:auth:purge-expired-refresh-tokens` command
-- [ ] **Refresh token reuse detection (RFC 9700)** — mark tokens used instead of deleting them, group them into families, revoke the whole family when a used token is presented again. Also removes the concurrent-refresh race
+- [ ] **Refresh token reuse detection (RFC 9700)** — mark tokens used instead of deleting them, group them into families, revoke the whole family when a used token is presented again
+- [x] A refresh token is exchanged only once, even by requests that arrive together — the exchange locks its row
 - [x] Rate limit `POST /api/v1/auth/register`
 - [x] Normalise emails (lowercase) on registration and lookup — an `Email` value object owns the canonical form
 - [ ] Identify the user in the JWT by immutable id instead of email

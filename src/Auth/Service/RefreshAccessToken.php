@@ -25,7 +25,7 @@ final class RefreshAccessToken
     public function handle(string $token): array
     {
         return $this->em->wrapInTransaction(function () use ($token): array {
-            $refreshToken = $this->refreshTokenRepository->findValidByToken(RefreshTokenHash::fromPlain($token));
+            $refreshToken = $this->refreshTokenRepository->lockValidByToken(RefreshTokenHash::fromPlain($token));
 
             if (null === $refreshToken) {
                 throw new InvalidRefreshTokenException();
