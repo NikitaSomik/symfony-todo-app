@@ -18,7 +18,8 @@ a lead wants the ones nobody holds, and anyone may want those of a colleague.
   is an `AssigneeFilter` — a user or nobody — and the query never learns who asked.
 - **Anything else is a `422` on `filter[assignee]`.** An id has at most nine digits, so
   it always fits the 32-bit `assignee_id` column; a longer one would reach PostgreSQL and
-  fail there with a `500`. An empty value means no filter, as for `due_from` and `search`.
+  fail there with a `500`. An empty value meant no filter, as for `due_from` and `search`;
+  it is refused since [0029](0029-an-empty-query-parameter-is-refused.md).
 - **An id is not checked against the users.** The id of someone outside the workspace
   returns an empty list, not an error: a `422` for an unknown id would let anyone signed
   in find out which ids are registered. A former member still holds the tasks they

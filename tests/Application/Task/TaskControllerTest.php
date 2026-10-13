@@ -378,15 +378,12 @@ final class TaskControllerTest extends ApiTestCase
     }
 
     #[Test]
-    public function getAllWhenSearchTermIsBlankShouldNotFilter(): void
+    public function getAllWhenSearchTermIsBlankShouldReturn422(): void
     {
-        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Buy milk']);
-        TaskFactory::createOne(['workspace' => $this->workspace, 'title' => 'Read book']);
-
         $response = $this->get($this->tasks.'?filter[search]='.urlencode('   '));
 
-        self::assertResponseIsSuccessful();
-        self::assertCount(2, $this->jsonData($response));
+        self::assertResponseStatusCodeSame(422);
+        self::assertSame(['parameter' => 'filter[search]'], $this->json($response)['errors'][0]['source']);
     }
 
     #[Test]

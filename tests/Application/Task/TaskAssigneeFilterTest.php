@@ -79,7 +79,7 @@ final class TaskAssigneeFilterTest extends ApiTestCase
     #[Test]
     public function getAllWithoutAssigneeShouldReturnEveryTask(): void
     {
-        self::assertSame(['Colleague', 'Mine', 'Nobody'], $this->titles('?filter[assignee]='));
+        self::assertSame(['Colleague', 'Mine', 'Nobody'], $this->titles(''));
     }
 
     #[Test]
