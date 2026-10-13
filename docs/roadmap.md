@@ -128,12 +128,12 @@ Each decision, with the alternatives that lost and what it costs, is an
 - [x] `app:auth:purge-expired-refresh-tokens` command
 - [x] **Refresh token reuse detection (RFC 9700)** — tokens of one sign-in form a family; a spent token presented again after a 30-second window revokes it ([ADR 0025](adr/0025-refresh-token-families-and-reuse-detection.md))
 - [x] A session ends after 90 days however active; logout ends only the session of this device
-- [ ] Sign out everywhere — revoke every family of the user
+- [ ] Session management — list the sessions of the user, end one or all the others; a password change ends the others
 - [x] A refresh token is exchanged only once, even by requests that arrive together — the exchange locks its row
 - [x] Rate limit `POST /api/v1/auth/register`
 - [x] A new password is refused if it appears in a known breach — Have I Been Pwned, k-anonymity ([ADR 0026](adr/0026-new-passwords-checked-against-known-breaches.md))
 - [x] Normalise emails (lowercase) on registration and lookup — an `Email` value object owns the canonical form
-- [ ] Identify the user in the JWT by immutable id instead of email
+- [x] The access token names the user by id (`sub`), not by email ([ADR 0027](adr/0027-the-access-token-names-the-user-by-id.md))
 
 ---
 

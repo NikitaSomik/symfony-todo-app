@@ -5,6 +5,7 @@ lexik_jwt_authentication:
     encoder:
         signature_algorithm: HS256
     token_ttl: '%app.jwt_ttl%'
+    user_id_claim: sub
     blocklist_token:
         enabled: true
         cache: cache.app

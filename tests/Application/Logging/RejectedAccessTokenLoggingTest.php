@@ -7,6 +7,7 @@ namespace App\Tests\Application\Logging;
 use App\Auth\Entity\User;
 use App\Fixtures\Auth\UserFactory;
 use App\Tests\ApiTestCase;
+use Doctrine\ORM\EntityManagerInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Encoder\JWTEncoderInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Monolog\Handler\TestHandler;
@@ -86,7 +87,13 @@ final class RejectedAccessTokenLoggingTest extends ApiTestCase
     #[Test]
     public function tokenOfAUserWhoDoesNotExistShouldBeLogged(): void
     {
-        $this->requestWithToken(static::getContainer()->get(JWTEncoderInterface::class)->encode(['username' => 'nobody@example.com']));
+        $user = UserFactory::createOne();
+        $token = $this->tokenFor($user);
+        $em = static::getContainer()->get(EntityManagerInterface::class);
+        $em->remove($user);
+        $em->flush();
+
+        $this->requestWithToken($token);
 
         $this->assertRejectedBecause('user_not_found');
     }
@@ -104,7 +111,7 @@ final class RejectedAccessTokenLoggingTest extends ApiTestCase
     {
         $user = UserFactory::createOne();
         $this->requestWithToken(static::getContainer()->get(JWTEncoderInterface::class)->encode([
-            'username' => $user->getEmail(),
+            'sub' => $user->getUserIdentifier(),
             'iat' => time() - 120,
             'exp' => time() - 60,
         ]));

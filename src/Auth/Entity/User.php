@@ -94,8 +94,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, Authent
     /** @return non-empty-string */
     public function getUserIdentifier(): string
     {
-        // @phpstan-ignore return.type
-        return $this->email;
+        return (string) $this->id();
     }
 
     public function getRoles(): array
