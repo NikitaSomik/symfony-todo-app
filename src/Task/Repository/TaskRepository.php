@@ -11,6 +11,8 @@ use App\Task\DTO\TaskListQueryDTO;
 use App\Task\Entity\Task;
 use App\Task\Enum\TaskSortField;
 use App\Task\Enum\TaskStatus;
+use App\Task\Query\AssigneeFilter;
+use App\Task\Query\Specification\TaskAssigneeSpecification;
 use App\Task\Query\Specification\TaskDueRangeSpecification;
 use App\Task\Query\Specification\TaskSearchRankSpecification;
 use App\Task\Query\Specification\TaskSearchSpecification;
@@ -36,7 +38,7 @@ class TaskRepository extends ServiceEntityRepository
     /**
      * @return Task[]
      */
-    public function findForWorkspaceList(Uuid $workspaceId, TaskListQueryDTO $query): array
+    public function findForWorkspaceList(Uuid $workspaceId, TaskListQueryDTO $query, ?AssigneeFilter $assignee): array
     {
         $search = $query->filter->searchQuery();
         $field = $query->sortField();
@@ -57,6 +59,7 @@ class TaskRepository extends ServiceEntityRepository
             new TaskSearchSpecification($search),
             new TaskStatusSpecification($query->filter->status),
             new TaskDueRangeSpecification($query->filter->dueFrom(), $query->filter->dueTo()),
+            new TaskAssigneeSpecification($assignee),
             // The chosen field comes first; relevance then breaks its ties, best match first. Without
             // a chosen field relevance is the sort itself, in the requested direction.
             new TaskSortSpecification(null === $field ? null : new Sort($field->value, $direction)),
@@ -88,7 +91,7 @@ class TaskRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    public function countForWorkspaceList(Uuid $workspaceId, TaskListQueryDTO $query): int
+    public function countForWorkspaceList(Uuid $workspaceId, TaskListQueryDTO $query, ?AssigneeFilter $assignee): int
     {
         $queryBuilder = $this->createQueryBuilder('t')
             ->select('COUNT(t.id)')
@@ -99,6 +102,7 @@ class TaskRepository extends ServiceEntityRepository
             new TaskSearchSpecification($query->filter->searchQuery()),
             new TaskStatusSpecification($query->filter->status),
             new TaskDueRangeSpecification($query->filter->dueFrom(), $query->filter->dueTo()),
+            new TaskAssigneeSpecification($assignee),
         ]);
 
         return (int) $queryBuilder

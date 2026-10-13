@@ -6,6 +6,7 @@ namespace App\Task\DTO;
 
 use App\Shared\Query\SearchQuery;
 use App\Task\Enum\TaskStatus;
+use App\Task\Query\AssigneeFilter;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
@@ -23,7 +24,21 @@ readonly class TaskFilterDTO
 
         #[Assert\Length(max: 100)]
         public ?string $search = null,
+
+        // At most nine digits: any such id fits the 32-bit assignee_id column.
+        #[Assert\Regex(pattern: '/^(me|none|[1-9]\d{0,8})\z/', message: 'Use "me", "none" or the id of a user.')]
+        public ?string $assignee = null,
     ) {
+    }
+
+    public function assignee(int $currentUserId): ?AssigneeFilter
+    {
+        return match ($this->assignee) {
+            null, '' => null,
+            'me' => AssigneeFilter::assignedTo($currentUserId),
+            'none' => AssigneeFilter::unassigned(),
+            default => AssigneeFilter::assignedTo((int) $this->assignee),
+        };
     }
 
     public function searchQuery(): ?SearchQuery

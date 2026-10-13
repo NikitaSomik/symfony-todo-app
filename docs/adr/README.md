@@ -55,3 +55,4 @@ Statuses:
 | [0025](0025-refresh-token-families-and-reuse-detection.md) | A sign-in is a family of refresh tokens; a spent token presented again revokes it | accepted | 2026-10-13 |
 | [0026](0026-new-passwords-checked-against-known-breaches.md) | A new password is checked against known breaches, and the check never blocks a sign-up | accepted | 2026-10-13 |
 | [0027](0027-the-access-token-names-the-user-by-id.md) | The access token names the user by id, not by email | accepted | 2026-10-13 |
+| [0028](0028-tasks-filtered-by-assignee-an-id-me-or-none.md) | Tasks are filtered by assignee with one parameter: a user id, `me` or `none` | accepted | 2026-10-13 |
