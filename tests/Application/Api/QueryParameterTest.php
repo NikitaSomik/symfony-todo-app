@@ -48,6 +48,24 @@ final class QueryParameterTest extends ApiTestCase
     }
 
     #[Test]
+    #[TestWith(['filter[status]'])]
+    #[TestWith(['filter[due_from]'])]
+    #[TestWith(['filter[due_to]'])]
+    #[TestWith(['filter[search]'])]
+    #[TestWith(['filter[assignee]'])]
+    #[TestWith(['sort'])]
+    #[TestWith(['direction'])]
+    #[TestWith(['page[number]'])]
+    #[TestWith(['page[size]'])]
+    public function knownParameterWithAnEmptyValueShouldBeA422(string $parameter): void
+    {
+        $response = $this->get($this->tasks.'?'.$parameter.'=');
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSame(['parameter' => $parameter], $this->json($response)['errors'][0]['source']);
+    }
+
+    #[Test]
     #[TestWith(['10001'])]
     #[TestWith(['9223372036854775807'])]
     #[TestWith(['9223372036854775808'])]

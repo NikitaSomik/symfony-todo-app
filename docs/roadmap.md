@@ -155,7 +155,7 @@ Each decision, with the alternatives that lost and what it costs, is an
 - [x] Add `user_id` to the log processor
 - [x] Check whether the password reaches the log context when the buffer is flushed — it does not, a test proves it
 - [ ] Granular rate limits on the remaining sensitive endpoints
-- [ ] One rule for an empty query parameter: `filter[status]=` and `sort=` answer `422`, while `filter[due_from]=`, `filter[search]=` and `filter[assignee]=` are ignored
+- [x] One rule for an empty query parameter: it is a `422` ([ADR 0029](adr/0029-an-empty-query-parameter-is-refused.md))
 - [ ] A stable machine-readable `code` on every error object (JSON:API `code` member), so clients branch on the code instead of the status or the text
 - [x] A rejected access token is logged at `warning` to the `security` channel with its reason — malformed, bad signature, revoked, unknown user; an expired one is not, its refresh is the normal flow
 - [x] The `401` and `403` bodies come from one place
