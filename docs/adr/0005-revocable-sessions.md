@@ -3,6 +3,7 @@
 - Status: accepted
 - Date: 2026-03-24
 - Implemented in: #6, refined in #17 and #21
+- Logout scope, theft detection and the concurrent refresh changed by [0025](0025-refresh-token-families-and-reuse-detection.md)
 
 ## Context
 
