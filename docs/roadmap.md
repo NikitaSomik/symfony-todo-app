@@ -155,6 +155,7 @@ Each decision, with the alternatives that lost and what it costs, is an
 - [x] Add `user_id` to the log processor
 - [x] Check whether the password reaches the log context when the buffer is flushed — it does not, a test proves it
 - [ ] Granular rate limits on the remaining sensitive endpoints
+- [ ] One rule for an empty query parameter: `filter[status]=` and `sort=` answer `422`, while `filter[due_from]=`, `filter[search]=` and `filter[assignee]=` are ignored
 - [ ] A stable machine-readable `code` on every error object (JSON:API `code` member), so clients branch on the code instead of the status or the text
 - [x] A rejected access token is logged at `warning` to the `security` channel with its reason — malformed, bad signature, revoked, unknown user; an expired one is not, its refresh is the normal flow
 - [x] The `401` and `403` bodies come from one place
@@ -175,7 +176,7 @@ Each decision, with the alternatives that lost and what it costs, is an
 - [x] `Task` in a workspace; access by membership, a viewer only reads ([ADR 0020](adr/0020-a-task-belongs-to-a-workspace.md))
 - [x] Assign a task to an owner or a member; losing the role takes unfinished tasks off them ([ADR 0021](adr/0021-a-task-has-an-assignee-who-can-work.md))
 - [x] Permissions instead of role comparisons; only an owner deletes a task ([ADR 0022](adr/0022-code-asks-for-a-permission.md))
-- [ ] Filter tasks by assignee, including nobody; a list of the tasks assigned to me
+- [x] Filter tasks by assignee — a user id, `me` or `none` ([ADR 0028](adr/0028-tasks-filtered-by-assignee-an-id-me-or-none.md))
 - [ ] Projects inside a workspace
 
 ---

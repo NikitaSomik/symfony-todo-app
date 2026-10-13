@@ -58,7 +58,7 @@ final class WorkspaceTaskController extends AbstractController
     #[Route('', name: 'get_all', methods: ['GET'])]
     #[OA\Get(summary: 'Get the tasks of a workspace (paginated)')]
     #[OA\Parameter(name: 'page', in: 'query', schema: new OA\Schema(properties: [new OA\Property(property: 'number', type: 'integer', default: 1, maximum: PageQueryDTO::MAX_NUMBER, minimum: 1, example: 1), new OA\Property(property: 'size', type: 'integer', default: 20, maximum: 100, minimum: 1, example: 20)], type: 'object'), style: 'deepObject', explode: true, )]
-    #[OA\Parameter(name: 'filter', in: 'query', schema: new OA\Schema(properties: [new OA\Property(property: 'status', ref: new Model(type: TaskStatus::class), nullable: true), new OA\Property(property: 'due_from', type: 'string', format: 'date', example: '2026-04-01', nullable: true), new OA\Property(property: 'due_to', type: 'string', format: 'date', example: '2026-04-30', nullable: true), new OA\Property(property: 'search', description: 'Full-text search across task title and description. Without `sort`, results are ranked by relevance.', type: 'string', maxLength: 100, example: 'milk', nullable: true)], type: 'object'), style: 'deepObject', explode: true, )]
+    #[OA\Parameter(name: 'filter', in: 'query', schema: new OA\Schema(properties: [new OA\Property(property: 'status', ref: new Model(type: TaskStatus::class), nullable: true), new OA\Property(property: 'due_from', type: 'string', format: 'date', example: '2026-04-01', nullable: true), new OA\Property(property: 'due_to', type: 'string', format: 'date', example: '2026-04-30', nullable: true), new OA\Property(property: 'search', description: 'Full-text search across task title and description. Without `sort`, results are ranked by relevance.', type: 'string', maxLength: 100, example: 'milk', nullable: true), new OA\Property(property: 'assignee', description: '`me` for the tasks assigned to the user asking, `none` for the tasks nobody holds, or the id of a user.', type: 'string', example: 'me', nullable: true)], type: 'object'), style: 'deepObject', explode: true, )]
     #[OA\Parameter(name: 'sort', in: 'query', description: 'Defaults to relevance when `filter[search]` is given, otherwise to `created_at`. With a search, tasks that tie on the chosen field are ranked by relevance.', schema: new OA\Schema(type: 'string', enum: [TaskSortField::CREATED_AT->value, TaskSortField::STATUS->value, TaskSortField::DUE_DATE->value]))]
     #[OA\Parameter(name: 'direction', in: 'query', description: 'Applies to the chosen sort, or to relevance when a search has no `sort`.', schema: new OA\Schema(type: 'string', default: 'desc', enum: ['asc', 'desc']))]
     #[OA\Response(response: 200, description: 'Paginated list of tasks', content: new JsonApiContent(ref: new Model(type: TaskCollectionResponseSchema::class)))]
@@ -68,9 +68,12 @@ final class WorkspaceTaskController extends AbstractController
         Request $request,
         #[ValueResolver(WorkspaceContextValueResolver::class)]
         WorkspaceContext $context,
+        #[CurrentUser]
+        AuthenticatedUser $user,
     ): JsonResponse {
-        $tasks = $this->taskRepository->findForWorkspaceList($context->workspaceId, $query);
-        $total = $this->taskRepository->countForWorkspaceList($context->workspaceId, $query);
+        $assignee = $query->filter->assignee($user->id());
+        $tasks = $this->taskRepository->findForWorkspaceList($context->workspaceId, $query, $assignee);
+        $total = $this->taskRepository->countForWorkspaceList($context->workspaceId, $query, $assignee);
 
         return JsonApiResponse::collection(
             new PaginatedCollection(

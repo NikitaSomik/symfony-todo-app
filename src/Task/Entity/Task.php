@@ -20,7 +20,7 @@ use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: TaskRepository::class)]
 #[ORM\Table(name: 'tasks')]
-#[ORM\Index(name: 'idx_tasks_workspace_id', columns: ['workspace_id'])]
+#[ORM\Index(name: 'idx_tasks_workspace_id_assignee_id', columns: ['workspace_id', 'assignee_id'])]
 #[ORM\Index(name: 'idx_tasks_search_vector', columns: ['search_vector'])]
 #[ORM\HasLifecycleCallbacks]
 class Task
