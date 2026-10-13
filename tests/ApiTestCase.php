@@ -70,6 +70,13 @@ abstract class ApiTestCase extends WebTestCase
         return $this;
     }
 
+    protected function clearCookies(): static
+    {
+        $this->client->getCookieJar()->clear();
+
+        return $this;
+    }
+
     protected function setCookieWithPath(string $name, string $value, string $path): static
     {
         $this->client->getCookieJar()->set(new Cookie($name, $value, path: $path));

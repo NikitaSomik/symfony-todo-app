@@ -8,7 +8,6 @@ use App\Auth\Exception\InvalidRefreshTokenException;
 use App\Auth\RefreshToken\RandomRefreshTokenGenerator;
 use App\Auth\RefreshToken\RefreshTokenHash;
 use App\Auth\Repository\RefreshTokenRepository;
-use App\Auth\Service\RefreshAccessToken;
 use App\Fixtures\Auth\RefreshTokenFactory;
 use App\Fixtures\Auth\UserFactory;
 use App\Tests\ApiTestCase;
@@ -419,22 +418,13 @@ final class AuthControllerTest extends ApiTestCase
         $oldToken = $this->createRefreshToken();
 
         $this->setCookie('refresh_token', $oldToken);
-        $this->post($this->route('api_auth_refresh'));
-
-        $repo = static::getContainer()->get(RefreshTokenRepository::class);
-        self::assertNull($repo->findValidByToken(RefreshTokenHash::fromPlain($oldToken)));
-    }
-
-    #[Test]
-    public function refreshWithAlreadyExchangedTokenShouldReturn401(): void
-    {
-        $oldToken = $this->createRefreshToken();
-        static::getContainer()->get(RefreshAccessToken::class)->handle($oldToken);
-
-        $this->setCookie('refresh_token', $oldToken);
         $response = $this->post($this->route('api_auth_refresh'));
 
-        self::assertSame(401, $response->getStatusCode());
+        $newToken = array_values(array_filter(
+            $response->headers->getCookies(),
+            static fn (Cookie $c) => 'refresh_token' === $c->getName(),
+        ))[0]->getValue();
+        self::assertNotSame($oldToken, $newToken);
     }
 
     #[Test]
@@ -544,18 +534,19 @@ final class AuthControllerTest extends ApiTestCase
     }
 
     #[Test]
-    public function logoutShouldRevokeAllUserTokens(): void
+    public function logoutShouldEndOnlyThisSession(): void
     {
         $user = UserFactory::createOne();
-        RefreshTokenFactory::createMany(3, ['user' => $user]);
-        $activeToken = $this->createRefreshToken(['user' => $user]);
+        $thisDevice = $this->createRefreshToken(['user' => $user]);
+        $otherDevice = $this->createRefreshToken(['user' => $user]);
 
         $this->actingAs($user);
-        $this->setCookie('refresh_token', $activeToken);
+        $this->setCookieWithPath('refresh_token', $thisDevice, '/api/v1/auth');
         $this->post($this->route('api_auth_logout'));
 
         $repo = static::getContainer()->get(RefreshTokenRepository::class);
-        self::assertCount(0, $repo->findBy(['user' => $user]));
+        self::assertNull($repo->findValidByToken(RefreshTokenHash::fromPlain($thisDevice), new \DateTimeImmutable()));
+        self::assertNotNull($repo->findValidByToken(RefreshTokenHash::fromPlain($otherDevice), new \DateTimeImmutable()));
     }
 
     #[Test]
@@ -580,7 +571,7 @@ final class AuthControllerTest extends ApiTestCase
         self::assertResponseStatusCodeSame(204);
 
         $repo = static::getContainer()->get(RefreshTokenRepository::class);
-        self::assertNull($repo->findValidByToken(RefreshTokenHash::fromPlain($refreshToken)));
+        self::assertNull($repo->findValidByToken(RefreshTokenHash::fromPlain($refreshToken), new \DateTimeImmutable()));
     }
 
     #[Test]
@@ -682,7 +673,7 @@ final class AuthControllerTest extends ApiTestCase
         self::assertContains('refresh_token', $clearedCookieNames);
 
         $repo = static::getContainer()->get(RefreshTokenRepository::class);
-        self::assertNull($repo->findValidByToken(RefreshTokenHash::fromPlain($refreshToken)));
+        self::assertNull($repo->findValidByToken(RefreshTokenHash::fromPlain($refreshToken), new \DateTimeImmutable()));
     }
 
     #[Test]

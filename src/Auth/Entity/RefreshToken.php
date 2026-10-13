@@ -11,6 +11,7 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: RefreshTokenRepository::class)]
 #[ORM\Table(name: 'refresh_tokens')]
+#[ORM\Index(name: 'idx_refresh_tokens_family_id', columns: ['family_id'])]
 final class RefreshToken
 {
     #[ORM\Id]
@@ -27,7 +28,7 @@ final class RefreshToken
 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
-    private User $user;
+    private RefreshTokenFamily $family;
 
     #[ORM\Column(type: Types::DATETIMETZ_IMMUTABLE)]
     private \DateTimeImmutable $expiresAt;
@@ -35,12 +36,15 @@ final class RefreshToken
     #[ORM\Column(type: Types::DATETIMETZ_IMMUTABLE)]
     private \DateTimeImmutable $createdAt;
 
-    public function __construct(RefreshTokenHash $token, User $user, \DateTimeImmutable $expiresAt)
+    #[ORM\Column(type: Types::DATETIMETZ_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $usedAt = null;
+
+    public function __construct(RefreshTokenHash $token, RefreshTokenFamily $family, \DateTimeImmutable $at, \DateTimeImmutable $expiresAt)
     {
         $this->token = $token->value;
-        $this->user = $user;
+        $this->family = $family;
+        $this->createdAt = $at;
         $this->expiresAt = $expiresAt;
-        $this->createdAt = new \DateTimeImmutable();
     }
 
     public function getId(): ?int
@@ -48,9 +52,9 @@ final class RefreshToken
         return $this->id;
     }
 
-    public function getUser(): User
+    public function getFamily(): RefreshTokenFamily
     {
-        return $this->user;
+        return $this->family;
     }
 
     public function getExpiresAt(): \DateTimeImmutable
@@ -63,8 +67,19 @@ final class RefreshToken
         return $this->createdAt;
     }
 
-    public function isExpired(\DateTimeImmutable $now = new \DateTimeImmutable()): bool
+    public function getUsedAt(): ?\DateTimeImmutable
     {
-        return $this->expiresAt < $now;
+        return $this->usedAt;
+    }
+
+    public function markUsed(\DateTimeImmutable $at): void
+    {
+        $this->usedAt ??= $at;
+    }
+
+    /** Used longer ago than a second tab or a retried request can explain: someone holds a copy. */
+    public function isReplayed(\DateTimeImmutable $now, int $reuseWindowSeconds): bool
+    {
+        return null !== $this->usedAt && $this->usedAt < $now->modify(sprintf('-%d seconds', $reuseWindowSeconds));
     }
 }
