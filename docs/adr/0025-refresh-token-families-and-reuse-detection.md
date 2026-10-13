@@ -1,7 +1,7 @@
 # 0025. A sign-in is a family of refresh tokens; a spent token presented again revokes it
 
 - Status: accepted
-- Date: 2026-10-12
+- Date: 2026-10-13
 - Implemented in: #93
 
 ## Context
