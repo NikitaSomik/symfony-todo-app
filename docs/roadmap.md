@@ -132,6 +132,7 @@ Each decision, with the alternatives that lost and what it costs, is an
 - [x] A refresh token is exchanged only once, even by requests that arrive together — the exchange locks its row
 - [x] Rate limit `POST /api/v1/auth/register`
 - [x] A new password is refused if it appears in a known breach — Have I Been Pwned, k-anonymity ([ADR 0026](adr/0026-new-passwords-checked-against-known-breaches.md))
+- [x] A password hashed with outdated settings is rehashed at the next login
 - [x] Normalise emails (lowercase) on registration and lookup — an `Email` value object owns the canonical form
 - [x] The access token names the user by id (`sub`), not by email ([ADR 0027](adr/0027-the-access-token-names-the-user-by-id.md))
 

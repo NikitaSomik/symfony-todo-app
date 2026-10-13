@@ -11,12 +11,15 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\AbstractQuery;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bridge\Doctrine\Security\User\UserLoaderInterface;
+use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
  * @extends ServiceEntityRepository<User>
  */
-class UserRepository extends ServiceEntityRepository implements UserLoaderInterface, UserDirectory
+class UserRepository extends ServiceEntityRepository implements UserLoaderInterface, PasswordUpgraderInterface, UserDirectory
 {
     public function __construct(ManagerRegistry $registry)
     {
@@ -26,6 +29,16 @@ class UserRepository extends ServiceEntityRepository implements UserLoaderInterf
     public function loadUserByIdentifier(string $email): ?UserInterface
     {
         return $this->findOneBy(['email' => (new Email($email))->value]);
+    }
+
+    public function upgradePassword(PasswordAuthenticatedUserInterface $user, string $newHashedPassword): void
+    {
+        if (!$user instanceof User) {
+            throw new UnsupportedUserException(sprintf('Instances of "%s" are not supported.', $user::class));
+        }
+
+        $user->setPassword($newHashedPassword);
+        $this->getEntityManager()->flush();
     }
 
     public function findIdByEmail(string $email): ?int
