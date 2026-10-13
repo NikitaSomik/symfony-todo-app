@@ -12,6 +12,7 @@ use DAMA\DoctrineTestBundle\Doctrine\DBAL\StaticDriver;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 use PHPUnit\Framework\Attributes\Test;
+use Symfony\Component\Uid\Uuid;
 
 /**
  * The rival request runs on a connection of its own and sees only committed rows,
@@ -42,7 +43,7 @@ final class ConcurrentRefreshTest extends ApiTestCase
     }
 
     #[Test]
-    public function tokenExchangedByTwoRequestsAtOnceShouldServeOnlyOne(): void
+    public function tokenExchangedByTwoRequestsAtOnceShouldBeDecidedOneAtATime(): void
     {
         $userId = $this->createUser();
         [$plainToken, $tokenHash] = $this->createRefreshToken($userId);
@@ -85,15 +86,23 @@ final class ConcurrentRefreshTest extends ApiTestCase
         return $this->userId = (int) $this->committed()->lastInsertId();
     }
 
-    /** @return array{string, string} the plain token and its stored hash */
+    /** @return array{string, string} the plain token and its stored hash, in a session of its own */
     private function createRefreshToken(int $userId): array
     {
+        $familyId = Uuid::v7()->toRfc4122();
+        $this->committed()->insert('refresh_token_families', [
+            'id' => $familyId,
+            'user_id' => $userId,
+            'created_at' => (new \DateTimeImmutable())->format(\DATE_ATOM),
+            'expires_at' => (new \DateTimeImmutable('+90 days'))->format(\DATE_ATOM),
+        ]);
+
         $plainToken = (new RandomRefreshTokenGenerator())->generate();
         $tokenHash = RefreshTokenHash::fromPlain($plainToken)->value;
 
         $this->committed()->insert('refresh_tokens', [
             'token' => $tokenHash,
-            'user_id' => $userId,
+            'family_id' => $familyId,
             'expires_at' => (new \DateTimeImmutable('+1 day'))->format(\DATE_ATOM),
             'created_at' => (new \DateTimeImmutable())->format(\DATE_ATOM),
         ]);

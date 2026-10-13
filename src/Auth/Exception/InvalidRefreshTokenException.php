@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace App\Auth\Exception;
 
-final class InvalidRefreshTokenException extends \RuntimeException
+// Not final: a reused token answers the client the same way, see RefreshTokenReusedException.
+class InvalidRefreshTokenException extends \RuntimeException
 {
     public function __construct()
     {

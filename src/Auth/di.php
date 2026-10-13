@@ -26,7 +26,11 @@ return static function (ContainerConfigurator $di): void {
         ->arg('$secure', '%app.cookie_secure%');
 
     $services->set(Service\IssueRefreshToken::class)
-        ->arg('$refreshTokenTtl', '%app.refresh_token_ttl%');
+        ->arg('$refreshTokenTtl', '%app.refresh_token_ttl%')
+        ->arg('$familyTtl', '%app.refresh_token_family_ttl%');
+
+    $services->set(Service\RefreshAccessToken::class)
+        ->arg('$reuseWindowSeconds', '%app.refresh_token_reuse_window%');
 
     $services->set(RefreshToken\RandomRefreshTokenGenerator::class);
     $services->alias(RefreshToken\RefreshTokenGenerator::class, RefreshToken\RandomRefreshTokenGenerator::class);

@@ -23,14 +23,28 @@ final class RefreshTokenFactory extends PersistentObjectFactory
     {
         return [
             'token' => RefreshTokenHash::fromPlain((new RandomRefreshTokenGenerator())->generate()),
-            'user' => UserFactory::new(),
+            'family' => RefreshTokenFamilyFactory::new(),
+            'at' => new \DateTimeImmutable(),
             'expiresAt' => new \DateTimeImmutable('+30 days'),
         ];
     }
 
     protected function initialize(): static
     {
-        return $this;
+        // A token for a user starts a session of that user, as a sign-in does.
+        return $this->beforeInstantiate(static function (array $attributes): array {
+            if (isset($attributes['user'])) {
+                $attributes['family'] = RefreshTokenFamilyFactory::new(['user' => $attributes['user']]);
+                unset($attributes['user']);
+            }
+
+            return $attributes;
+        });
+    }
+
+    public function used(\DateTimeImmutable $at = new \DateTimeImmutable()): static
+    {
+        return $this->afterInstantiate(static fn (RefreshToken $token) => $token->markUsed($at));
     }
 
     public function expired(): static

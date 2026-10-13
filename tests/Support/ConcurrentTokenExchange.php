@@ -53,14 +53,14 @@ final class ConcurrentTokenExchange
 
         try {
             $this->succeeded = $rival->transactional(static function (Connection $rival) use ($tokenHash): bool {
-                $userId = $rival->fetchOne('DELETE FROM refresh_tokens WHERE token = ? RETURNING user_id', [$tokenHash]);
-                if (false === $userId) {
+                $familyId = $rival->fetchOne('UPDATE refresh_tokens SET used_at = NOW() WHERE token = ? AND used_at IS NULL RETURNING family_id', [$tokenHash]);
+                if (false === $familyId) {
                     return false;
                 }
 
                 $rival->insert('refresh_tokens', [
                     'token' => RefreshTokenHash::fromPlain((new RandomRefreshTokenGenerator())->generate())->value,
-                    'user_id' => $userId,
+                    'family_id' => $familyId,
                     'expires_at' => (new \DateTimeImmutable('+1 day'))->format(\DATE_ATOM),
                     'created_at' => (new \DateTimeImmutable())->format(\DATE_ATOM),
                 ]);

@@ -123,7 +123,7 @@ sequenceDiagram
 
     Note over C,R: Login
     C->>A: POST /auth/login (email, password)
-    A->>DB: verify the password, store the hash of a new refresh token
+    A->>DB: verify the password, start a token family, store the hash of its first token
     A-->>C: 204 + cookies: access_token (15 min), refresh_token (30 days)
 
     Note over C,R: A request
@@ -133,12 +133,17 @@ sequenceDiagram
 
     Note over C,R: The access token expired
     C->>A: POST /auth/refresh (refresh_token cookie)
-    A->>DB: find the token by its hash, delete it, store a new one
+    A->>DB: lock the token and its family, mark the token used, store a new one in the family
     A-->>C: 204 + new access_token + new refresh_token
+
+    Note over C,R: A spent token presented again, past the reuse window
+    C->>A: POST /auth/refresh (a copied refresh_token)
+    A->>DB: revoke the family
+    A-->>C: 401, and a warning in the security log
 
     Note over C,R: Logout
     C->>A: POST /auth/logout
-    A->>DB: delete every refresh token of the user
+    A->>DB: revoke the family of the presented refresh token
     A->>R: blocklist the access token until it expires
     A-->>C: 204 + cleared cookies
 ```
@@ -147,7 +152,8 @@ Both tokens live in HttpOnly cookies ([0004](adr/0004-access-token-in-httponly-c
 the refresh cookie is sent only to `/api/v1/auth`.
 The access token is short-lived and stateless; the refresh token is stored only as a
 SHA-256 hash and rotated on every use, which is what makes a session revocable
-([0005](adr/0005-revocable-sessions.md)). The auth endpoints sit behind their own firewall,
+([0005](adr/0005-revocable-sessions.md)). The tokens rotated from one sign-in form a family;
+a spent one presented again revokes it ([0025](adr/0025-refresh-token-families-and-reuse-detection.md)). The auth endpoints sit behind their own firewall,
 so a stale access token cannot block a login or a refresh.
 
 ## Task lifecycle
