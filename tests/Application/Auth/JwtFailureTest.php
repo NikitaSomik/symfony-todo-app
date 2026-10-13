@@ -43,7 +43,7 @@ final class JwtFailureTest extends ApiTestCase
     {
         $user = UserFactory::createOne();
         $expired = static::getContainer()->get(JWTEncoderInterface::class)->encode([
-            'username' => $user->getEmail(),
+            'sub' => $user->getUserIdentifier(),
             'iat' => time() - 120,
             'exp' => time() - 60,
         ]);

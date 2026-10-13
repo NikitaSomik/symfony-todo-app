@@ -3,9 +3,14 @@ security:
         App\Auth\Entity\User: 'auto'
 
     providers:
-        app_users:
+        # Signing in names the user by email; an access token names them by id.
+        users_by_email:
             entity:
                 class: App\Auth\Entity\User
+        users_by_id:
+            entity:
+                class: App\Auth\Entity\User
+                property: id
 
     firewalls:
         dev:
@@ -18,7 +23,7 @@ security:
         auth:
             pattern: ^/api/v1/auth
             stateless: true
-            provider: app_users
+            provider: users_by_email
             entry_point: App\Auth\Security\Authentication\EntryPoint\ApiAuthenticationEntryPoint
             access_denied_handler: App\Auth\Security\Authorization\ApiAccessDeniedHandler
             json_login:
@@ -37,7 +42,7 @@ security:
         api:
             pattern: ^/api
             stateless: true
-            provider: app_users
+            provider: users_by_id
             entry_point: App\Auth\Security\Authentication\EntryPoint\ApiAuthenticationEntryPoint
             access_denied_handler: App\Auth\Security\Authorization\ApiAccessDeniedHandler
             jwt: ~
