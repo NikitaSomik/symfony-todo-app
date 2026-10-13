@@ -46,6 +46,22 @@ final class AccessTokenTest extends ApiTestCase
     }
 
     #[Test]
+    public function tokenShouldNotOpenTheAccountThatTookOverTheEmail(): void
+    {
+        $alice = UserFactory::createOne(['email' => 'alice@example.com']);
+        $this->actingAs($alice);
+
+        $alice->setEmail(new Email('alice.new@example.com'));
+        static::getContainer()->get(EntityManagerInterface::class)->flush();
+        UserFactory::createOne(['email' => 'alice@example.com']);
+
+        $response = $this->get($this->route('api_profile_me'));
+
+        self::assertResponseIsSuccessful();
+        self::assertSame((string) $alice->getId(), $this->jsonData($response)['id']);
+    }
+
+    #[Test]
     public function tokenThatNamesTheUserByEmailShouldBeRefused(): void
     {
         $user = UserFactory::createOne();

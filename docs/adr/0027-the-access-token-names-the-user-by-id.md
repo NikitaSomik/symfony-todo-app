@@ -43,5 +43,9 @@ could also be read wherever the token travels.
 - For up to 15 minutes after the deploy, tokens of the former format are refused and the
   `security` log records them as `invalid_payload`. The refresh token knows nothing of the
   email, so clients only refresh.
+- The email no longer reaches the log of every authenticated request: Symfony's
+  `Authenticator successful!` record names the user by id, and the production buffer that
+  an error flushes carries no email.
 - `getUserIdentifier()` is no longer what a user types to sign in. Code that needs the
-  email asks for `getEmail()`.
+  email asks for `getEmail()`, and a feature that loads a user by identifier — a login
+  link, impersonation, remember-me — uses `users_by_id`.
