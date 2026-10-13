@@ -7,5 +7,6 @@ framework:
 
 when@test:
     framework:
-        validation:
-            not_compromised_password: false
+        # The check runs in tests against PwnedPasswordsStub instead of haveibeenpwned.com.
+        http_client:
+            mock_response_factory: App\Tests\Support\PwnedPasswordsStub
