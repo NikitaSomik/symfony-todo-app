@@ -45,13 +45,17 @@ final class WorkspaceFactory extends PersistentObjectFactory
     protected function initialize(): static
     {
         return $this->instantiateWith(static function (array $attributes): Workspace {
+            /** @var User $owner */
             $owner = $attributes['owner'];
-            \assert($owner instanceof User);
+            /** @var string $name */
+            $name = $attributes['name'];
+            /** @var list<array{User, WorkspaceRole}> $members */
+            $members = $attributes['members'];
             $at = new \DateTimeImmutable();
 
-            $workspace = new Workspace(Uuid::v7(), $attributes['name'], $owner->id(), $at);
+            $workspace = new Workspace(Uuid::v7(), $name, $owner->id(), $at);
 
-            foreach ($attributes['members'] as [$user, $role]) {
+            foreach ($members as [$user, $role]) {
                 $workspace->addMember($user->id(), $role, $at);
             }
 

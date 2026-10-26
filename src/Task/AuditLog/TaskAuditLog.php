@@ -46,7 +46,7 @@ final class TaskAuditLog
     public function updated(string $taskId, int $actorId, TaskState $previousState, TaskState $currentState): void
     {
         $changes = $this->changeSetDetector->detect($previousState->toArray(), $currentState->toArray());
-        if (empty($changes)) {
+        if ([] === $changes) {
             return;
         }
 

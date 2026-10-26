@@ -8,6 +8,7 @@ use App\Auth\Entity\RefreshToken;
 use App\Auth\RefreshToken\RefreshTokenHash;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\LockMode;
+use Doctrine\ORM\AbstractQuery;
 use Doctrine\ORM\Query;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -23,7 +24,7 @@ class RefreshTokenRepository extends ServiceEntityRepository
 
     public function findValidByToken(RefreshTokenHash $token, \DateTimeImmutable $now): ?RefreshToken
     {
-        return $this->validByToken($token, $now)->getOneOrNullResult();
+        return $this->validByToken($token, $now)->getOneOrNullResult(AbstractQuery::HYDRATE_OBJECT);
     }
 
     /**
@@ -32,12 +33,12 @@ class RefreshTokenRepository extends ServiceEntityRepository
      */
     public function lockValidByToken(RefreshTokenHash $token, \DateTimeImmutable $now): ?RefreshToken
     {
-        return $this->validByToken($token, $now)->setLockMode(LockMode::PESSIMISTIC_WRITE)->getOneOrNullResult();
+        return $this->validByToken($token, $now)->setLockMode(LockMode::PESSIMISTIC_WRITE)->getOneOrNullResult(AbstractQuery::HYDRATE_OBJECT);
     }
 
     public function deleteExpired(\DateTimeImmutable $now): int
     {
-        return (int) $this->createQueryBuilder('rt')
+        return $this->createQueryBuilder('rt')
             ->delete()
             ->where('rt.expiresAt < :now')
             ->setParameter('now', $now)

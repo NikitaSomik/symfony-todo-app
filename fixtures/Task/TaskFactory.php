@@ -76,13 +76,21 @@ final class TaskFactory extends PersistentObjectFactory
     protected function initialize(): static
     {
         return $this->instantiateWith(function (array $attributes): Task {
+            /** @var Workspace $workspace */
             $workspace = $attributes['workspace'];
-            \assert($workspace instanceof Workspace);
+            /** @var int|null $creatorId */
+            $creatorId = $attributes['creatorId'];
+            /** @var string $title */
+            $title = $attributes['title'];
+            /** @var string|null $description */
+            $description = $attributes['description'];
+            /** @var \DateTimeImmutable|null $dueDate */
+            $dueDate = $attributes['dueDate'];
 
-            $task = new Task(id: Uuid::v7(), workspaceId: $workspace->getId(), creatorId: $attributes['creatorId'] ?? $workspace->getMembers()[0]->getUserId());
-            $task->setTitle($attributes['title']);
-            $task->setDescription($attributes['description']);
-            $task->setDueDate($attributes['dueDate']);
+            $task = new Task(id: Uuid::v7(), workspaceId: $workspace->getId(), creatorId: $creatorId ?? $workspace->getMembers()[0]->getUserId());
+            $task->setTitle($title);
+            $task->setDescription($description);
+            $task->setDueDate($dueDate);
             // A task reaches a status only through its lifecycle and sets its creation time itself;
             // tests need a task in any of those states without replaying how it got there.
             set($task, 'status', $attributes['status']);

@@ -40,7 +40,7 @@ final readonly class MemberWorkspaceValueResolver implements ValueResolverInterf
             throw new AccessDeniedException();
         }
 
-        $id = (string) $request->attributes->get('id');
+        $id = $request->attributes->getString('id');
         $workspace = Uuid::isValid($id) ? $this->workspaces->findOneForMember(Uuid::fromString($id), $user->id()) : null;
 
         if (null === $workspace) {

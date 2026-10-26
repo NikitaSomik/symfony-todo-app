@@ -49,22 +49,15 @@ final class WorkspaceRepository extends ServiceEntityRepository implements Works
             ->setParameter('id', $id, UuidType::NAME)
             ->setParameter('userId', $userId)
             ->getQuery()
-            ->getOneOrNullResult();
+            ->getOneOrNullResult(AbstractQuery::HYDRATE_OBJECT);
     }
 
     private function findRole(Uuid $workspaceId, int $userId): ?WorkspaceRole
     {
-        $role = $this->getEntityManager()->createQueryBuilder()
-            ->select('m.role')
-            ->from(Membership::class, 'm')
-            ->where('IDENTITY(m.workspace) = :workspaceId')
-            ->andWhere('m.userId = :userId')
-            ->setParameter('workspaceId', $workspaceId, UuidType::NAME)
-            ->setParameter('userId', $userId)
-            ->getQuery()
-            ->getOneOrNullResult(AbstractQuery::HYDRATE_SINGLE_SCALAR);
+        $membership = $this->getEntityManager()->getRepository(Membership::class)
+            ->findOneBy(['workspace' => $workspaceId, 'userId' => $userId]);
 
-        return null === $role ? null : WorkspaceRole::from($role);
+        return null === $membership ? null : $membership->getRole();
     }
 
     public function permissionsOf(Uuid $workspaceId, int $userId): array
