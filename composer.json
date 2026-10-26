@@ -44,7 +44,7 @@
         },
         "bump-after-update": true,
         "platform": {
-            "php": "8.5.10"
+            "php": "8.5.12"
         },
         "sort-packages": true
     },
@@ -100,8 +100,9 @@
         "friendsofphp/php-cs-fixer": "^3.95.26",
         "nelmio/api-doc-bundle": "^5.12.2",
         "phpstan/extension-installer": "^1.4.3",
-        "phpstan/phpstan": "^2.2.14",
+        "phpstan/phpstan": "^2.3",
         "phpstan/phpstan-doctrine": "^2.0.28",
+        "phpstan/phpstan-strict-rules": "^2.1",
         "phpstan/phpstan-symfony": "^2.0.20",
         "phpunit/phpunit": "^13.3.4",
         "symfony/browser-kit": "8.1.*",
