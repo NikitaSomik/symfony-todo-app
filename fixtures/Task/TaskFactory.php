@@ -76,8 +76,21 @@ final class TaskFactory extends PersistentObjectFactory
     protected function initialize(): static
     {
         return $this->instantiateWith(function (array $attributes): Task {
+            /**
+             * @var array{
+             *     workspace: Workspace,
+             *     creatorId: int|null,
+             *     title: string,
+             *     description: string|null,
+             *     dueDate: \DateTimeImmutable|null,
+             *     status: TaskStatus,
+             *     cancellationReason: string|null,
+             *     blockReason: string|null,
+             *     createdAt: \DateTimeImmutable,
+             *     assigneeId: int|null,
+             * } $attributes
+             */
             $workspace = $attributes['workspace'];
-            \assert($workspace instanceof Workspace);
 
             $task = new Task(id: Uuid::v7(), workspaceId: $workspace->getId(), creatorId: $attributes['creatorId'] ?? $workspace->getMembers()[0]->getUserId());
             $task->setTitle($attributes['title']);

@@ -36,7 +36,7 @@ final readonly class WorkspaceContextValueResolver implements ValueResolverInter
             throw new AccessDeniedException();
         }
 
-        $id = (string) $request->attributes->get('id');
+        $id = $request->attributes->getString('id');
         $permissions = Uuid::isValid($id) ? $this->workspaces->permissionsOf(Uuid::fromString($id), $user->id()) : [];
 
         if (!in_array(WorkspacePermission::VIEW, $permissions, true)) {

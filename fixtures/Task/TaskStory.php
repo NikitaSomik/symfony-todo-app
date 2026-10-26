@@ -45,8 +45,8 @@ final class TaskStory extends Story
                 foreach ($owners as $owner) {
                     TaskFactory::createMany(random_int(1, 3), [
                         'workspace' => $this->em->getReference(Workspace::class, Uuid::fromString($owner['workspaceId'])),
-                        'creatorId' => (int) $owner['userId'],
-                        'assigneeId' => 0 === random_int(0, 1) ? (int) $owner['userId'] : null,
+                        'creatorId' => $owner['userId'],
+                        'assigneeId' => 0 === random_int(0, 1) ? $owner['userId'] : null,
                     ]);
                 }
             });

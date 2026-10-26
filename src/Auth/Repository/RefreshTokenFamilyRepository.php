@@ -21,7 +21,7 @@ class RefreshTokenFamilyRepository extends ServiceEntityRepository
     /** Their tokens go with them (ON DELETE CASCADE). */
     public function deleteEnded(\DateTimeImmutable $now): int
     {
-        return (int) $this->createQueryBuilder('f')
+        return $this->createQueryBuilder('f')
             ->delete()
             ->where('f.revokedAt IS NOT NULL')
             ->orWhere('f.expiresAt < :now')

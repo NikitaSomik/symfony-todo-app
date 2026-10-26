@@ -6,6 +6,7 @@ namespace App\Task\Repository;
 
 use App\Task\Contract\TaskDirectory;
 use App\Task\Contract\TaskSummary;
+use Doctrine\ORM\AbstractQuery;
 use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Uid\Uuid;
 
@@ -23,6 +24,6 @@ final readonly class TaskSummaryRepository implements TaskDirectory
             ->where('t.id = :id')
             ->setParameter('id', $taskId, UuidType::NAME)
             ->getQuery()
-            ->getOneOrNullResult();
+            ->getOneOrNullResult(AbstractQuery::HYDRATE_OBJECT);
     }
 }

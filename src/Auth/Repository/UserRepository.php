@@ -8,7 +8,6 @@ use App\Auth\Contract\UserDirectory;
 use App\Auth\Entity\User;
 use App\Auth\ValueObject\Email;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\ORM\AbstractQuery;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bridge\Doctrine\Security\User\UserLoaderInterface;
 use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
@@ -43,14 +42,9 @@ class UserRepository extends ServiceEntityRepository implements UserLoaderInterf
 
     public function findIdByEmail(string $email): ?int
     {
-        $id = $this->createQueryBuilder('u')
-            ->select('u.id')
-            ->where('u.email = :email')
-            ->setParameter('email', (new Email($email))->value)
-            ->getQuery()
-            ->getOneOrNullResult(AbstractQuery::HYDRATE_SINGLE_SCALAR);
+        $user = $this->findOneBy(['email' => (new Email($email))->value]);
 
-        return null === $id ? null : (int) $id;
+        return null === $user ? null : $user->id();
     }
 
     public function findEmailById(int $id): ?string

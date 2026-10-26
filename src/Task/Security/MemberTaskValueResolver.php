@@ -49,7 +49,7 @@ final readonly class MemberTaskValueResolver implements ValueResolverInterface
             throw new AccessDeniedException();
         }
 
-        $id = (string) $request->attributes->get('id');
+        $id = $request->attributes->getString('id');
         $task = Uuid::isValid($id) ? $this->taskRepository->find(Uuid::fromString($id)) : null;
 
         if (null === $task || !$this->workspaces->can($task->getWorkspaceId(), $user->id(), WorkspacePermission::VIEW)) {
