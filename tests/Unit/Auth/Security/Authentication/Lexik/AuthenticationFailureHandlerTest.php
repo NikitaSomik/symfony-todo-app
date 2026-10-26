@@ -23,6 +23,7 @@ final class AuthenticationFailureHandlerTest extends TestCase
     {
         yield 'one minute' => [1, 'Too many failed login attempts, please try again in 1 minute.'];
         yield 'several minutes' => [5, 'Too many failed login attempts, please try again in 5 minutes.'];
+        yield 'no time left' => [0, 'Too many failed login attempts, please try again later.'];
         yield 'unknown time' => [null, 'Too many failed login attempts, please try again later.'];
     }
 
