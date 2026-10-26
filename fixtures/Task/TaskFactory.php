@@ -76,21 +76,26 @@ final class TaskFactory extends PersistentObjectFactory
     protected function initialize(): static
     {
         return $this->instantiateWith(function (array $attributes): Task {
-            /** @var Workspace $workspace */
+            /**
+             * @var array{
+             *     workspace: Workspace,
+             *     creatorId: int|null,
+             *     title: string,
+             *     description: string|null,
+             *     dueDate: \DateTimeImmutable|null,
+             *     status: TaskStatus,
+             *     cancellationReason: string|null,
+             *     blockReason: string|null,
+             *     createdAt: \DateTimeImmutable,
+             *     assigneeId: int|null,
+             * } $attributes
+             */
             $workspace = $attributes['workspace'];
-            /** @var int|null $creatorId */
-            $creatorId = $attributes['creatorId'];
-            /** @var string $title */
-            $title = $attributes['title'];
-            /** @var string|null $description */
-            $description = $attributes['description'];
-            /** @var \DateTimeImmutable|null $dueDate */
-            $dueDate = $attributes['dueDate'];
 
-            $task = new Task(id: Uuid::v7(), workspaceId: $workspace->getId(), creatorId: $creatorId ?? $workspace->getMembers()[0]->getUserId());
-            $task->setTitle($title);
-            $task->setDescription($description);
-            $task->setDueDate($dueDate);
+            $task = new Task(id: Uuid::v7(), workspaceId: $workspace->getId(), creatorId: $attributes['creatorId'] ?? $workspace->getMembers()[0]->getUserId());
+            $task->setTitle($attributes['title']);
+            $task->setDescription($attributes['description']);
+            $task->setDueDate($attributes['dueDate']);
             // A task reaches a status only through its lifecycle and sets its creation time itself;
             // tests need a task in any of those states without replaying how it got there.
             set($task, 'status', $attributes['status']);
