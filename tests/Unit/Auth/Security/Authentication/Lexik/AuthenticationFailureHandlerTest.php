@@ -21,9 +21,9 @@ final class AuthenticationFailureHandlerTest extends TestCase
      */
     public static function throttledMessages(): iterable
     {
-        yield 'one minute' => [1, 'Too many login attempts. Please try again in 1 minute.'];
-        yield 'several minutes' => [5, 'Too many login attempts. Please try again in 5 minutes.'];
-        yield 'unknown time' => [null, 'Too many login attempts. Please try again later.'];
+        yield 'one minute' => [1, 'Too many failed login attempts, please try again in 1 minute.'];
+        yield 'several minutes' => [5, 'Too many failed login attempts, please try again in 5 minutes.'];
+        yield 'unknown time' => [null, 'Too many failed login attempts, please try again later.'];
     }
 
     #[Test]

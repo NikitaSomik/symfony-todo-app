@@ -18,23 +18,11 @@ final class AuthenticationFailureHandler implements AuthenticationFailureHandler
     {
         if ($exception instanceof TooManyLoginAttemptsAuthenticationException) {
             return JsonApiResponse::error(
-                [JsonApiError::of((string) Response::HTTP_TOO_MANY_REQUESTS, $this->tooManyAttemptsMessage($exception))],
+                [JsonApiError::of((string) Response::HTTP_TOO_MANY_REQUESTS, strtr($exception->getMessageKey(), $exception->getMessageData()))],
                 Response::HTTP_TOO_MANY_REQUESTS,
             );
         }
 
         return JsonApiResponse::unauthorized();
-    }
-
-    private function tooManyAttemptsMessage(TooManyLoginAttemptsAuthenticationException $exception): string
-    {
-        // Minutes until the lockout ends, rounded up by Symfony; unknown when not set.
-        $minutes = (int) ($exception->getMessageData()['%minutes%'] ?? 0);
-
-        if ($minutes <= 0) {
-            return 'Too many login attempts. Please try again later.';
-        }
-
-        return sprintf('Too many login attempts. Please try again in %d minute%s.', $minutes, 1 === $minutes ? '' : 's');
     }
 }
