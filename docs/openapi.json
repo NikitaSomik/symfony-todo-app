@@ -598,6 +598,52 @@
                 }
             }
         },
+        "/api/v1/tasks/{id}/request-changes": {
+            "post": {
+                "tags": [
+                    "Task lifecycle"
+                ],
+                "summary": "Send a task in review back to work",
+                "description": "`in_review` \u2192 `in_progress`, for another round of work before the next review.",
+                "operationId": "post_api_task_request_changes",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The task in its new status",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TaskResponseSchema"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The user is a viewer in the workspace of the task"
+                    },
+                    "404": {
+                        "description": "Task not found, or the user is not a member of its workspace"
+                    },
+                    "409": {
+                        "description": "The task cannot make this transition from its current status"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    }
+                }
+            }
+        },
         "/api/v1/tasks/{id}/block": {
             "post": {
                 "tags": [
@@ -836,6 +882,12 @@
                                     "example": "milk",
                                     "nullable": true,
                                     "maxLength": 100
+                                },
+                                "assignee": {
+                                    "description": "`me` for the tasks assigned to the user asking, `none` for the tasks nobody holds, or the id of a user.",
+                                    "type": "string",
+                                    "example": "me",
+                                    "nullable": true
                                 }
                             },
                             "type": "object"
@@ -1639,6 +1691,12 @@
                         "nullable": true,
                         "default": null,
                         "maxLength": 100
+                    },
+                    "assignee": {
+                        "type": "string",
+                        "pattern": ".*(^(me|none|[1-9]\\d{0,8})\\z).*",
+                        "nullable": true,
+                        "default": null
                     }
                 },
                 "type": "object"
@@ -1976,6 +2034,9 @@
                                 "type": "string"
                             },
                             "complete": {
+                                "type": "string"
+                            },
+                            "request_changes": {
                                 "type": "string"
                             },
                             "block": {

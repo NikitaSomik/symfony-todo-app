@@ -9,6 +9,7 @@ enum TaskTransition: string
     case START = 'start';
     case SUBMIT_FOR_REVIEW = 'submit_for_review';
     case COMPLETE = 'complete';
+    case REQUEST_CHANGES = 'request_changes';
     case BLOCK = 'block';
     case UNBLOCK = 'unblock';
     case CANCEL = 'cancel';
@@ -19,7 +20,7 @@ enum TaskTransition: string
         return match ($this) {
             self::START => [TaskStatus::TODO],
             self::SUBMIT_FOR_REVIEW, self::BLOCK => [TaskStatus::IN_PROGRESS],
-            self::COMPLETE => [TaskStatus::IN_REVIEW],
+            self::COMPLETE, self::REQUEST_CHANGES => [TaskStatus::IN_REVIEW],
             self::UNBLOCK => [TaskStatus::BLOCKED],
             self::CANCEL => [TaskStatus::TODO, TaskStatus::IN_PROGRESS, TaskStatus::BLOCKED, TaskStatus::IN_REVIEW],
         };
@@ -28,7 +29,7 @@ enum TaskTransition: string
     public function toStatus(): TaskStatus
     {
         return match ($this) {
-            self::START, self::UNBLOCK => TaskStatus::IN_PROGRESS,
+            self::START, self::UNBLOCK, self::REQUEST_CHANGES => TaskStatus::IN_PROGRESS,
             self::SUBMIT_FOR_REVIEW => TaskStatus::IN_REVIEW,
             self::COMPLETE => TaskStatus::COMPLETED,
             self::BLOCK => TaskStatus::BLOCKED,

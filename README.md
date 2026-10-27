@@ -26,9 +26,12 @@ The rules it enforces now:
   member, never to a viewer, and whoever leaves, is removed or becomes a viewer is taken
   off their unfinished tasks; work is handed over to someone else in one request
   ([0021](docs/adr/0021-a-task-has-an-assignee-who-can-work.md)).
-- **Work moves one way:** to do → in progress → in review → completed. Finished work stays
-  finished — a completed or cancelled task cannot be reopened
-  ([0015](docs/adr/0015-task-lifecycle-as-explicit-transitions.md)).
+- **Work moves forward, and goes back only from review:** to do → in progress → in review →
+  completed. Finished work stays finished — a completed or cancelled task cannot be
+  reopened ([0015](docs/adr/0015-task-lifecycle-as-explicit-transitions.md)).
+- **Review can send work back.** A task in review that needs more work returns to in
+  progress, with the same assignee, and goes to review again when it is ready
+  ([0030](docs/adr/0030-a-task-in-review-goes-back-to-work.md)).
 - **Cancelling takes an explanation.** A task cannot be dropped silently; the reason stays
   with it.
 - **Stuck work is visible.** A task in progress can be blocked, with a reason, and it does
@@ -102,6 +105,7 @@ stateDiagram-v2
     in_progress --> blocked: block
     blocked --> in_progress: unblock
     in_review --> completed: complete
+    in_review --> in_progress: request-changes
     todo --> cancelled: cancel
     in_progress --> cancelled: cancel
     blocked --> cancelled: cancel

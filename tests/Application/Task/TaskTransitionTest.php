@@ -75,6 +75,7 @@ final class TaskTransitionTest extends ApiTestCase
     #[TestWith(['start', TaskStatus::TODO, 'in_progress'])]
     #[TestWith(['submit_for_review', TaskStatus::IN_PROGRESS, 'in_review'])]
     #[TestWith(['complete', TaskStatus::IN_REVIEW, 'completed'])]
+    #[TestWith(['request_changes', TaskStatus::IN_REVIEW, 'in_progress'])]
     public function transitionShouldMoveTheTaskAndRecordIt(string $transition, TaskStatus $from, string $expectedStatus): void
     {
         $task = $this->taskIn($from);
@@ -199,6 +200,10 @@ final class TaskTransitionTest extends ApiTestCase
     #[TestWith(['unblock', TaskStatus::IN_PROGRESS, 'A task in status "in_progress" cannot move to "in_progress".'])]
     #[TestWith(['unblock', TaskStatus::TODO, 'A task in status "todo" cannot move to "in_progress".'])]
     #[TestWith(['start', TaskStatus::BLOCKED, 'A task in status "blocked" cannot move to "in_progress".'])]
+    #[TestWith(['request_changes', TaskStatus::TODO, 'A task in status "todo" cannot move to "in_progress".'])]
+    #[TestWith(['request_changes', TaskStatus::IN_PROGRESS, 'A task in status "in_progress" cannot move to "in_progress".'])]
+    #[TestWith(['request_changes', TaskStatus::BLOCKED, 'A task in status "blocked" cannot move to "in_progress".'])]
+    #[TestWith(['request_changes', TaskStatus::COMPLETED, 'A task in status "completed" cannot move to "in_progress".'])]
     public function transitionOutsideTheLifecycleShouldReturn409AndChangeNothing(string $transition, TaskStatus $from, string $detail): void
     {
         $task = $this->taskIn($from);
@@ -255,6 +260,7 @@ final class TaskTransitionTest extends ApiTestCase
     #[TestWith(['start'])]
     #[TestWith(['submit_for_review'])]
     #[TestWith(['complete'])]
+    #[TestWith(['request_changes'])]
     #[TestWith(['cancel'])]
     #[TestWith(['block'])]
     #[TestWith(['unblock'])]
@@ -279,6 +285,22 @@ final class TaskTransitionTest extends ApiTestCase
         self::assertResponseStatusCodeSame(500);
         self::assertSame(TaskStatus::TODO, static::getContainer()->get(TaskRepository::class)->find($task->getId())->getStatus());
         self::assertSame([], $this->statusHistory($task));
+    }
+
+    #[Test]
+    public function requestChangesShouldLinkTheWayBackToReview(): void
+    {
+        $task = $this->taskIn(TaskStatus::IN_REVIEW);
+        $id = $task->getId()->toRfc4122();
+
+        $response = $this->transition('request_changes', $task);
+
+        self::assertSame([
+            'self' => '/api/v1/tasks/'.$id,
+            'submit_for_review' => '/api/v1/tasks/'.$id.'/submit-for-review',
+            'block' => '/api/v1/tasks/'.$id.'/block',
+            'cancel' => '/api/v1/tasks/'.$id.'/cancel',
+        ], $this->jsonData($response)['links']);
     }
 
     #[Test]

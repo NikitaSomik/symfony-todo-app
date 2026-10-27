@@ -146,6 +146,7 @@ final class TaskWorkspaceAccessTest extends ApiTestCase
     #[TestWith(['PUT', 'api_task_update', ['title' => '']])]
     #[TestWith(['DELETE', 'api_task_delete', []])]
     #[TestWith(['POST', 'api_task_start', []])]
+    #[TestWith(['POST', 'api_task_request_changes', []])]
     #[TestWith(['POST', 'api_task_cancel', ['reason' => 'No longer needed']])]
     #[TestWith(['POST', 'api_task_cancel', []])]
     public function viewerShouldNotChangeATask(string $method, string $route, array $body): void

@@ -16,7 +16,7 @@ final class TaskTransitionTest extends TestCase
     #[TestWith(['todo', ['start', 'cancel']])]
     #[TestWith(['in_progress', ['submit_for_review', 'block', 'cancel']])]
     #[TestWith(['blocked', ['unblock', 'cancel']])]
-    #[TestWith(['in_review', ['complete', 'cancel']])]
+    #[TestWith(['in_review', ['complete', 'request_changes', 'cancel']])]
     #[TestWith(['completed', []])]
     #[TestWith(['cancelled', []])]
     public function eachStatusShouldAllowOnlyItsOwnTransitions(string $status, array $expected): void
