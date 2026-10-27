@@ -19,6 +19,9 @@ todo → in_progress → in_review → completed
 cancelled cancelled   cancelled
 ```
 
+*Extended on 2026-10-27, in #103: a task in review can also go back to `in_progress` —
+see [0030](0030-a-task-in-review-goes-back-to-work.md).*
+
 - **One table of transitions.** `TaskTransition` holds the whole lifecycle: each
   transition names the statuses it starts from and the one it leads to.
   `completed` and `cancelled` are final. `in_review` is a new status.

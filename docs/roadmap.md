@@ -198,6 +198,7 @@ Each decision, with the alternatives that lost and what it costs, is an
 
 > Real rules enforced in the Service layer — not just database operations.
 
+- [x] **Request changes** — a task in review goes back to in progress ([ADR 0030](adr/0030-a-task-in-review-goes-back-to-work.md))
 - [x] **State Machine** — allowed transitions only ([ADR 0015](adr/0015-task-lifecycle-as-explicit-transitions.md)):
   ```
   TODO → IN_PROGRESS → IN_REVIEW → COMPLETED

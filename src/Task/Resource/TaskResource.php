@@ -59,6 +59,7 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
                 new OA\Property(property: 'start', type: 'string', example: '/api/v1/tasks/0195f2f7-1f0a-7db2-b6f6-5d1d48d6752b/start'),
                 new OA\Property(property: 'submit_for_review', type: 'string'),
                 new OA\Property(property: 'complete', type: 'string'),
+                new OA\Property(property: 'request_changes', type: 'string'),
                 new OA\Property(property: 'block', type: 'string'),
                 new OA\Property(property: 'unblock', type: 'string'),
                 new OA\Property(property: 'cancel', type: 'string', example: '/api/v1/tasks/0195f2f7-1f0a-7db2-b6f6-5d1d48d6752b/cancel'),

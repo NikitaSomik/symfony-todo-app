@@ -44,6 +44,32 @@ final class TaskTest extends TestCase
     }
 
     #[Test]
+    public function requestChangesShouldSendATaskInReviewBackToWork(): void
+    {
+        $task = self::task();
+        $at = new \DateTimeImmutable('2026-04-01 10:00:00');
+        $task->start($at);
+        $task->submitForReview($at);
+
+        $task->requestChanges($at);
+
+        self::assertSame(TaskStatus::IN_PROGRESS, $task->getStatus());
+    }
+
+    #[Test]
+    public function requestChangesWhenTaskIsNotInReviewShouldBeRefused(): void
+    {
+        $task = self::task();
+        $at = new \DateTimeImmutable('2026-04-01 10:00:00');
+        $task->start($at);
+
+        $this->expectException(TaskTransitionNotAllowedException::class);
+        $this->expectExceptionMessage('A task in status "in_progress" cannot move to "in_progress".');
+
+        $task->requestChanges($at);
+    }
+
+    #[Test]
     public function cancelShouldKeepTheReason(): void
     {
         $task = self::task();

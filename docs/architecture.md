@@ -166,6 +166,7 @@ stateDiagram-v2
     in_progress --> blocked: block (reason)
     blocked --> in_progress: unblock
     in_review --> completed: complete
+    in_review --> in_progress: request-changes
     todo --> cancelled: cancel (reason)
     in_progress --> cancelled: cancel (reason)
     blocked --> cancelled: cancel (reason)
@@ -176,9 +177,10 @@ stateDiagram-v2
 
 `completed` and `cancelled` are final: nothing leads out of them, and the circle at the
 bottom marks the end of a task's life, not a status. The table lives in `TaskTransition`, and the `Task` entity enforces it: it has no status
-setter, only `start()`, `submitForReview()`, `complete()`, `block()`, `unblock()` and
+setter, only `start()`, `submitForReview()`, `complete()`, `requestChanges()`, `block()`, `unblock()` and
 `cancel()` ([0015](adr/0015-task-lifecycle-as-explicit-transitions.md),
-[0016](adr/0016-blocked-is-a-status-of-work-in-progress.md)). A task's response links the
+[0016](adr/0016-blocked-is-a-status-of-work-in-progress.md),
+[0030](adr/0030-a-task-in-review-goes-back-to-work.md)). A task's response links the
 transitions its status allows, so a client knows which actions to offer.
 
 ### What one transition does

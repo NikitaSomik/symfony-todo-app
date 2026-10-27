@@ -17,6 +17,7 @@ use App\Task\Security\TaskVoter;
 use App\Task\Service\BlockTask;
 use App\Task\Service\CancelTask;
 use App\Task\Service\CompleteTask;
+use App\Task\Service\RequestTaskChanges;
 use App\Task\Service\StartTask;
 use App\Task\Service\SubmitTaskForReview;
 use App\Task\Service\UnblockTask;
@@ -47,6 +48,7 @@ final class TaskTransitionController extends AbstractController
         private readonly StartTask $startTask,
         private readonly SubmitTaskForReview $submitTaskForReview,
         private readonly CompleteTask $completeTask,
+        private readonly RequestTaskChanges $requestTaskChanges,
         private readonly CancelTask $cancelTask,
         private readonly BlockTask $blockTask,
         private readonly UnblockTask $unblockTask,
@@ -72,6 +74,13 @@ final class TaskTransitionController extends AbstractController
     public function complete(#[ValueResolver(MemberTaskValueResolver::class)] Task $task, #[CurrentUser] AuthenticatedUser $user): JsonResponse
     {
         return JsonApiResponse::one($this->taskResource->toItem($this->completeTask->handle($task, $user->id())));
+    }
+
+    #[Route('/request-changes', name: 'request_changes')]
+    #[OA\Post(summary: 'Send a task in review back to work', description: '`in_review` → `in_progress`, for another round of work before the next review.')]
+    public function requestChanges(#[ValueResolver(MemberTaskValueResolver::class)] Task $task, #[CurrentUser] AuthenticatedUser $user): JsonResponse
+    {
+        return JsonApiResponse::one($this->taskResource->toItem($this->requestTaskChanges->handle($task, $user->id())));
     }
 
     #[Route('/block', name: 'block')]

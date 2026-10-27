@@ -171,6 +171,11 @@ class Task
         $this->apply(TaskTransition::COMPLETE, $at);
     }
 
+    public function requestChanges(\DateTimeImmutable $at): void
+    {
+        $this->apply(TaskTransition::REQUEST_CHANGES, $at);
+    }
+
     public function block(BlockReason $reason, \DateTimeImmutable $at): void
     {
         $this->apply(TaskTransition::BLOCK, $at);
