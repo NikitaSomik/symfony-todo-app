@@ -194,6 +194,21 @@ Each decision, with the alternatives that lost and what it costs, is an
 
 ---
 
+## Billing
+
+> New module: `src/Billing/`. A workspace pays for a plan sized by its members, on Stripe ([ADR 0031](adr/0031-billing-on-stripe-by-plan-tiers.md)).
+
+- [ ] Plans and limits without Stripe — Free up to 3 members, Team up to 10, Business up to 50; `403 plan_limit_exceeded`
+- [ ] A stable `code` on the billing errors, the first step of the machine-readable codes above
+- [ ] Outbox on Messenger's Doctrine transport, and Checkout for the first purchase
+- [ ] Webhooks — a signed endpoint, an inbox, a worker that fetches the subscription again
+- [ ] Plan changes — `POST /workspaces/{id}/billing/plan-change` answering `next: redirect` to the Customer Portal
+- [ ] Failed payments, cancelling and SEPA — grace and suspension from Stripe's status, reminders by email
+- [ ] Nightly reconciliation with Stripe, alerts and a runbook
+- [ ] Load test of the webhooks and of the race for the last place in a plan
+
+---
+
 ## Phase 3 — Business Logic
 
 > Real rules enforced in the Service layer — not just database operations.
