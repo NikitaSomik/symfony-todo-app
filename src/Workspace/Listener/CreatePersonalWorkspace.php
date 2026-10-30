@@ -20,6 +20,6 @@ final readonly class CreatePersonalWorkspace
 
     public function __invoke(UserRegistered $event): void
     {
-        $this->createWorkspace->handlePersonal(self::NAME, $event->userId);
+        $this->createWorkspace->personal(self::NAME, $event->userId);
     }
 }

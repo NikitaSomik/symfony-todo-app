@@ -25,7 +25,7 @@ final readonly class CreateWorkspace
         return $this->create(new Workspace(Uuid::v7(), $name, $ownerId, $this->clock->now()), $ownerId);
     }
 
-    public function handlePersonal(string $name, int $ownerId): Workspace
+    public function personal(string $name, int $ownerId): Workspace
     {
         return $this->create(Workspace::personal(Uuid::v7(), $name, $ownerId, $this->clock->now()), $ownerId);
     }
