@@ -64,6 +64,11 @@ flowchart TB
         n1[Handler]
     end
 
+    subgraph Billing
+        direction TB
+        b1[Entity · Repository · Service]
+    end
+
     subgraph Shared
         direction TB
         s1[Http — error rendering, request id]
@@ -78,10 +83,12 @@ flowchart TB
     Workspace -->|writes its history| AuditLog
     Notification -->|contract only| Task
     Notification -->|contract only| Auth
+    Billing -->|implements a contract of| Workspace
     Task --> Shared
     Workspace --> Shared
     Auth --> Shared
     AuditLog --> Shared
+    Billing --> Shared
 ```
 
 An arrow reads "depends on". A module owns its slice end to end and registers itself through its own `di.php` and
@@ -93,7 +100,9 @@ only `Auth`'s contract — an interface for the current user, a lookup by email 
 registration event — and `Task` only `Workspace`'s: a member's role and a reference to
 the workspace ([0018](adr/0018-modules-meet-through-contracts.md)). `Notification` reads tasks
 and email addresses through contracts and reacts to `Task`'s events in the worker
-([0024](adr/0024-the-assignee-is-told-by-email-from-the-worker.md)).
+([0024](adr/0024-the-assignee-is-told-by-email-from-the-worker.md)). `Workspace` asks what a
+plan allows through a contract of its own, and `Billing` answers it, so `Workspace` knows
+nothing of plans ([0031](adr/0031-billing-on-stripe-by-plan-tiers.md)).
 
 ## Reacting to events
 

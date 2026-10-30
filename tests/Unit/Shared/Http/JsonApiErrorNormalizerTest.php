@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Shared\Http;
 
 use App\Shared\Http\ClientFacingException;
+use App\Shared\Http\CodedException;
 use App\Shared\Http\JsonApiErrorNormalizer;
 use App\Shared\Http\QueryPayload;
 use PHPUnit\Framework\Attributes\Test;
@@ -26,6 +27,22 @@ final class JsonApiErrorNormalizerTest extends TestCase
         self::assertSame(
             ['jsonapi' => ['version' => '1.1'], 'errors' => [['status' => '409', 'detail' => 'Email is already taken.']]],
             $this->normalize(new HttpException(409, $domain->getMessage(), $domain)),
+        );
+    }
+
+    #[Test]
+    public function codedExceptionShouldCarryItsCode(): void
+    {
+        $domain = new class('Upgrade to add more.') extends \DomainException implements CodedException {
+            public function errorCode(): string
+            {
+                return 'plan_limit_exceeded';
+            }
+        };
+
+        self::assertSame(
+            ['jsonapi' => ['version' => '1.1'], 'errors' => [['status' => '403', 'detail' => 'Upgrade to add more.', 'code' => 'plan_limit_exceeded']]],
+            $this->normalize(new HttpException(403, $domain->getMessage(), $domain)),
         );
     }
 

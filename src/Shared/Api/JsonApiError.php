@@ -13,12 +13,18 @@ final readonly class JsonApiError
         public string $status,
         public string $detail,
         public ?array $source = null,
+        public ?string $code = null,
     ) {
     }
 
     public static function of(string $status, string $detail): self
     {
         return new self($status, $detail);
+    }
+
+    public static function withCode(string $status, string $detail, string $code): self
+    {
+        return new self($status, $detail, code: $code);
     }
 
     /**
@@ -46,11 +52,15 @@ final readonly class JsonApiError
     }
 
     /**
-     * @return array{status: string, detail: string, source?: array{pointer: string}|array{parameter: string}|array{header: string}}
+     * @return array{status: string, detail: string, code?: string, source?: array{pointer: string}|array{parameter: string}|array{header: string}}
      */
     public function toArray(): array
     {
         $error = ['status' => $this->status, 'detail' => $this->detail];
+
+        if (null !== $this->code) {
+            $error['code'] = $this->code;
+        }
 
         if (null !== $this->source) {
             $error['source'] = $this->source;

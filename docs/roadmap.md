@@ -198,9 +198,9 @@ Each decision, with the alternatives that lost and what it costs, is an
 
 > New module: `src/Billing/`. A workspace pays for a plan sized by its members, on Stripe ([ADR 0031](adr/0031-billing-on-stripe-by-plan-tiers.md)).
 
-- [ ] Plans and limits without Stripe, behind `BILLING_LIMITS=off` — Free up to 3 members, Team up to 10, Business up to 50; `403 plan_limit_exceeded`
-- [ ] A stable `code` on the billing errors, the first step of the machine-readable codes above
-- [ ] `personal` on workspaces, filled from the earliest workspace each user created
+- [x] Plans and limits without Stripe, behind `BILLING_LIMITS=off` — Free up to 3 members, Team up to 10, Business up to 50; `403 plan_limit_exceeded`
+- [x] A stable `code` on the billing errors, the first step of the machine-readable codes above
+- [x] `personal` on workspaces, filled from the earliest workspace each user created
 - [ ] `shadow` mode — log who would be refused, count it, nobody is refused
 - [ ] Outbox on Messenger's Doctrine transport, and Checkout for the first purchase
 - [ ] Webhooks — a signed endpoint, an inbox, a worker that fetches the subscription again

@@ -1135,6 +1135,9 @@
                             }
                         }
                     },
+                    "403": {
+                        "description": "The Free plan includes one team workspace (`plan_limit_exceeded`)"
+                    },
                     "415": {
                         "description": "Body is not sent as application/json"
                     },
@@ -1366,7 +1369,7 @@
                         }
                     },
                     "403": {
-                        "description": "The user is a member but not an owner"
+                        "description": "The user is a member but not an owner, or the workspace has all the members its plan includes (`plan_limit_exceeded`)"
                     },
                     "409": {
                         "description": "The user is already a member"
