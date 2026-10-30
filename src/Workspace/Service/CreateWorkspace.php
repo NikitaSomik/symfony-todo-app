@@ -22,8 +22,17 @@ final readonly class CreateWorkspace
 
     public function handle(string $name, int $ownerId): Workspace
     {
-        return $this->em->wrapInTransaction(function () use ($name, $ownerId): Workspace {
-            $workspace = new Workspace(Uuid::v7(), $name, $ownerId, $this->clock->now());
+        return $this->create(new Workspace(Uuid::v7(), $name, $ownerId, $this->clock->now()), $ownerId);
+    }
+
+    public function personal(string $name, int $ownerId): Workspace
+    {
+        return $this->create(Workspace::personal(Uuid::v7(), $name, $ownerId, $this->clock->now()), $ownerId);
+    }
+
+    private function create(Workspace $workspace, int $ownerId): Workspace
+    {
+        return $this->em->wrapInTransaction(function () use ($workspace, $ownerId): Workspace {
             $this->em->persist($workspace);
 
             $this->eventDispatcher->dispatch(new WorkspaceCreated(
