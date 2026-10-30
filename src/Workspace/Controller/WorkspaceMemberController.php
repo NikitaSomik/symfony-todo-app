@@ -62,7 +62,7 @@ final class WorkspaceMemberController extends AbstractController
     #[OA\Post(summary: 'Add a registered user to a workspace', description: 'Owners only.')]
     #[OA\RequestBody(required: true, content: new OA\JsonContent(ref: new Model(type: AddMemberDTO::class)))]
     #[OA\Response(response: 201, description: 'Member added', headers: [new OA\Header(header: 'Location', description: 'URL of the new member', schema: new OA\Schema(type: 'string'))], content: new JsonApiContent(ref: new Model(type: MemberResponseSchema::class)))]
-    #[OA\Response(response: 403, description: 'The user is a member but not an owner')]
+    #[OA\Response(response: 403, description: 'The user is a member but not an owner, or the workspace has all the members its plan includes (`plan_limit_exceeded`)')]
     #[OA\Response(response: 409, description: 'The user is already a member')]
     #[OA\Response(response: 415, description: 'Body is not sent as application/json')]
     #[OA\Response(response: 422, description: 'Invalid body, or no user is registered with this email')]

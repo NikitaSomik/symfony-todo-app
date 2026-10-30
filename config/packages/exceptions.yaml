@@ -23,6 +23,9 @@ framework:
         App\Workspace\Exception\LastOwnerException:
             status_code: 409
             log_level: info
+        App\Workspace\Exception\PlanLimitExceededException:
+            status_code: 403
+            log_level: info
         App\Workspace\Exception\MemberAlreadyExistsException:
             status_code: 409
             log_level: info

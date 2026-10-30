@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Workspace\Service;
 
+use App\Workspace\Contract\PlanLimits;
 use App\Workspace\Entity\Workspace;
 use App\Workspace\Event\WorkspaceCreated;
+use App\Workspace\Exception\PlanLimitExceededException;
+use App\Workspace\Repository\WorkspaceRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Clock\ClockInterface;
 use Symfony\Component\Uid\Uuid;
@@ -17,11 +20,17 @@ final readonly class CreateWorkspace
         private EntityManagerInterface $em,
         private ClockInterface $clock,
         private EventDispatcherInterface $eventDispatcher,
+        private WorkspaceRepository $workspaces,
+        private PlanLimits $planLimits,
     ) {
     }
 
     public function handle(string $name, int $ownerId): Workspace
     {
+        if (!$this->planLimits->allowsAnotherTeamWorkspace($this->workspaces->findTeamWorkspaceIdsOwnedBy($ownerId))) {
+            throw PlanLimitExceededException::forWorkspaces();
+        }
+
         return $this->create(new Workspace(Uuid::v7(), $name, $ownerId, $this->clock->now()), $ownerId);
     }
 
