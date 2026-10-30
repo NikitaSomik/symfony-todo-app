@@ -14,6 +14,7 @@ use App\Fixtures\Workspace\WorkspaceFactory;
 use App\Tests\ApiTestCase;
 use App\Workspace\Entity\Workspace;
 use App\Workspace\Enum\WorkspaceRole;
+use App\Workspace\Repository\WorkspaceRepository;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;
@@ -49,6 +50,21 @@ final class WorkspaceControllerTest extends ApiTestCase
         self::assertCount(1, $data);
         self::assertSame('Personal', $data[0]['attributes']['name']);
         self::assertSame('owner', $data[0]['attributes']['role']);
+        self::assertTrue($this->workspace($data[0]['id'])->isPersonal());
+    }
+
+    #[Test]
+    public function aWorkspaceCreatedByHandShouldNotBePersonalEvenWhenNamedSo(): void
+    {
+        $response = $this->post($this->route('api_workspace_create'), ['name' => 'Personal']);
+
+        self::assertResponseStatusCodeSame(201);
+        self::assertFalse($this->workspace($this->jsonData($response)['id'])->isPersonal());
+    }
+
+    private function workspace(string $id): Workspace
+    {
+        return static::getContainer()->get(WorkspaceRepository::class)->find($id);
     }
 
     #[Test]

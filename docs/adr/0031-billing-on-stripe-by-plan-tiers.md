@@ -111,10 +111,11 @@ There is no frontend yet; one comes later. The API is its only client until then
 - **What already exists keeps working.** A workspace over its limit keeps its members and
   an owner keeps the workspaces they have; only adding beyond the limit is refused, until
   the team buys a plan. Owners of such workspaces are told by email thirty days ahead.
-- **A personal workspace is marked, not guessed.** `is_personal` is a new column, filled
-  for each user's earliest workspace they own, because a personal workspace is created at
-  registration. Its name proves nothing: it can be renamed, and a team may call itself
-  Personal. A report of what would be marked comes before the update. A personal workspace
+- **A personal workspace is marked, not guessed.** `personal` is a new column, filled for
+  the earliest workspace each user created, because a personal workspace is created at
+  registration. Being its owner is not enough, since an owner may be promoted in a team
+  older than their account, and its name proves nothing: it can be renamed, and a team may
+  call itself Personal. A report of what would be marked comes before the update. A personal workspace
   stays on Free, up to three members, and cannot move to a paid plan.
 - **Migrations run before the code that needs them**, and filling a column is a step of
   its own, so old and new code can run side by side.

@@ -6,7 +6,6 @@ namespace App\Fixtures\Workspace;
 
 use App\Auth\Entity\User;
 use App\Workspace\Enum\WorkspaceRole;
-use App\Workspace\Listener\CreatePersonalWorkspace;
 use Doctrine\ORM\EntityManagerInterface;
 use Zenstruck\Foundry\Story;
 
@@ -39,7 +38,7 @@ final class WorkspaceStory extends Story
             // One flush per batch of users instead of one per workspace.
             flush_after(static function () use ($users): void {
                 foreach ($users as $index => $user) {
-                    WorkspaceFactory::createOne(['name' => CreatePersonalWorkspace::NAME, 'owner' => $user]);
+                    WorkspaceFactory::new()->personal()->create(['owner' => $user]);
 
                     if (0 !== $index % 10) {
                         continue;

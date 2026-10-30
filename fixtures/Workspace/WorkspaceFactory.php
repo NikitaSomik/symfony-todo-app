@@ -8,6 +8,7 @@ use App\Auth\Entity\User;
 use App\Fixtures\Auth\UserFactory;
 use App\Workspace\Entity\Workspace;
 use App\Workspace\Enum\WorkspaceRole;
+use App\Workspace\Listener\CreatePersonalWorkspace;
 use Symfony\Component\Uid\Uuid;
 use Zenstruck\Foundry\Persistence\PersistentObjectFactory;
 
@@ -30,7 +31,13 @@ final class WorkspaceFactory extends PersistentObjectFactory
             // Created at once, not together with the workspace: the workspace names its owner by id.
             'owner' => lazy(static fn (): User => UserFactory::createOne()),
             'members' => [],
+            'personal' => false,
         ];
+    }
+
+    public function personal(): static
+    {
+        return $this->with(['personal' => true, 'name' => CreatePersonalWorkspace::NAME]);
     }
 
     /**
@@ -45,10 +52,12 @@ final class WorkspaceFactory extends PersistentObjectFactory
     protected function initialize(): static
     {
         return $this->instantiateWith(static function (array $attributes): Workspace {
-            /** @var array{owner: User, name: string, members: list<array{User, WorkspaceRole}>} $attributes */
+            /** @var array{owner: User, name: string, members: list<array{User, WorkspaceRole}>, personal: bool} $attributes */
             $at = new \DateTimeImmutable();
 
-            $workspace = new Workspace(Uuid::v7(), $attributes['name'], $attributes['owner']->id(), $at);
+            $workspace = $attributes['personal']
+                ? Workspace::personal(Uuid::v7(), $attributes['name'], $attributes['owner']->id(), $at)
+                : new Workspace(Uuid::v7(), $attributes['name'], $attributes['owner']->id(), $at);
 
             foreach ($attributes['members'] as [$user, $role]) {
                 $workspace->addMember($user->id(), $role, $at);

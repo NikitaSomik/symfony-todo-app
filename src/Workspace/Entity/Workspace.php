@@ -33,6 +33,9 @@ class Workspace
     #[ORM\Column(type: Types::DATETIMETZ_IMMUTABLE)]
     private \DateTimeImmutable $createdAt;
 
+    #[ORM\Column(options: ['default' => false])]
+    private bool $personal = false;
+
     /** @var Collection<int, Membership> */
     #[ORM\OneToMany(targetEntity: Membership::class, mappedBy: 'workspace', cascade: ['persist'], orphanRemoval: true)]
     #[ORM\OrderBy(['joinedAt' => 'ASC', 'id' => 'ASC'])]
@@ -44,6 +47,20 @@ class Workspace
         $this->name = trim($name);
         $this->createdAt = $at;
         $this->members = new ArrayCollection([new Membership($this, $ownerId, WorkspaceRole::OWNER, $at)]);
+    }
+
+    /** The workspace every user gets at registration; its name proves nothing, it can be renamed. */
+    public static function personal(Uuid $id, string $name, int $ownerId, \DateTimeImmutable $at): self
+    {
+        $workspace = new self($id, $name, $ownerId, $at);
+        $workspace->personal = true;
+
+        return $workspace;
+    }
+
+    public function isPersonal(): bool
+    {
+        return $this->personal;
     }
 
     public function getId(): Uuid
