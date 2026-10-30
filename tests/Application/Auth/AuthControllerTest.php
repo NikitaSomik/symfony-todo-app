@@ -304,7 +304,11 @@ final class AuthControllerTest extends ApiTestCase
 
         self::assertResponseStatusCodeSame(429);
         self::assertSame('429', $this->json($response)['errors'][0]['status']);
-        self::assertSame('Too many failed login attempts, please try again in 1 minute.', $this->json($response)['errors'][0]['detail']);
+        // The minutes come from Symfony's rounding; the exact wording is covered by AuthenticationFailureHandlerTest.
+        self::assertMatchesRegularExpression(
+            '/^Too many failed login attempts, please try again in \d+ minutes?\.$/',
+            $this->json($response)['errors'][0]['detail'],
+        );
     }
 
     #[Test]
@@ -331,7 +335,11 @@ final class AuthControllerTest extends ApiTestCase
         ]);
 
         self::assertResponseStatusCodeSame(429);
-        self::assertSame('Too many failed login attempts, please try again in 1 minute.', $this->json($response)['errors'][0]['detail']);
+        // The minutes come from Symfony's rounding; the exact wording is covered by AuthenticationFailureHandlerTest.
+        self::assertMatchesRegularExpression(
+            '/^Too many failed login attempts, please try again in \d+ minutes?\.$/',
+            $this->json($response)['errors'][0]['detail'],
+        );
     }
 
     #[Test]
