@@ -34,6 +34,22 @@ final class WorkspaceTest extends TestCase
     }
 
     #[Test]
+    public function newWorkspaceShouldNotBePersonal(): void
+    {
+        self::assertFalse($this->workspace()->isPersonal());
+    }
+
+    #[Test]
+    public function personalWorkspaceShouldHaveItsCreatorAsTheOnlyOwner(): void
+    {
+        $workspace = Workspace::personal(Uuid::v7(), 'Personal', self::OWNER, new \DateTimeImmutable('2026-04-01 10:00:00'));
+
+        self::assertTrue($workspace->isPersonal());
+        self::assertSame(WorkspaceRole::OWNER, $workspace->roleOf(self::OWNER));
+        self::assertCount(1, $workspace->getMembers());
+    }
+
+    #[Test]
     public function userShouldNotBeAddedTwice(): void
     {
         $workspace = $this->workspace();
