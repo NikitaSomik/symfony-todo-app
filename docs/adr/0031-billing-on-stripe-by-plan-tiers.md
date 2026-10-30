@@ -97,8 +97,47 @@ There is no frontend yet; one comes later. The API is its only client until then
 - **Payments and payers outlive the workspace.** No cascade from the workspace: invoices
   are kept for as long as the law asks.
 
+### How it is released
+
+- **Shipping and switching on are separate.** The code lands in the steps below, while
+  limits are governed by one setting, `BILLING_LIMITS`, for every workspace at once:
+  `off` checks nothing; `shadow` checks and logs who would be refused, and refuses nobody;
+  `on` refuses.
+- **Limits go `on` last.** A limit nobody can buy their way out of would only cut teams
+  off, so the order is: `off` with the code in place, `shadow` to learn how many teams are
+  affected, Checkout and webhooks, an email to the owners concerned, and `on` thirty days
+  later. Going back is changing the setting, without a deployment. The setting is removed
+  once `on` has held.
+- **What already exists keeps working.** A workspace over its limit keeps its members and
+  an owner keeps the workspaces they have; only adding beyond the limit is refused, until
+  the team buys a plan. Owners of such workspaces are told by email thirty days ahead.
+- **A personal workspace is marked, not guessed.** `is_personal` is a new column, filled
+  for each user's earliest workspace they own, because a personal workspace is created at
+  registration. Its name proves nothing: it can be renamed, and a team may call itself
+  Personal. A report of what would be marked comes before the update. A personal workspace
+  stays on Free, up to three members, and cannot move to a paid plan.
+- **Migrations run before the code that needs them**, and filling a column is a step of
+  its own, so old and new code can run side by side.
+- **A plan lives in Billing's own table.** A workspace without a row there is on Free,
+  so no existing row is touched, and Workspace stays unaware of billing. Billing implements
+  a contract declared by Workspace, so the only dependency is Billing → Workspace.
+- **Support changes a plan with a console command**, which leaves an audit entry saying who
+  changed what.
+- **Each switch is rehearsed.** There is no deployment yet, so the migrations and the moves
+  from `off` to `shadow` to `on` are played on a local copy seeded with workspaces over
+  their limits, following a written release plan and runbook.
+
 ## Alternatives considered
 
+- **No setting: limits on from the first step.** One path fewer in the code and in the
+  tests, but limits would arrive before anyone could pay, and the only way back would be
+  a revert.
+- **A share of workspaces at a time, or a flag service such as Unleash.** A real gradual
+  rollout, for more code or one more service to run. Worth it once one setting for everyone
+  proves too coarse.
+- **Keeping teams over the limit on their old terms for good, or making them read-only
+  after some months.** The first gives up what they would pay; the second breaks work that
+  was allowed yesterday.
 - **A price per member.** Revenue grows with the team and there is no jump between tiers.
   It brings back everything tiers avoid: a seat count kept in sync with Stripe on every
   change of members, a charge on every addition, a race for the last paid seat, rules for
@@ -126,6 +165,8 @@ There is no frontend yet; one comes later. The API is its only client until then
 
 ## Consequences
 
+- Until `on`, the limits are checked and not enforced, and `BILLING_LIMITS` is one more
+  thing to test: every check has three modes until the setting goes.
 - The eleventh member moves a team from Team to Business. That is the price of having no
   seats; a tier between the two is the answer if teams stop there.
 - A team larger than fifty cannot buy on its own.
@@ -139,7 +180,8 @@ There is no frontend yet; one comes later. The API is its only client until then
   pages handle the confirmation.
 - Selling inside a future iOS app would fall under Apple's in-app purchase rules; billing
   stays on the web.
-- Built in steps, each with its own pull request: plans and limits without Stripe;
-  the outbox and Checkout; webhooks; plan changes; failed payments, cancelling and SEPA;
-  reconciliation and alerts; load. The status becomes `accepted` when the first step
+- Built in steps, each with its own pull request: plans and limits without Stripe, off;
+  shadow mode; the outbox and Checkout; webhooks; plan changes; the email to owners over
+  their limits; limits on; failed payments, cancelling and SEPA; reconciliation and alerts;
+  load. The status becomes `accepted` when the first step
   reaches `main`, and this record links each step as it lands.
