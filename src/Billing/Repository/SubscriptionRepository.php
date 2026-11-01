@@ -7,6 +7,7 @@ namespace App\Billing\Repository;
 use App\Billing\Entity\Subscription;
 use App\Billing\Enum\Plan;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Uid\Uuid;
 
@@ -25,5 +26,27 @@ class SubscriptionRepository extends ServiceEntityRepository
         $subscription = $this->find($workspaceId);
 
         return null === $subscription ? Plan::FREE : $subscription->getPlan();
+    }
+
+    /**
+     * @param list<Uuid> $workspaceIds
+     */
+    public function countOnFree(array $workspaceIds): int
+    {
+        if ([] === $workspaceIds) {
+            return 0;
+        }
+
+        /** @var int<0, max> $paid */
+        $paid = $this->createQueryBuilder('s')
+            ->select('COUNT(s.workspaceId)')
+            ->where('s.workspaceId IN (:ids)')
+            ->andWhere('s.plan != :free')
+            ->setParameter('ids', array_map(static fn (Uuid $id): string => $id->toRfc4122(), $workspaceIds), ArrayParameterType::STRING)
+            ->setParameter('free', Plan::FREE)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return count($workspaceIds) - $paid;
     }
 }

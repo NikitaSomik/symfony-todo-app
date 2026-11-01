@@ -38,13 +38,10 @@ final readonly class WorkspacePlanLimits implements PlanLimits
             return;
         }
 
-        $onFree = array_filter(
-            $ownedTeamWorkspaceIds,
-            fn (Uuid $workspaceId): bool => Plan::FREE === $this->subscriptions->planOf($workspaceId),
-        );
+        $onFree = $this->subscriptions->countOnFree($ownedTeamWorkspaceIds);
 
-        if (count($onFree) >= Plan::TEAM_WORKSPACES_ON_FREE) {
-            throw PlanLimitExceededException::forTeamWorkspaces(count($onFree));
+        if ($onFree >= Plan::TEAM_WORKSPACES_ON_FREE) {
+            throw PlanLimitExceededException::forTeamWorkspaces($onFree);
         }
     }
 }

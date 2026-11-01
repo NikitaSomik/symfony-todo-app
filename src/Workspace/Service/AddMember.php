@@ -45,6 +45,7 @@ final readonly class AddMember
                 $this->em->lock($workspace, LockMode::PESSIMISTIC_WRITE);
                 $membership = $workspace->addMember($userId, $role, $this->clock->now());
 
+                // After the addition: someone already here stays a conflict, and a refusal rolls it back.
                 $this->planLimits->ensureCanAddMember($workspace->getId(), $this->workspaces->countMembers($workspace->getId()));
 
                 $this->eventDispatcher->dispatch(new MemberAdded(
