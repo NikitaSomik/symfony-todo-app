@@ -78,6 +78,25 @@ final class PlanLimitTest extends ApiTestCase
     }
 
     #[Test]
+    public function aFullPlanShouldSayWhatToDoNext(): void
+    {
+        $error = $this->json($this->addSomeone($this->workspaceWithMembers(3)))['errors'][0];
+
+        self::assertSame('Member limit reached', $error['title']);
+        self::assertSame('The Free plan includes 3 members. Move to Team to add up to 10.', $error['detail']);
+        self::assertSame(['plan' => 'free', 'limit' => 3, 'used' => 3, 'next_plan' => 'team'], $error['meta']);
+    }
+
+    #[Test]
+    public function theLastPlanShouldOfferToTalkInsteadOfANextPlan(): void
+    {
+        $error = $this->json($this->addSomeone($this->workspaceWithMembers(50, Plan::BUSINESS)))['errors'][0];
+
+        self::assertSame('The Business plan includes 50 members. Contact us to add more.', $error['detail']);
+        self::assertSame(['plan' => 'business', 'limit' => 50, 'used' => 50], $error['meta']);
+    }
+
+    #[Test]
     public function aWorkspaceOverItsLimitShouldKeepItsMembersAndRefuseMore(): void
     {
         $workspace = $this->workspaceWithMembers(5);

@@ -6,33 +6,36 @@ namespace App\Billing\Service;
 
 use App\Billing\Enum\LimitMode;
 use App\Billing\Enum\Plan;
+use App\Billing\Exception\PlanLimitExceededException;
 use App\Billing\Repository\SubscriptionRepository;
 use App\Workspace\Contract\PlanLimits;
 use Symfony\Component\Uid\Uuid;
 
 final readonly class WorkspacePlanLimits implements PlanLimits
 {
-    private const int TEAM_WORKSPACES_ON_FREE = 1;
-
     public function __construct(
         private SubscriptionRepository $subscriptions,
         private LimitMode $mode,
     ) {
     }
 
-    public function allowsAnotherMember(Uuid $workspaceId, int $members): bool
+    public function ensureCanAddMember(Uuid $workspaceId, int $currentMembers): void
     {
         if (LimitMode::OFF === $this->mode) {
-            return true;
+            return;
         }
 
-        return $members < $this->subscriptions->planOf($workspaceId)->memberLimit();
+        $plan = $this->subscriptions->planOf($workspaceId);
+
+        if ($currentMembers >= $plan->memberLimit()) {
+            throw PlanLimitExceededException::forMembers($plan, $currentMembers);
+        }
     }
 
-    public function allowsAnotherTeamWorkspace(array $ownedTeamWorkspaceIds): bool
+    public function ensureCanCreateTeamWorkspace(array $ownedTeamWorkspaceIds): void
     {
         if (LimitMode::OFF === $this->mode) {
-            return true;
+            return;
         }
 
         $onFree = array_filter(
@@ -40,6 +43,8 @@ final readonly class WorkspacePlanLimits implements PlanLimits
             fn (Uuid $workspaceId): bool => Plan::FREE === $this->subscriptions->planOf($workspaceId),
         );
 
-        return count($onFree) < self::TEAM_WORKSPACES_ON_FREE;
+        if (count($onFree) >= Plan::TEAM_WORKSPACES_ON_FREE) {
+            throw PlanLimitExceededException::forTeamWorkspaces(count($onFree));
+        }
     }
 }

@@ -6,6 +6,7 @@ namespace App\Tests\Unit\Billing;
 
 use App\Billing\Enum\LimitMode;
 use App\Billing\Enum\Plan;
+use App\Billing\Exception\PlanLimitExceededException;
 use App\Billing\Repository\SubscriptionRepository;
 use App\Billing\Service\WorkspacePlanLimits;
 use PHPUnit\Framework\Attributes\Test;
@@ -25,18 +26,27 @@ final class WorkspacePlanLimitsTest extends TestCase
     #[Test]
     public function offShouldAllowWhatTheLimitsWouldRefuse(): void
     {
+        $this->expectNotToPerformAssertions();
+
         $limits = $this->limits(LimitMode::OFF);
 
-        self::assertTrue($limits->allowsAnotherMember(Uuid::v7(), 100));
-        self::assertTrue($limits->allowsAnotherTeamWorkspace([Uuid::v7(), Uuid::v7()]));
+        $limits->ensureCanAddMember(Uuid::v7(), 100);
+        $limits->ensureCanCreateTeamWorkspace([Uuid::v7(), Uuid::v7()]);
     }
 
     #[Test]
-    public function onShouldRefuseWhatIsOverTheLimits(): void
+    public function onShouldRefuseAMemberOverTheLimit(): void
     {
-        $limits = $this->limits(LimitMode::ON);
+        $this->expectException(PlanLimitExceededException::class);
 
-        self::assertFalse($limits->allowsAnotherMember(Uuid::v7(), 3));
-        self::assertFalse($limits->allowsAnotherTeamWorkspace([Uuid::v7()]));
+        $this->limits(LimitMode::ON)->ensureCanAddMember(Uuid::v7(), 3);
+    }
+
+    #[Test]
+    public function onShouldRefuseASecondTeamWorkspaceOnFree(): void
+    {
+        $this->expectException(PlanLimitExceededException::class);
+
+        $this->limits(LimitMode::ON)->ensureCanCreateTeamWorkspace([Uuid::v7()]);
     }
 }

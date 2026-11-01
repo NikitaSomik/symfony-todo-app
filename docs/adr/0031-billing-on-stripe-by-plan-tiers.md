@@ -34,7 +34,10 @@ There is no frontend yet; one comes later. The API is its only client until then
 - **The limit is checked where a member is added**, under a lock on the workspace, so two
   invitations racing for the last place cannot both pass, **and where a workspace is
   created.** There is nothing to lock there yet, and two workspaces created at once cost
-  nothing but a free workspace. Over the limit the answer is `403` with the code `plan_limit_exceeded`.
+  nothing but a free workspace. Over the limit the answer is `403` with the code
+  `plan_limit_exceeded`, and the error says which plan, how full it is and which plan
+  comes next, in `meta`, so a client can offer the move instead of a dead end. Billing refuses, because it knows the plan; Workspace only
+  asks through its contract.
 
 ### Who pays
 

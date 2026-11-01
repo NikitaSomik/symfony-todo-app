@@ -6,11 +6,11 @@ namespace App\Workspace\Contract;
 
 use Symfony\Component\Uid\Uuid;
 
-/** What a plan allows a workspace; whoever sells the plans answers. */
+/** What a plan allows a workspace. Whoever sells the plans refuses by throwing, and says why. */
 interface PlanLimits
 {
-    public function allowsAnotherMember(Uuid $workspaceId, int $members): bool;
+    public function ensureCanAddMember(Uuid $workspaceId, int $currentMembers): void;
 
     /** @param list<Uuid> $ownedTeamWorkspaceIds */
-    public function allowsAnotherTeamWorkspace(array $ownedTeamWorkspaceIds): bool;
+    public function ensureCanCreateTeamWorkspace(array $ownedTeamWorkspaceIds): void;
 }

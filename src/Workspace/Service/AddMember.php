@@ -11,7 +11,6 @@ use App\Workspace\Entity\Workspace;
 use App\Workspace\Enum\WorkspaceRole;
 use App\Workspace\Event\MemberAdded;
 use App\Workspace\Exception\MemberAlreadyExistsException;
-use App\Workspace\Exception\PlanLimitExceededException;
 use App\Workspace\Exception\UserNotRegisteredException;
 use App\Workspace\Repository\WorkspaceRepository;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
@@ -46,9 +45,7 @@ final readonly class AddMember
                 $this->em->lock($workspace, LockMode::PESSIMISTIC_WRITE);
                 $membership = $workspace->addMember($userId, $role, $this->clock->now());
 
-                if (!$this->planLimits->allowsAnotherMember($workspace->getId(), $this->workspaces->countMembers($workspace->getId()))) {
-                    throw PlanLimitExceededException::forMembers();
-                }
+                $this->planLimits->ensureCanAddMember($workspace->getId(), $this->workspaces->countMembers($workspace->getId()));
 
                 $this->eventDispatcher->dispatch(new MemberAdded(
                     workspaceId: $workspace->getId()->toRfc4122(),
