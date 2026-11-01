@@ -22,3 +22,8 @@ updates:
       github-actions:
         patterns:
           - '*'
+
+  - package-ecosystem: 'docker'
+    directory: '/docker/php'
+    schedule:
+      interval: 'weekly'

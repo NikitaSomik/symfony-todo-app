@@ -20,7 +20,7 @@ RUN apk add --no-cache --virtual .build-deps $PHPIZE_DEPS linux-headers shadow \
     && groupmod -g $GID www-data \
     && apk del .build-deps
 
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2.11 /usr/bin/composer /usr/bin/composer
 
 ###> recipes ###
 ###< recipes ###
