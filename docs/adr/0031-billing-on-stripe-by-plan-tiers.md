@@ -168,10 +168,11 @@ There is no frontend yet; one comes later. The API is its only client until then
 - **A free trial of Team.** Free already lets a small team start; a trial is a parameter of
   Checkout to add when there is a reason to.
 - **Plans and their limits as rows of a `plans` table** — entitlements kept as data, so a
-  new plan or a customer's own terms need no code change. While every customer gets the
-  same three plans, an enum is simpler and checked by PHPStan. The limits move to a table
-  when the first customer signs for terms of their own; Workspace asks the same contract
-  either way, so only Billing changes.
+  new plan needs no code change. Three plans that rarely change gain nothing from it, and an
+  enum is simpler and checked by PHPStan. A customer's own terms are not a plan either: when
+  the first one signs, its limit is kept on that workspace's subscription and overrides the
+  plan's (plan defaults, customer overrides), set by support with an audit entry. Workspace
+  asks the same contract either way, so only Billing changes.
 
 ## Consequences
 
