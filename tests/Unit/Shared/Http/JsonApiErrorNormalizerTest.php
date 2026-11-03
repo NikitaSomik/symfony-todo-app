@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Shared\Http;
 
+use App\Shared\Http\ActionableException;
 use App\Shared\Http\ClientFacingException;
 use App\Shared\Http\JsonApiErrorNormalizer;
 use App\Shared\Http\QueryPayload;
@@ -26,6 +27,38 @@ final class JsonApiErrorNormalizerTest extends TestCase
         self::assertSame(
             ['jsonapi' => ['version' => '1.1'], 'errors' => [['status' => '409', 'detail' => 'Email is already taken.']]],
             $this->normalize(new HttpException(409, $domain->getMessage(), $domain)),
+        );
+    }
+
+    #[Test]
+    public function actionableExceptionShouldCarryWhatAClientActsOn(): void
+    {
+        $domain = new class('Move to Team.') extends \DomainException implements ActionableException {
+            public function errorCode(): string
+            {
+                return 'plan_limit_exceeded';
+            }
+
+            public function errorTitle(): string
+            {
+                return 'Member limit reached';
+            }
+
+            public function errorMeta(): array
+            {
+                return ['limit' => 3];
+            }
+        };
+
+        self::assertSame(
+            ['jsonapi' => ['version' => '1.1'], 'errors' => [[
+                'status' => '403',
+                'detail' => 'Move to Team.',
+                'code' => 'plan_limit_exceeded',
+                'title' => 'Member limit reached',
+                'meta' => ['limit' => 3],
+            ]]],
+            $this->normalize(new HttpException(403, $domain->getMessage(), $domain)),
         );
     }
 

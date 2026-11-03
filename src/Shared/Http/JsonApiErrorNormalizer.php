@@ -15,7 +15,7 @@ use Symfony\Component\Validator\Exception\ValidationFailedException;
 final class JsonApiErrorNormalizer implements NormalizerInterface
 {
     /**
-     * @return array{jsonapi: array{version: string}, errors: list<array{status: string, detail: string, source?: array{pointer: string}|array{parameter: string}|array{header: string}}>}
+     * @return array{jsonapi: array{version: string}, errors: list<array{status: string, detail: string, code?: string, title?: string, meta?: array<string, int|string>, source?: array{pointer: string}|array{parameter: string}|array{header: string}}>}
      */
     public function normalize(mixed $data, ?string $format = null, array $context = []): array
     {
@@ -39,6 +39,10 @@ final class JsonApiErrorNormalizer implements NormalizerInterface
         if ($throwable instanceof HttpExceptionInterface) {
             $status = $throwable->getStatusCode();
             $mapped = $throwable->getPrevious();
+
+            if ($mapped instanceof ActionableException) {
+                return $this->toPayload([JsonApiError::actionable((string) $status, $mapped->getMessage(), $mapped->errorCode(), $mapped->errorTitle(), $mapped->errorMeta())]);
+            }
 
             return $this->toPayload([JsonApiError::of(
                 (string) $status,
@@ -118,7 +122,7 @@ final class JsonApiErrorNormalizer implements NormalizerInterface
     /**
      * @param list<JsonApiError> $errors
      *
-     * @return array{jsonapi: array{version: string}, errors: list<array{status: string, detail: string, source?: array{pointer: string}|array{parameter: string}|array{header: string}}>}
+     * @return array{jsonapi: array{version: string}, errors: list<array{status: string, detail: string, code?: string, title?: string, meta?: array<string, int|string>, source?: array{pointer: string}|array{parameter: string}|array{header: string}}>}
      */
     private function toPayload(array $errors): array
     {

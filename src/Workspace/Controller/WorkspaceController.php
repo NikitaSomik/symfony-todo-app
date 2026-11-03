@@ -60,6 +60,7 @@ final class WorkspaceController extends AbstractController
     #[OA\Post(summary: 'Create a workspace', description: 'The user who creates it becomes its owner.')]
     #[OA\RequestBody(required: true, content: new OA\JsonContent(ref: new Model(type: WorkspaceDTO::class)))]
     #[OA\Response(response: 201, description: 'Workspace created', headers: [new OA\Header(header: 'Location', description: 'URL of the created workspace', schema: new OA\Schema(type: 'string'))], content: new JsonApiContent(ref: new Model(type: WorkspaceResponseSchema::class)))]
+    #[OA\Response(response: 403, description: 'The Free plan includes one team workspace (`plan_limit_exceeded`)')]
     #[OA\Response(response: 415, description: 'Body is not sent as application/json')]
     #[OA\Response(ref: '#/components/responses/ValidationError', response: 422)]
     public function create(#[MapRequestPayload(acceptFormat: 'json')] WorkspaceDTO $dto, #[CurrentUser] AuthenticatedUser $user): JsonResponse

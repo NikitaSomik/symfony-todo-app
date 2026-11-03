@@ -8,17 +8,32 @@ final readonly class JsonApiError
 {
     /**
      * @param array{pointer: string}|array{parameter: string}|array{header: string}|null $source
+     * @param array<string, int|string>                                                  $meta
      */
     private function __construct(
         public string $status,
         public string $detail,
         public ?array $source = null,
+        public ?string $code = null,
+        public ?string $title = null,
+        public array $meta = [],
     ) {
     }
 
     public static function of(string $status, string $detail): self
     {
         return new self($status, $detail);
+    }
+
+    /**
+     * For an error a client can act on: a code to branch on, a title that stays the same
+     * from one occurrence to the next, and the facts behind this one.
+     *
+     * @param array<string, int|string> $meta
+     */
+    public static function actionable(string $status, string $detail, string $code, string $title, array $meta): self
+    {
+        return new self($status, $detail, code: $code, title: $title, meta: $meta);
     }
 
     /**
@@ -46,11 +61,23 @@ final readonly class JsonApiError
     }
 
     /**
-     * @return array{status: string, detail: string, source?: array{pointer: string}|array{parameter: string}|array{header: string}}
+     * @return array{status: string, detail: string, code?: string, title?: string, meta?: array<string, int|string>, source?: array{pointer: string}|array{parameter: string}|array{header: string}}
      */
     public function toArray(): array
     {
         $error = ['status' => $this->status, 'detail' => $this->detail];
+
+        if (null !== $this->code) {
+            $error['code'] = $this->code;
+        }
+
+        if (null !== $this->title) {
+            $error['title'] = $this->title;
+        }
+
+        if ([] !== $this->meta) {
+            $error['meta'] = $this->meta;
+        }
 
         if (null !== $this->source) {
             $error['source'] = $this->source;

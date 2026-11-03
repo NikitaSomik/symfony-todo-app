@@ -23,6 +23,7 @@ return static function (DeptracConfig $config): void {
             $task = $internals('Task'),
             $auditLog = $module('AuditLog'),
             $notification = $module('Notification'),
+            $billing = $module('Billing'),
             $shared = $module('Shared'),
         )
         ->rulesets(
@@ -34,6 +35,7 @@ return static function (DeptracConfig $config): void {
             Ruleset::forLayer($authContract),
             Ruleset::forLayer($auditLog)->accesses($shared),
             Ruleset::forLayer($notification)->accesses($taskContract, $authContract, $shared),
+            Ruleset::forLayer($billing)->accesses($workspaceContract, $shared),
             Ruleset::forLayer($shared),
         )
     ;

@@ -25,6 +25,31 @@ final class WorkspaceRepository extends ServiceEntityRepository implements Works
         parent::__construct($registry, Workspace::class);
     }
 
+    public function countMembers(Uuid $workspaceId): int
+    {
+        return $this->getEntityManager()->getRepository(Membership::class)->count(['workspace' => $workspaceId]);
+    }
+
+    /**
+     * @return list<Uuid>
+     */
+    public function findTeamWorkspaceIdsOwnedBy(int $userId): array
+    {
+        /** @var list<array{id: Uuid}> $rows */
+        $rows = $this->createQueryBuilder('w')
+            ->select('w.id')
+            ->join('w.members', 'm')
+            ->where('m.userId = :userId')
+            ->andWhere('m.role = :owner')
+            ->andWhere('w.personal = false')
+            ->setParameter('userId', $userId)
+            ->setParameter('owner', WorkspaceRole::OWNER)
+            ->getQuery()
+            ->getResult();
+
+        return array_column($rows, 'id');
+    }
+
     /**
      * @return Workspace[]
      */

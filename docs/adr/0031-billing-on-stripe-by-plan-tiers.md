@@ -1,8 +1,8 @@
 # 0031. A workspace pays on Stripe for a plan sized by its members; Stripe decides the status, the application derives access
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-10-29
-- Implemented in: to come, step by step (see Consequences)
+- Implemented in: #109 (the personal mark), #110 (plans and limits); the rest step by step (see Consequences)
 
 ## Context
 
@@ -31,9 +31,13 @@ There is no frontend yet; one comes later. The API is its only client until then
 - **A team that outgrows its tier moves to the next one.** No extra charge per person.
 - **On Free an owner has one team workspace.** The personal workspace created at
   registration does not count toward it.
-- **The limit is checked where a member is added and where a workspace is created**,
-  under a lock on the workspace, so two invitations racing for the last place cannot both
-  pass. Over the limit the answer is `403` with the code `plan_limit_exceeded`.
+- **The limit is checked where a member is added**, under a lock on the workspace, so two
+  invitations racing for the last place cannot both pass, **and where a workspace is
+  created.** There is nothing to lock there yet, and two workspaces created at once cost
+  nothing but a free workspace. Over the limit the answer is `403` with the code
+  `plan_limit_exceeded`, and the error says which plan, how full it is and which plan
+  comes next, in `meta`, so a client can offer the move instead of a dead end. Billing refuses, because it knows the plan; Workspace only
+  asks through its contract.
 
 ### Who pays
 
@@ -163,6 +167,12 @@ There is no frontend yet; one comes later. The API is its only client until then
   services, and the outbox gives the delivery guarantee a bus would not.
 - **A free trial of Team.** Free already lets a small team start; a trial is a parameter of
   Checkout to add when there is a reason to.
+- **Plans and their limits as rows of a `plans` table** — entitlements kept as data, so a
+  new plan needs no code change. Three plans that rarely change gain nothing from it, and an
+  enum is simpler and checked by PHPStan. A customer's own terms are not a plan either: when
+  the first one signs, its limit is kept on that workspace's subscription and overrides the
+  plan's (plan defaults, customer overrides), set by support with an audit entry. Workspace
+  asks the same contract either way, so only Billing changes.
 
 ## Consequences
 
