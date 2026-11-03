@@ -7,5 +7,6 @@ namespace App\Billing\Enum;
 enum LimitMode: string
 {
     case OFF = 'off';
+    case SHADOW = 'shadow';
     case ON = 'on';
 }

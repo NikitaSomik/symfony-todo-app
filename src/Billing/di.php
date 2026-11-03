@@ -15,7 +15,5 @@ return static function (ContainerConfigurator $di): void {
             ->autoconfigure()
         ->load('App\Billing\\', __DIR__)
             ->exclude([__DIR__.'/{di,routing}.php', __DIR__.'/Entity'])
-        ->set(WorkspacePlanLimits::class)
-            ->arg('$mode', '%env(enum:App\Billing\Enum\LimitMode:BILLING_LIMITS)%')
         ->alias(PlanLimits::class, WorkspacePlanLimits::class);
 };

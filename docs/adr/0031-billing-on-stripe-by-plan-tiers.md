@@ -2,7 +2,7 @@
 
 - Status: accepted
 - Date: 2026-10-29
-- Implemented in: #109 (the personal mark), #110 (plans and limits); the rest step by step (see Consequences)
+- Implemented in: #109 (the personal mark), #110 (plans and limits), #113 (shadow mode); the rest step by step (see Consequences)
 
 ## Context
 
@@ -107,6 +107,11 @@ There is no frontend yet; one comes later. The API is its only client until then
   limits are governed by one setting, `BILLING_LIMITS`, for every workspace at once:
   `off` checks nothing; `shadow` checks and logs who would be refused, and refuses nobody;
   `on` refuses.
+- **The setting wraps the rules instead of living in them.** `SwitchablePlanLimits`
+  decorates the rules behind `PlanLimits`, so they know nothing of the release, and removing
+  the setting is removing that class. In `shadow` it writes each refusal it lets pass to the
+  `billing` log channel, with the plan, its limit and how full it is, at `info`, which
+  production keeps on its own instead of buffering it with the rest.
 - **Limits go `on` last.** A limit nobody can buy their way out of would only cut teams
   off, so the order is: `off` with the code in place, `shadow` to learn how many teams are
   affected, Checkout and webhooks, an email to the owners concerned, and `on` thirty days

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Billing;
 
-use App\Billing\Enum\LimitMode;
 use App\Billing\Enum\Plan;
 use App\Billing\Exception\PlanLimitExceededException;
 use App\Billing\Repository\SubscriptionRepository;
@@ -15,39 +14,36 @@ use Symfony\Component\Uid\Uuid;
 
 final class WorkspacePlanLimitsTest extends TestCase
 {
-    private function limits(LimitMode $mode): WorkspacePlanLimits
+    private function limits(): WorkspacePlanLimits
     {
         $subscriptions = $this->createStub(SubscriptionRepository::class);
         $subscriptions->method('planOf')->willReturn(Plan::FREE);
         $subscriptions->method('countOnFree')->willReturn(1);
 
-        return new WorkspacePlanLimits($subscriptions, $mode);
+        return new WorkspacePlanLimits($subscriptions);
     }
 
     #[Test]
-    public function offShouldAllowWhatTheLimitsWouldRefuse(): void
+    public function aMemberBelowTheLimitShouldPass(): void
     {
         $this->expectNotToPerformAssertions();
 
-        $limits = $this->limits(LimitMode::OFF);
-
-        $limits->ensureCanAddMember(Uuid::v7(), 100);
-        $limits->ensureCanCreateTeamWorkspace([Uuid::v7(), Uuid::v7()]);
+        $this->limits()->ensureCanAddMember(Uuid::v7(), 2);
     }
 
     #[Test]
-    public function onShouldRefuseAMemberOverTheLimit(): void
+    public function aMemberOverTheLimitShouldBeRefused(): void
     {
         $this->expectException(PlanLimitExceededException::class);
 
-        $this->limits(LimitMode::ON)->ensureCanAddMember(Uuid::v7(), 3);
+        $this->limits()->ensureCanAddMember(Uuid::v7(), 3);
     }
 
     #[Test]
-    public function onShouldRefuseASecondTeamWorkspaceOnFree(): void
+    public function aSecondTeamWorkspaceOnFreeShouldBeRefused(): void
     {
         $this->expectException(PlanLimitExceededException::class);
 
-        $this->limits(LimitMode::ON)->ensureCanCreateTeamWorkspace([Uuid::v7()]);
+        $this->limits()->ensureCanCreateTeamWorkspace([Uuid::v7()]);
     }
 }
