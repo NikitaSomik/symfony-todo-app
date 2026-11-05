@@ -202,9 +202,9 @@ Each decision, with the alternatives that lost and what it costs, is an
 - [x] A stable `code` on the billing errors, the first step of the machine-readable codes above
 - [x] `personal` on workspaces, filled from the earliest workspace each user created
 - [x] `shadow` mode — log who would be refused, count it, nobody is refused
-- [ ] Outbox on Messenger's Doctrine transport, and Checkout for the first purchase
+- [x] Checkout for the first purchase — `POST /workspaces/{id}/billing/checkout`, owners only (`manage_billing`), a price found by its lookup key
 - [ ] Webhooks — a signed endpoint, an inbox, a worker that fetches the subscription again
-- [ ] Plan changes — `POST /workspaces/{id}/billing/plan-change` answering `next: redirect` to the Customer Portal
+- [ ] Plan changes — `POST /workspaces/{id}/billing/plan-change` answering `next: redirect` to the Customer Portal, and the outbox on Messenger's Doctrine transport with it
 - [ ] Email to owners over a limit, thirty days ahead; a release plan and runbook, rehearsed on seeded data
 - [ ] `BILLING_LIMITS=on`, then the setting removed
 - [ ] Failed payments, cancelling and SEPA — grace and suspension from Stripe's status, reminders by email

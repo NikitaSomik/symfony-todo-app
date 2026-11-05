@@ -10,4 +10,5 @@ enum WorkspacePermission: string
     case MANAGE_WORKSPACE = 'manage_workspace';
     case WORK_ON_TASKS = 'work_on_tasks';
     case DELETE_TASKS = 'delete_tasks';
+    case MANAGE_BILLING = 'manage_billing';
 }
