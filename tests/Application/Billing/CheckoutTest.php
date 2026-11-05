@@ -6,6 +6,7 @@ namespace App\Tests\Application\Billing;
 
 use App\Auth\Entity\User;
 use App\Billing\Enum\Plan;
+use App\Billing\Exception\PaymentProviderUnavailableException;
 use App\Billing\Repository\SubscriptionRepository;
 use App\Fixtures\Auth\UserFactory;
 use App\Fixtures\Billing\SubscriptionFactory;
@@ -16,6 +17,7 @@ use App\Workspace\Entity\Workspace;
 use App\Workspace\Enum\WorkspaceRole;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
+use Stripe\Exception\ApiConnectionException;
 use Symfony\Component\HttpFoundation\Response;
 
 final class CheckoutTest extends ApiTestCase
@@ -52,7 +54,7 @@ final class CheckoutTest extends ApiTestCase
         self::assertResponseStatusCodeSame(201);
         self::assertSame('checkout_sessions', $this->jsonData($response)['type']);
         self::assertSame('https://checkout.stripe.test/c/pay/cs_test_stub', $this->jsonAttributes($response)['url']);
-        self::assertEquals([['workspaceId' => $workspace->getId(), 'plan' => $expected]], $this->pages()->opened);
+        self::assertEquals([['workspaceId' => $workspace->getId(), 'plan' => $expected, 'buyerEmail' => $this->user->getEmail()]], $this->pages()->opened);
     }
 
     #[Test]
@@ -77,6 +79,26 @@ final class CheckoutTest extends ApiTestCase
     }
 
     #[Test]
+    #[TestWith([WorkspaceRole::MEMBER])]
+    #[TestWith([WorkspaceRole::VIEWER])]
+    public function permissionShouldBeCheckedBeforeTheBody(WorkspaceRole $role): void
+    {
+        $workspace = WorkspaceFactory::new()->withMembers([[$this->user, $role]])->create();
+
+        $this->checkout($workspace, ['plan' => 'enterprise']);
+
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    #[Test]
+    public function aStrangerShouldNotFindTheWorkspaceEvenWithAnInvalidBody(): void
+    {
+        $this->checkout(WorkspaceFactory::createOne(), ['plan' => 'enterprise']);
+
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    #[Test]
     public function aPersonalWorkspaceShouldBeBoughtLikeAnyOther(): void
     {
         $this->checkout(WorkspaceFactory::new()->personal()->create(['owner' => $this->user]));
@@ -90,10 +112,23 @@ final class CheckoutTest extends ApiTestCase
         $workspace = WorkspaceFactory::createOne(['owner' => $this->user]);
         SubscriptionFactory::createOne(['workspaceId' => $workspace->getId(), 'plan' => Plan::TEAM]);
 
-        $this->checkout($workspace, ['plan' => 'business']);
+        $response = $this->checkout($workspace, ['plan' => 'business']);
 
         self::assertResponseStatusCodeSame(409);
+        self::assertSame('already_subscribed', $this->json($response)['errors'][0]['code']);
+        self::assertSame(['plan' => 'team'], $this->json($response)['errors'][0]['meta']);
         self::assertSame([], $this->pages()->opened);
+    }
+
+    #[Test]
+    public function aPaymentProviderThatDoesNotAnswerShouldBeAskedAgainLater(): void
+    {
+        $this->pages()->failure = PaymentProviderUnavailableException::because(new ApiConnectionException('Could not connect to Stripe.'));
+
+        $response = $this->checkout(WorkspaceFactory::createOne(['owner' => $this->user]));
+
+        self::assertResponseStatusCodeSame(503);
+        self::assertSame('payment_provider_unavailable', $this->json($response)['errors'][0]['code']);
     }
 
     #[Test]

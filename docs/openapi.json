@@ -230,10 +230,13 @@
                         "description": "Workspace not found, or the user is not a member of it"
                     },
                     "409": {
-                        "description": "The workspace already has a paid plan"
+                        "description": "The workspace already has a paid plan; the code is `already_subscribed`"
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationError"
+                    },
+                    "503": {
+                        "description": "Stripe did not answer; the code is `payment_provider_unavailable`, and the request can be repeated"
                     }
                 }
             }
@@ -1636,7 +1639,6 @@
                 "properties": {
                     "plan": {
                         "type": "string",
-                        "example": "team",
                         "enum": [
                             "team",
                             "business"

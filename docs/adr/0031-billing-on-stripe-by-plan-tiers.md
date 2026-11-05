@@ -77,9 +77,22 @@ There is no frontend yet; one comes later. The API is its only client until then
   between the sandbox and the live account. A workspace that already pays cannot open a
   Checkout: it changes its plan instead. A personal workspace is bought like any other: a
   user who wants more people where they already work moves that workspace to a paid
-  plan, rather than starting again in a new one. A workspace may open
-  more than one page before it pays; Stripe expires the rest, and only a payment changes
+  plan, rather than starting again in a new one. The owner's email fills the page, and the
+  customer comes back with the session id in the return address. Only a payment changes
   the plan.
+- **One page per half hour, and a second payment is taken back.** Asking again within the
+  same half-hour window, for the same plan, by the same owner, sends Stripe the same
+  idempotency key and gets the same page back, so a double click or a second tab cannot
+  pay twice. A page expires within an hour. A page opened in the next half hour, or by
+  another owner, is a new one, and our own check sees a paid plan only once the webhook
+  has written it, so two payments for one workspace stay possible: the webhook step
+  cancels and refunds the subscription that comes second for the same `workspace_id`.
+- **When Stripe does not answer, the client is told to try again.** A connection failure,
+  the rate limit or a 5xx from Stripe is `503` with the code
+  `payment_provider_unavailable`; Stripe's client waits 10 seconds an attempt, with one
+  retry, instead of its default 80 seconds. A request Stripe refuses as invalid is our bug
+  and stays a `500`. A workspace that already pays gets `409` with the code
+  `already_subscribed`.
 - **A plan change has its own endpoint whose answer says what comes next.**
   `POST /api/v1/workspaces/{id}/billing/plan-change` with `{"plan": "business"}` answers
   `{"next": "redirect", "url": …}`: a Portal session opened on the confirmation of that

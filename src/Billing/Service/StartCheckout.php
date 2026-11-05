@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Billing\Service;
 
+use App\Auth\Contract\UserDirectory;
 use App\Billing\Checkout\CheckoutPage;
 use App\Billing\Checkout\CheckoutPages;
 use App\Billing\Enum\Plan;
@@ -20,15 +21,20 @@ final readonly class StartCheckout
     public function __construct(
         private SubscriptionRepository $subscriptions,
         private CheckoutPages $checkoutPages,
+        private UserDirectory $users,
     ) {
     }
 
-    public function handle(Uuid $workspaceId, Plan $plan): CheckoutPage
+    public function handle(Uuid $workspaceId, Plan $plan, int $buyerId): CheckoutPage
     {
-        if (Plan::FREE !== $this->subscriptions->planOf($workspaceId)) {
-            throw CannotBuyPlanException::alreadySubscribed();
+        $currentPlan = $this->subscriptions->planOf($workspaceId);
+
+        if (Plan::FREE !== $currentPlan) {
+            throw CannotBuyPlanException::alreadySubscribed($currentPlan);
         }
 
-        return $this->checkoutPages->open($workspaceId, $plan);
+        $buyerEmail = $this->users->findEmailById($buyerId) ?? throw new \LogicException(sprintf('The user %d who is buying does not exist.', $buyerId));
+
+        return $this->checkoutPages->open($workspaceId, $plan, $buyerEmail);
     }
 }
