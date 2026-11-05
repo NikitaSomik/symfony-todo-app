@@ -138,6 +138,9 @@
             "tests/bootstrap.php"
         ]
     },
+    "stripe/stripe-php": {
+        "version": "v22.1.0"
+    },
     "symfony/console": {
         "version": "8.0",
         "recipe": {

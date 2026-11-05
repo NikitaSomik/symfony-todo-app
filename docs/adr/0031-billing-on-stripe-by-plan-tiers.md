@@ -2,7 +2,7 @@
 
 - Status: accepted
 - Date: 2026-10-29
-- Implemented in: #109 (the personal mark), #110 (plans and limits), #113 (shadow mode); the rest step by step (see Consequences)
+- Implemented in: #109 (the personal mark), #110 (plans and limits), #113 (shadow mode), #114 (Checkout); the rest step by step (see Consequences)
 
 ## Context
 
@@ -71,8 +71,28 @@ There is no frontend yet; one comes later. The API is its only client until then
 
 - **Buying is Stripe Checkout; managing is the Customer Portal.** Card forms, 3-D Secure,
   retries and receipts stay on Stripe's pages. The workspace id travels in the metadata of
-  the subscription and the customer, so a webhook that arrives before
-  `checkout.session.completed` still finds its workspace. One open Checkout per workspace.
+  the subscription and the Checkout session, so a webhook that arrives before
+  `checkout.session.completed` still finds its workspace. A price is found by its lookup
+  key, `team` or `business`, the plan's own name, so the code holds no price id that differs
+  between the sandbox and the live account. A workspace that already pays cannot open a
+  Checkout: it changes its plan instead. A personal workspace is bought like any other: a
+  user who wants more people where they already work moves that workspace to a paid
+  plan, rather than starting again in a new one. The owner's email fills the page, and the
+  customer comes back with the session id in the return address. Only a payment changes
+  the plan.
+- **One page per half hour, and a second payment is taken back.** Asking again within the
+  same half-hour window, for the same plan, by the same owner, sends Stripe the same
+  idempotency key and gets the same page back, so a double click or a second tab cannot
+  pay twice. A page expires within an hour. A page opened in the next half hour, or by
+  another owner, is a new one, and our own check sees a paid plan only once the webhook
+  has written it, so two payments for one workspace stay possible: the webhook step
+  cancels and refunds the subscription that comes second for the same `workspace_id`.
+- **When Stripe does not answer, the client is told to try again.** A connection failure,
+  the rate limit or a 5xx from Stripe is `503` with the code
+  `payment_provider_unavailable`; Stripe's client waits 10 seconds an attempt, with one
+  retry, instead of its default 80 seconds. A request Stripe refuses as invalid is our bug
+  and stays a `500`. A workspace that already pays gets `409` with the code
+  `already_subscribed`.
 - **A plan change has its own endpoint whose answer says what comes next.**
   `POST /api/v1/workspaces/{id}/billing/plan-change` with `{"plan": "business"}` answers
   `{"next": "redirect", "url": …}`: a Portal session opened on the confirmation of that
@@ -95,7 +115,10 @@ There is no frontend yet; one comes later. The API is its only client until then
   as a message in the same transaction as the change — an outbox on Messenger's Doctrine
   transport, or the outbox Symfony 8.2 brings if it is adopted by then
   ([0023](0023-facts-announced-after-the-commit.md) named billing as the reason) — and a
-  worker sends it with the message id as the idempotency key.
+  worker sends it with the message id as the idempotency key. Opening a Checkout page is
+  not such a change: it writes nothing here and the customer is waiting for its address,
+  so it calls Stripe in the request, outside any transaction, and a failure is an error the
+  customer can retry. The outbox starts with the first change that touches both sides.
 - **Every night the subscriptions are reconciled with Stripe**, from Symfony Scheduler, to
   catch a webhook that never arrived.
 - **Payments and payers outlive the workspace.** No cascade from the workspace: invoices
@@ -124,8 +147,9 @@ There is no frontend yet; one comes later. The API is its only client until then
   the earliest workspace each user created, because a personal workspace is created at
   registration. Being its owner is not enough, since an owner may be promoted in a team
   older than their account, and its name proves nothing: it can be renamed, and a team may
-  call itself Personal. A report of what would be marked comes before the update. A personal workspace
-  stays on Free, up to three members, and cannot move to a paid plan.
+  call itself Personal. A report of what would be marked comes before the update. The mark only
+  keeps the personal workspace out of the count of team workspaces on Free; for its own
+  members it is on a plan like any other.
 - **Migrations run before the code that needs them**, and filling a column is a step of
   its own, so old and new code can run side by side.
 - **A plan lives in Billing's own table.** A workspace without a row there is on Free,

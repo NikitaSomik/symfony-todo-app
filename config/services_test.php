@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Billing\Checkout\CheckoutPages;
 use App\Tests\Support\AuditLogFailureToggle;
+use App\Tests\Support\CheckoutPagesStub;
 use App\Tests\Support\ConcurrentTokenExchange;
 use App\Tests\Support\FailAuditLogEventSubscriber;
 use App\Tests\Support\PwnedPasswordsStub;
@@ -18,5 +20,7 @@ return static function (ContainerConfigurator $di): void {
         ->set(ConcurrentTokenExchange::class)
         ->args([service('doctrine.dbal.default_connection')])
         ->tag('doctrine.event_listener', ['event' => 'postLoad'])
-        ->set(PwnedPasswordsStub::class);
+        ->set(PwnedPasswordsStub::class)
+        ->set(CheckoutPagesStub::class)
+        ->alias(CheckoutPages::class, CheckoutPagesStub::class)->public();
 };

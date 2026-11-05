@@ -186,6 +186,61 @@
                 }
             }
         },
+        "/api/v1/workspaces/{id}/billing/checkout": {
+            "post": {
+                "tags": [
+                    "Billing"
+                ],
+                "summary": "Open a payment page to buy a plan for a workspace",
+                "description": "Owners only. The plan changes once Stripe reports the payment, not when the page opens.",
+                "operationId": "post_api_billing_checkout",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CheckoutDTO"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "A Stripe Checkout page; send the customer to `attributes.url`"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    },
+                    "403": {
+                        "description": "The user may not manage billing in this workspace"
+                    },
+                    "404": {
+                        "description": "Workspace not found, or the user is not a member of it"
+                    },
+                    "409": {
+                        "description": "The workspace already has a paid plan; the code is `already_subscribed`"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "503": {
+                        "description": "Stripe did not answer; the code is `payment_provider_unavailable`, and the request can be repeated"
+                    }
+                }
+            }
+        },
         "/api/v1/tasks/{id}/assignee": {
             "put": {
                 "tags": [
@@ -1577,6 +1632,21 @@
                 },
                 "type": "object"
             },
+            "CheckoutDTO": {
+                "required": [
+                    "plan"
+                ],
+                "properties": {
+                    "plan": {
+                        "type": "string",
+                        "enum": [
+                            "team",
+                            "business"
+                        ]
+                    }
+                },
+                "type": "object"
+            },
             "AssignTaskDTO": {
                 "required": [
                     "user_id"
@@ -2628,6 +2698,9 @@
         },
         {
             "name": "Profile"
+        },
+        {
+            "name": "Billing"
         },
         {
             "name": "Task assignee"
