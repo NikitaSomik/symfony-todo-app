@@ -141,7 +141,7 @@ final readonly class StripePaymentProvider implements PaymentProvider
 
             // A 4xx other than the rate limit is a request Stripe will never accept: our fault, so it stays a 500.
             if ($exception instanceof ApiConnectionException || $exception instanceof RateLimitException || $exception->getHttpStatus() >= 500) {
-                throw PaymentProviderUnavailableException::because($exception, $exception->getRequestId());
+                throw PaymentProviderUnavailableException::because($exception);
             }
 
             throw $exception;
