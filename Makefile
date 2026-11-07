@@ -1,7 +1,8 @@
 .DEFAULT_GOAL := help
 .PHONY: help bash build up down logs cache-clear migrate \
         db-create db-drop db-wipe db-reset db-seed db-fresh db-dump db-restore \
-        run-phpstan run-deptrac run-cs fix-cs run-tests coverage check-code fix-and-check-code \
+        run-phpstan run-deptrac run-cs fix-cs run-tests coverage lint-container validate-schema \
+        verify-fast verify fix-and-verify \
         generate-openapi queue-stats queue-failed restart-worker
 
 EXEC = docker compose exec app
@@ -86,11 +87,24 @@ coverage:       ## Generate coverage report
 	$(EXEC) env XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-html var/coverage
 	@echo "Coverage report: var/coverage/index.html"
 
-check-code:     ## Run cs + phpstan + deptrac + tests
-check-code: run-cs run-phpstan run-deptrac run-tests
+lint-container: ## Check the service definitions of the dev and prod containers
+	$(EXEC) php bin/console lint:container
+	$(EXEC) php bin/console lint:container --env=prod
 
-fix-and-check-code: ## Fix cs, then phpstan + deptrac + tests
-fix-and-check-code: fix-cs run-phpstan run-deptrac run-tests
+validate-schema: ## Rebuild the test database from this branch's migrations, then check it matches the mapping
+	$(EXEC) php bin/console doctrine:database:drop --env=test --force --if-exists
+	$(EXEC) php bin/console doctrine:database:create --env=test
+	$(EXEC) php bin/console doctrine:migrations:migrate --no-interaction --env=test
+	$(EXEC) php bin/console doctrine:schema:validate --env=test
+
+verify-fast:    ## Quick checks of what the branch changed
+	$(EXEC) bin/verify-fast
+
+verify:         ## Run everything CI runs
+verify: run-cs lint-container run-phpstan run-deptrac validate-schema run-tests
+
+fix-and-verify: ## Fix cs, then everything else CI runs
+fix-and-verify: fix-cs lint-container run-phpstan run-deptrac validate-schema run-tests
 
 ## —— Docs —————————————————————————————————————————
 generate-openapi: ## Generate OpenAPI spec

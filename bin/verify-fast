@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# Quick checks over what this branch changed, committed or not. Runs in the app container:
+# `make verify-fast`; the Stop hook runs it before Claude finishes. `make verify` runs
+# everything CI runs.
+#
+# Besides style, the container, PHPStan, module boundaries and tests, it refuses what would
+# hide a problem instead of fixing it: a new @phpstan-ignore or skipped test, and a changed
+# migration that is already on main.
+set -uo pipefail
+cd "$(dirname "$0")/.."
+export XDEBUG_MODE=off
+
+if [ ! -x vendor/bin/phpunit ] || ! command -v php >/dev/null; then
+    echo "Run it in the app container: make verify-fast" >&2
+    exit 2
+fi
+
+base=$(git merge-base HEAD origin/main 2>/dev/null || echo HEAD)
+
+changed=()
+php=()
+analysed=()
+tests=()
+while IFS= read -r file; do
+    [ -f "$file" ] || continue
+    changed+=("$file")
+    case "$file" in *.php) php+=("$file") ;; *) continue ;; esac
+    case "$file" in
+        src/*|fixtures/*) analysed+=("$file") ;;
+        tests/Unit/*) ;;
+        tests/*Test.php) tests+=("$file") ;;
+    esac
+done < <({ git diff --name-only --diff-filter=ACMR "$base"; git ls-files --others --exclude-standard; } | sort -u)
+
+if [ ${#changed[@]} -eq 0 ]; then
+    echo "Nothing changed; nothing to check."
+    exit 0
+fi
+
+failed=()
+step() {
+    local name=$1
+    shift
+    echo "==> $name"
+    if ! "$@"; then
+        failed+=("$name")
+    fi
+}
+
+no_new_suppressions() {
+    local found
+    found=$({
+        git diff -U0 "$base" -- '*.php' | grep -E '^\+[^+]'
+        git ls-files --others --exclude-standard -- '*.php' | xargs -r cat
+    } | grep -E '@phpstan-ignore|phpstan-ignore-(next-)?line|markTestSkipped|markTestIncomplete')
+    if [ -n "$found" ]; then
+        echo "$found"
+        echo "Fix the cause instead of silencing PHPStan or skipping a test."
+        return 1
+    fi
+}
+
+released_migrations_untouched() {
+    local touched
+    touched=$(git diff --name-only --diff-filter=MD "$base" -- migrations/)
+    if [ -n "$touched" ]; then
+        echo "$touched"
+        echo "These migrations are already on main and may have run. Write a new migration instead."
+        return 1
+    fi
+}
+
+step "no new ignores or skipped tests" no_new_suppressions
+step "released migrations untouched" released_migrations_untouched
+
+if [ ${#php[@]} -gt 0 ]; then
+    step "code style" vendor/bin/php-cs-fixer fix --dry-run --diff --path-mode=intersection -- "${php[@]}"
+    step "service container" php bin/console lint:container
+    if [ ${#analysed[@]} -gt 0 ]; then
+        step "phpstan" vendor/bin/phpstan analyse --no-progress -- "${analysed[@]}"
+    fi
+    step "module boundaries" vendor/bin/deptrac analyse --no-progress
+    step "unit tests" vendor/bin/phpunit tests/Unit
+    for test in ${tests[@]+"${tests[@]}"}; do
+        step "test $test" vendor/bin/phpunit "$test"
+    done
+fi
+
+if [ ${#failed[@]} -gt 0 ]; then
+    echo
+    echo "Failed: ${failed[*]}"
+    exit 1
+fi
+
+echo
+echo "All quick checks passed. Run 'make verify' for everything CI runs."
