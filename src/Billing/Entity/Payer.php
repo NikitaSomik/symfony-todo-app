@@ -9,7 +9,6 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Uid\Uuid;
 
-/** Who pays for a workspace: a Stripe customer, whose invoice details live in Stripe. */
 #[ORM\Entity(repositoryClass: PayerRepository::class)]
 #[ORM\Table(name: 'payers')]
 class Payer

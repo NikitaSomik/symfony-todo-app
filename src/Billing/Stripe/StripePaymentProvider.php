@@ -21,7 +21,6 @@ final readonly class StripePaymentProvider implements PaymentProvider
     /** The shortest Stripe allows is 30 minutes; its default, 24 hours, leaves a forgotten page payable for a day. */
     private const int PAGE_LIFETIME_SECONDS = 60 * 60;
 
-    /** Every status but these two can still be paid or is being paid. */
     private const array FINISHED_STATUSES = ['canceled', 'incomplete_expired'];
 
     public function __construct(

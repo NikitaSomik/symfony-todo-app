@@ -13,10 +13,6 @@ use App\Billing\Repository\PayerRepository;
 use App\Billing\Repository\SubscriptionRepository;
 use Symfony\Component\Uid\Uuid;
 
-/**
- * Opens a payment page; the plan follows Stripe's webhook, not this call (ADR 0031). The only
- * thing kept here is the workspace's customer, created on the first purchase.
- */
 final readonly class StartCheckout
 {
     public function __construct(

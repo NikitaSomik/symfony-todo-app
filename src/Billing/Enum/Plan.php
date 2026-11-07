@@ -32,7 +32,6 @@ enum Plan: string
         return ucfirst($this->value);
     }
 
-    /** The plan a team moves to when it outgrows this one; the last one has none. */
     public function next(): ?self
     {
         return match ($this) {

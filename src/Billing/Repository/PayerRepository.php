@@ -26,12 +26,6 @@ class PayerRepository extends ServiceEntityRepository
         return null === $payer ? null : $payer->getStripeCustomerId();
     }
 
-    /**
-     * Two first purchases at once each create a customer in Stripe; the one saved first wins
-     * and both go on with it. The other stays in Stripe, empty.
-     *
-     * @return string the customer the workspace has after this call
-     */
     public function saveIfAbsent(Uuid $workspaceId, string $customerId): string
     {
         $connection = $this->getEntityManager()->getConnection();

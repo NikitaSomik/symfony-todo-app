@@ -13,10 +13,8 @@ use Symfony\Component\Uid\Uuid;
  */
 interface PaymentProvider
 {
-    /** @return string the id of the new customer */
     public function createCustomer(Uuid $workspaceId, string $email): string;
 
-    /** Whether the customer has a subscription that is not over yet, paid or not. */
     public function hasSubscription(string $customerId): bool;
 
     public function openCheckout(string $customerId, Uuid $workspaceId, Plan $plan): CheckoutPage;
