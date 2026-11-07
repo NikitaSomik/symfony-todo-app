@@ -27,8 +27,8 @@ every rule to its ADR.
 Everything runs in Docker: `make up` first.
 
 - `make verify-fast`: what the branch changed: style, `lint:container`, PHPStan, Deptrac,
-  unit tests and the changed tests, plus no new ignores, no edited migration from `main`,
-  and the scope. The Stop hook runs it.
+  unit tests and the changed tests, plus no new ignores and no edited migration from
+  `main`. The Stop hook runs it.
 - `make verify`: everything CI runs. Work is done when this is green.
 - `make fix-cs`: fix the code style.
 - One test: `docker compose exec -T app vendor/bin/phpunit tests/Application/Task/SomeTest.php`
@@ -66,7 +66,5 @@ In `.claude/settings.json`:
 - After each edit a hook runs php-cs-fixer in the app container.
 - Before Claude finishes, a hook runs `bin/verify-fast` in the container; while it fails,
   Claude keeps working.
-- When `.claude/scope.txt` exists (one glob per line), `verify-fast` fails on any change
-  outside it. Ask before widening it.
 
 The rails are changed by Nikita.

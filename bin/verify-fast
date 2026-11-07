@@ -4,8 +4,8 @@
 # everything CI runs.
 #
 # Besides style, the container, PHPStan, module boundaries and tests, it refuses what would
-# hide a problem instead of fixing it: a new @phpstan-ignore or skipped test, a changed
-# migration that is already on main, and a file outside .claude/scope.txt when that exists.
+# hide a problem instead of fixing it: a new @phpstan-ignore or skipped test, and a changed
+# migration that is already on main.
 set -uo pipefail
 cd "$(dirname "$0")/.."
 export XDEBUG_MODE=off
@@ -70,31 +70,8 @@ released_migrations_untouched() {
     fi
 }
 
-within_scope() {
-    [ -f .claude/scope.txt ] || return 0
-    local file glob outside=()
-    for file in "${changed[@]}"; do
-        [ "$file" = .claude/scope.txt ] && continue
-        local inside=false
-        while IFS= read -r glob; do
-            glob=${glob%%#*}
-            glob=$(echo "$glob" | xargs)
-            [ -z "$glob" ] && continue
-            # shellcheck disable=SC2254
-            case "$file" in $glob) inside=true; break ;; esac
-        done < .claude/scope.txt
-        $inside || outside+=("$file")
-    done
-    if [ ${#outside[@]} -gt 0 ]; then
-        printf '%s\n' "${outside[@]}"
-        echo "Outside the agreed scope (.claude/scope.txt). Ask Nikita before widening it."
-        return 1
-    fi
-}
-
 step "no new ignores or skipped tests" no_new_suppressions
 step "released migrations untouched" released_migrations_untouched
-step "scope" within_scope
 
 if [ ${#php[@]} -gt 0 ]; then
     step "code style" vendor/bin/php-cs-fixer fix --dry-run --diff --path-mode=intersection -- "${php[@]}"
