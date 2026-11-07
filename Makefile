@@ -96,8 +96,8 @@ validate-schema: ## Migrate the test database, then check it matches the mapping
 	$(EXEC) php bin/console doctrine:migrations:migrate --no-interaction --env=test
 	$(EXEC) php bin/console doctrine:schema:validate --env=test
 
-verify-fast:    ## Quick checks of the changed PHP files
-	bin/verify-fast
+verify-fast:    ## Quick checks of what the branch changed
+	$(EXEC) bin/verify-fast
 
 verify:         ## Run everything CI runs
 verify: run-cs lint-container run-phpstan run-deptrac validate-schema run-tests

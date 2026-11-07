@@ -1,33 +1,38 @@
 #!/usr/bin/env bash
-# Quick checks over the PHP files this branch changed, committed or not: style, the service
-# container, PHPStan, module boundaries, the unit tests and the changed tests. `make verify`
-# runs everything CI runs. Exit 3 means the checks could not run at all.
+# Quick checks over what this branch changed, committed or not. Runs in the app container:
+# `make verify-fast`; the Stop hook runs it before Claude finishes. `make verify` runs
+# everything CI runs.
+#
+# Besides style, the container, PHPStan, module boundaries and tests, it refuses what would
+# hide a problem instead of fixing it: a new @phpstan-ignore or skipped test, a changed
+# migration that is already on main, and a file outside .claude/scope.txt when that exists.
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
-exec_app() { docker compose exec -T app "$@"; }
-
-if ! docker compose ps --status running --services 2>/dev/null | grep -qx app; then
-    echo "The app container is not running; start it with 'make up'. Nothing was checked." >&2
-    exit 3
+if [ ! -x vendor/bin/phpunit ] || ! command -v php >/dev/null; then
+    echo "Run it in the app container: make verify-fast" >&2
+    exit 2
 fi
 
 base=$(git merge-base HEAD origin/main 2>/dev/null || echo HEAD)
 
 changed=()
+php=()
 analysed=()
 tests=()
 while IFS= read -r file; do
     [ -f "$file" ] || continue
     changed+=("$file")
+    case "$file" in *.php) php+=("$file") ;; *) continue ;; esac
     case "$file" in
         src/*|fixtures/*) analysed+=("$file") ;;
+        tests/Unit/*) ;;
         tests/*Test.php) tests+=("$file") ;;
     esac
-done < <({ git diff --name-only --diff-filter=ACMR "$base"; git ls-files --others --exclude-standard; } | grep -E '\.php$' | sort -u)
+done < <({ git diff --name-only --diff-filter=ACMR "$base"; git ls-files --others --exclude-standard; } | sort -u)
 
 if [ ${#changed[@]} -eq 0 ]; then
-    echo "No PHP files changed; nothing to check."
+    echo "Nothing changed; nothing to check."
     exit 0
 fi
 
@@ -41,23 +46,71 @@ step() {
     fi
 }
 
-step "code style" exec_app vendor/bin/php-cs-fixer fix --dry-run --diff --path-mode=intersection -- "${changed[@]}"
-step "service container" exec_app php bin/console lint:container
-if [ ${#analysed[@]} -gt 0 ]; then
-    step "phpstan" exec_app vendor/bin/phpstan analyse --no-progress -- "${analysed[@]}"
+no_new_suppressions() {
+    local found
+    found=$({
+        git diff -U0 "$base" -- '*.php' | grep -E '^\+[^+]'
+        git ls-files --others --exclude-standard -- '*.php' | xargs -r cat
+    } | grep -E '@phpstan-ignore|phpstan-ignore-(next-)?line|markTestSkipped|markTestIncomplete')
+    if [ -n "$found" ]; then
+        echo "$found"
+        echo "Fix the cause instead of silencing PHPStan or skipping a test."
+        return 1
+    fi
+}
+
+released_migrations_untouched() {
+    local touched
+    touched=$(git diff --name-only --diff-filter=MD "$base" -- migrations/)
+    if [ -n "$touched" ]; then
+        echo "$touched"
+        echo "These migrations are already on main and may have run. Write a new migration instead."
+        return 1
+    fi
+}
+
+within_scope() {
+    [ -f .claude/scope.txt ] || return 0
+    local file glob outside=()
+    for file in "${changed[@]}"; do
+        [ "$file" = .claude/scope.txt ] && continue
+        local inside=false
+        while IFS= read -r glob; do
+            glob=${glob%%#*}
+            glob=$(echo "$glob" | xargs)
+            [ -z "$glob" ] && continue
+            # shellcheck disable=SC2254
+            case "$file" in $glob) inside=true; break ;; esac
+        done < .claude/scope.txt
+        $inside || outside+=("$file")
+    done
+    if [ ${#outside[@]} -gt 0 ]; then
+        printf '%s\n' "${outside[@]}"
+        echo "Outside the agreed scope (.claude/scope.txt). Ask Nikita before widening it."
+        return 1
+    fi
+}
+
+step "no new ignores or skipped tests" no_new_suppressions
+step "released migrations untouched" released_migrations_untouched
+step "scope" within_scope
+
+if [ ${#php[@]} -gt 0 ]; then
+    step "code style" vendor/bin/php-cs-fixer fix --dry-run --diff --path-mode=intersection -- "${php[@]}"
+    step "service container" php bin/console lint:container
+    if [ ${#analysed[@]} -gt 0 ]; then
+        step "phpstan" vendor/bin/phpstan analyse --no-progress -- "${analysed[@]}"
+    fi
+    step "module boundaries" vendor/bin/deptrac analyse --no-progress
+    step "unit tests" vendor/bin/phpunit tests/Unit
+    for test in ${tests[@]+"${tests[@]}"}; do
+        step "test $test" vendor/bin/phpunit "$test"
+    done
 fi
-step "module boundaries" exec_app vendor/bin/deptrac analyse --no-progress
-step "unit tests" exec_app vendor/bin/phpunit tests/Unit
-for test in ${tests[@]+"${tests[@]}"}; do
-    case "$test" in
-        tests/Unit/*) ;;
-        *) step "test $test" exec_app vendor/bin/phpunit "$test" ;;
-    esac
-done
 
 if [ ${#failed[@]} -gt 0 ]; then
     echo
-    echo "Failed: ${failed[*]}" >&2
+    echo "Failed: ${failed[*]}"
     exit 1
 fi
 

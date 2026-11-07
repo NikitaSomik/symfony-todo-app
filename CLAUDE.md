@@ -19,8 +19,9 @@ every rule to its ADR.
 
 Everything runs in Docker: `make up` first.
 
-- `make verify-fast`: the changed PHP files: style, `lint:container`, PHPStan, Deptrac,
-  unit tests and the changed tests. The Stop hook runs it.
+- `make verify-fast`: what the branch changed: style, `lint:container`, PHPStan, Deptrac,
+  unit tests and the changed tests, plus no new ignores, no edited migration from `main`,
+  and the scope. The Stop hook runs it.
 - `make verify`: everything CI runs. Work is done when this is green.
 - `make fix-cs`: fix the code style.
 - One test: `docker compose exec -T app vendor/bin/phpunit tests/Application/Task/SomeTest.php`
@@ -50,12 +51,15 @@ Everything runs in Docker: `make up` first.
 
 ## Rails
 
-Hooks in `.claude/settings.json`, scripts in `.claude/hooks/`:
+In `.claude/settings.json`:
 
-- `guard.py` refuses edits to the checks and to these rails, edits to migrations already on
-  `main`, new `@phpstan-ignore` or skipped tests, and edits outside `.claude/scope.txt`
-  when that file exists (one glob per line; ask before widening it).
-- `format_php.py` runs php-cs-fixer and PHPStan on each edited PHP file.
-- `stop_verify.py` runs `bin/verify-fast` before Claude finishes, up to three times.
+- Deny rules keep the check configs, CI, the Makefile and `bin/verify-fast` unedited, and
+  refuse commands that throw away work or data. `git push` and opening a pull request ask
+  first.
+- After each edit a hook runs php-cs-fixer in the app container.
+- Before Claude finishes, a hook runs `bin/verify-fast` in the container; while it fails,
+  Claude keeps working.
+- When `.claude/scope.txt` exists (one glob per line), `verify-fast` fails on any change
+  outside it. Ask before widening it.
 
-The rails are changed by Nikita, or in a session started with `CLAUDE_GUARD_UNLOCK=1`.
+The rails are changed by Nikita.

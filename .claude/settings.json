@@ -11,8 +11,9 @@
       "Bash(make run-deptrac)",
       "Bash(make run-tests)",
       "Bash(make lint-container)",
-      "Bash(bin/verify-fast)",
+      "Bash(make up)",
       "Bash(docker compose ps:*)",
+      "Bash(docker compose exec -T app bin/verify-fast)",
       "Bash(docker compose exec -T app vendor/bin/phpunit:*)",
       "Bash(docker compose exec -T app vendor/bin/phpstan:*)",
       "Bash(git status:*)",
@@ -25,9 +26,26 @@
       "Bash(gh pr merge:*)"
     ],
     "deny": [
+      "Edit(/phpstan.neon)",
+      "Edit(/phpstan-baseline.neon)",
+      "Edit(/deptrac.php)",
+      "Edit(/.php-cs-fixer.php)",
+      "Edit(/phpunit.xml)",
+      "Edit(/composer.json)",
+      "Edit(/composer.lock)",
+      "Edit(/Makefile)",
+      "Edit(/bin/verify-fast)",
+      "Edit(/.github/**)",
+      "Edit(/.claude/settings.json)",
       "Bash(composer require:*)",
       "Bash(composer remove:*)",
       "Bash(composer update:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git clean:*)",
+      "Bash(docker compose down -v:*)",
+      "Bash(docker compose down --volumes:*)",
+      "Bash(*doctrine:schema:drop*)",
+      "Bash(*doctrine:database:drop*)",
       "Bash(make db-drop)",
       "Bash(make db-wipe)",
       "Bash(make db-reset)",
@@ -36,26 +54,26 @@
     ]
   },
   "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Edit|MultiEdit|Write|NotebookEdit|Bash",
-        "hooks": [
-          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard.py\"" }
-        ]
-      }
-    ],
     "PostToolUse": [
       {
         "matcher": "Edit|MultiEdit|Write",
         "hooks": [
-          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/format_php.py\"", "timeout": 120 }
+          {
+            "type": "command",
+            "command": "[ \"$CLAUDE_CODE_REMOTE\" = true ] || docker compose --project-directory \"$CLAUDE_PROJECT_DIR\" exec -T app vendor/bin/php-cs-fixer fix --quiet || true",
+            "timeout": 60
+          }
         ]
       }
     ],
     "Stop": [
       {
         "hooks": [
-          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/stop_verify.py\"", "timeout": 600 }
+          {
+            "type": "command",
+            "command": "[ \"$CLAUDE_CODE_REMOTE\" = true ] || docker compose --project-directory \"$CLAUDE_PROJECT_DIR\" exec -T app bin/verify-fast >&2 || exit 2",
+            "timeout": 600
+          }
         ]
       }
     ]
