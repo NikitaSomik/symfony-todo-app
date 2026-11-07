@@ -3,7 +3,7 @@
 ![CI](https://github.com/NikitaSomik/symfony-todo-app/actions/workflows/ci.yml/badge.svg)
 ![PHP](https://img.shields.io/badge/PHP-8.5-777BB4?logo=php&logoColor=white)
 ![Symfony](https://img.shields.io/badge/Symfony-8.1-000000?logo=symfony&logoColor=white)
-![PHPStan](https://img.shields.io/badge/PHPStan-level%208-brightgreen)
+![PHPStan](https://img.shields.io/badge/PHPStan-level%2010-brightgreen)
 
 A task API built as a modular Symfony monolith. The domain is small on purpose: the
 project is about the decisions behind it. Each one is written down with the alternatives
@@ -137,7 +137,7 @@ status history and the audit log in one transaction.
 
 Every pull request that changes code runs, against a real PostgreSQL:
 
-- PHP-CS-Fixer and PHPStan level 8
+- PHP-CS-Fixer and PHPStan level 10
 - Deptrac — the allowed dependencies between modules, declared in `deptrac.php`
 - `lint:container` for the development and production containers
 - migrations, then `doctrine:schema:validate`

@@ -91,8 +91,9 @@ lint-container: ## Check the service definitions of the dev and prod containers
 	$(EXEC) php bin/console lint:container
 	$(EXEC) php bin/console lint:container --env=prod
 
-validate-schema: ## Migrate the test database, then check it matches the mapping
-	$(EXEC) php bin/console doctrine:database:create --env=test --if-not-exists
+validate-schema: ## Rebuild the test database from this branch's migrations, then check it matches the mapping
+	$(EXEC) php bin/console doctrine:database:drop --env=test --force --if-exists
+	$(EXEC) php bin/console doctrine:database:create --env=test
 	$(EXEC) php bin/console doctrine:migrations:migrate --no-interaction --env=test
 	$(EXEC) php bin/console doctrine:schema:validate --env=test
 
