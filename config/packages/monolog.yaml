@@ -1,7 +1,7 @@
 monolog:
     channels: # To see all channels, run bin/console debug:autowiring logger
         - deprecation # Deprecations are logged in the dedicated "deprecation" channel when it exists
-        - billing # Who the plan limits reach, in shadow mode; kept at info in production
+        - billing # Who the plan limits reach in shadow mode, and every call to Stripe; kept at info in production
 
 when@dev:
     monolog:

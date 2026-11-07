@@ -9,9 +9,14 @@ use App\Shared\Http\RetryableException;
 
 final class PaymentProviderUnavailableException extends \RuntimeException implements ActionableException, RetryableException
 {
-    public static function because(\Throwable $previous): self
+    public static function because(\Throwable $previous, ?string $requestId): self
     {
-        return new self('The payment provider did not answer. Try again in a minute.', previous: $previous);
+        if (null === $requestId) {
+            return new self('The payment provider did not answer. Try again in a minute.', previous: $previous);
+        }
+
+        // In the message, so the exception's log line carries the id the provider finds the request by.
+        return new self(sprintf('The payment provider did not answer (request %s). Try again in a minute.', $requestId), previous: $previous);
     }
 
     public function retryAfterSeconds(): int

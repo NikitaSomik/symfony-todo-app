@@ -162,7 +162,7 @@ final class CheckoutTest extends ApiTestCase
     #[Test]
     public function aPaymentProviderThatDoesNotAnswerShouldBeAskedAgainLater(): void
     {
-        $this->stripe()->failure = PaymentProviderUnavailableException::because(new ApiConnectionException('Could not connect to Stripe.'));
+        $this->stripe()->failure = PaymentProviderUnavailableException::because(new ApiConnectionException('Could not connect to Stripe.'), requestId: null);
 
         $response = $this->checkout(WorkspaceFactory::createOne(['owner' => $this->user]));
 

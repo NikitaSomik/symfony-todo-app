@@ -8,14 +8,20 @@ use App\Billing\Enum\Plan;
 use App\Billing\Exception\PaymentProviderUnavailableException;
 use App\Billing\Stripe\StripePaymentProvider;
 use App\Tests\Support\FakeStripeHttp;
+use Monolog\Handler\TestHandler;
+use Monolog\Level;
+use Monolog\Logger;
+use Monolog\LogRecord;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Psr\Clock\ClockInterface;
 use Stripe\ApiRequestor;
 use Stripe\Exception\ApiConnectionException;
+use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\StripeClient;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Uid\Uuid;
 
 final class StripePaymentProviderTest extends TestCase
@@ -26,10 +32,16 @@ final class StripePaymentProviderTest extends TestCase
 
     private FakeStripeHttp $stripe;
 
+    private ArrayAdapter $cache;
+
+    private TestHandler $log;
+
     protected function setUp(): void
     {
         $this->stripe = new FakeStripeHttp();
         ApiRequestor::setHttpClient($this->stripe);
+        $this->cache = new ArrayAdapter();
+        $this->log = new TestHandler();
     }
 
     protected function tearDown(): void
@@ -42,7 +54,13 @@ final class StripePaymentProviderTest extends TestCase
         $clock = $this->createStub(ClockInterface::class);
         $clock->method('now')->willReturn(new \DateTimeImmutable('@'.self::NOW));
 
-        return new StripePaymentProvider(new StripeClient(['api_key' => 'sk_test_fake', 'max_network_retries' => 0]), $clock, 'https://app.test/billing');
+        return new StripePaymentProvider(
+            new StripeClient(['api_key' => 'sk_test_fake', 'max_network_retries' => 0]),
+            $clock,
+            $this->cache,
+            new Logger('billing', [$this->log]),
+            'https://app.test/billing',
+        );
     }
 
     private function openCheckout(Plan $plan = Plan::TEAM): void
@@ -170,5 +188,128 @@ final class StripePaymentProviderTest extends TestCase
         $this->expectException(InvalidRequestException::class);
 
         $this->openCheckout();
+    }
+
+    #[Test]
+    public function aCreatedCustomerShouldBeLoggedWithStripesRequestIdAndWithoutTheEmail(): void
+    {
+        $this->stripe->requestId = 'req_customer';
+
+        $this->provider()->createCustomer(Uuid::fromString(self::WORKSPACE_ID), 'owner@example.com');
+
+        self::assertSame(
+            ['workspace_id' => self::WORKSPACE_ID, 'customer_id' => 'cus_new', 'stripe_request_id' => 'req_customer'],
+            $this->onlyRecord(Level::Info, 'Stripe customer created')->context,
+        );
+        self::assertStringNotContainsString('owner@example.com', $this->allLogged());
+    }
+
+    #[Test]
+    public function anOpenedPageShouldBeLoggedWithStripesRequestId(): void
+    {
+        $this->stripe->requestId = 'req_page';
+
+        $this->openCheckout(Plan::BUSINESS);
+
+        self::assertSame(
+            ['workspace_id' => self::WORKSPACE_ID, 'customer_id' => 'cus_workspace', 'session_id' => 'cs_test_page', 'plan' => 'business', 'stripe_request_id' => 'req_page'],
+            $this->onlyRecord(Level::Info, 'Stripe checkout page opened')->context,
+        );
+    }
+
+    #[Test]
+    public function aFailingStripeShouldBeLoggedAndReportedWithItsRequestId(): void
+    {
+        $this->stripe->status = 503;
+        $this->stripe->requestId = 'req_failed';
+
+        try {
+            $this->provider()->hasSubscription('cus_workspace');
+            self::fail('Stripe failing should be reported as unavailable.');
+        } catch (PaymentProviderUnavailableException $exception) {
+            self::assertStringContainsString('req_failed', $exception->getMessage());
+        }
+
+        $context = $this->onlyRecord(Level::Warning, 'Stripe request failed')->context;
+        self::assertSame('req_failed', $context['stripe_request_id']);
+        self::assertSame(503, $context['http_status']);
+        self::assertSame('fake_failure', $context['stripe_code']);
+        self::assertInstanceOf(ApiErrorException::class, $context['exception']);
+    }
+
+    #[Test]
+    public function aRequestStripeRefusesShouldBeLoggedToo(): void
+    {
+        $this->stripe->status = 400;
+        $this->stripe->requestId = 'req_refused';
+
+        try {
+            $this->openCheckout();
+        } catch (InvalidRequestException) {
+        }
+
+        self::assertSame('req_refused', $this->onlyRecord(Level::Warning, 'Stripe request failed')->context['stripe_request_id']);
+    }
+
+    #[Test]
+    public function aStripeThatCannotBeReachedShouldBeLoggedWithoutARequestId(): void
+    {
+        $this->stripe->failure = new ApiConnectionException('Could not connect to Stripe.');
+
+        try {
+            $this->provider()->hasSubscription('cus_workspace');
+        } catch (PaymentProviderUnavailableException) {
+        }
+
+        self::assertNull($this->onlyRecord(Level::Warning, 'Stripe request failed')->context['stripe_request_id']);
+    }
+
+    #[Test]
+    public function aPlansPriceShouldBeAskedForOnceForTwoPages(): void
+    {
+        $this->openCheckout();
+        $this->openCheckout();
+
+        self::assertSame(1, $this->stripe->countSentTo('/v1/prices'));
+        self::assertSame(2, $this->stripe->countSentTo('/v1/checkout/sessions'));
+    }
+
+    #[Test]
+    public function eachPlanShouldHaveItsOwnPrice(): void
+    {
+        $this->openCheckout(Plan::TEAM);
+        $this->openCheckout(Plan::BUSINESS);
+
+        self::assertSame(2, $this->stripe->countSentTo('/v1/prices'));
+    }
+
+    #[Test]
+    public function aMissingPriceShouldBeAskedForAgain(): void
+    {
+        $this->stripe->prices = [];
+
+        try {
+            $this->openCheckout();
+        } catch (\LogicException) {
+        }
+
+        $this->stripe->prices = [['id' => 'price_added', 'object' => 'price']];
+        $this->openCheckout();
+
+        self::assertSame(2, $this->stripe->countSentTo('/v1/prices'));
+        self::assertSame([['price' => 'price_added', 'quantity' => 1]], $this->stripe->sentTo('/v1/checkout/sessions')['line_items']);
+    }
+
+    private function onlyRecord(Level $level, string $message): LogRecord
+    {
+        $records = array_values(array_filter($this->log->getRecords(), static fn (LogRecord $record): bool => $record->level === $level && $record->message === $message));
+        self::assertCount(1, $records);
+
+        return $records[0];
+    }
+
+    private function allLogged(): string
+    {
+        return json_encode(array_map(static fn (LogRecord $record): array => [$record->message, $record->context], $this->log->getRecords()), JSON_THROW_ON_ERROR);
     }
 }

@@ -6,6 +6,7 @@ namespace App\Tests\Support;
 
 use Stripe\Exception\ApiConnectionException;
 use Stripe\HttpClient\ClientInterface;
+use Stripe\Util\CaseInsensitiveArray;
 
 /** Answers the calls Billing makes, as Stripe's API would, and keeps what was sent. */
 final class FakeStripeHttp implements ClientInterface
@@ -21,6 +22,8 @@ final class FakeStripeHttp implements ClientInterface
 
     public int $status = 200;
 
+    public string $requestId = 'req_fake';
+
     public ?ApiConnectionException $failure = null;
 
     public function request($method, $absUrl, $headers, $params, $hasFile, $apiMode = 'v1', $maxNetworkRetries = null): array
@@ -32,10 +35,17 @@ final class FakeStripeHttp implements ClientInterface
         }
 
         if (200 !== $this->status) {
-            return [json_encode(['error' => ['type' => 'api_error', 'message' => 'Stripe answered '.$this->status]], JSON_THROW_ON_ERROR), $this->status, []];
+            return [json_encode(['error' => ['type' => 'api_error', 'code' => 'fake_failure', 'message' => 'Stripe answered '.$this->status]], JSON_THROW_ON_ERROR), $this->status, $this->headers()];
         }
 
-        return [json_encode($this->answer($absUrl), JSON_THROW_ON_ERROR), 200, []];
+        return [json_encode($this->answer($absUrl), JSON_THROW_ON_ERROR), 200, $this->headers()];
+    }
+
+    public function countSentTo(string $path): int
+    {
+        $sent = array_filter($this->requests, static fn (array $request): bool => str_ends_with((string) parse_url($request['url'], PHP_URL_PATH), $path));
+
+        return count($sent);
     }
 
     /** @return array<string, mixed> the params of the last request to a path such as "/v1/customers" */
@@ -48,6 +58,12 @@ final class FakeStripeHttp implements ClientInterface
         }
 
         throw new \LogicException(sprintf('Nothing was sent to %s.', $path));
+    }
+
+    /** Stripe's own client hands its headers over in this case-insensitive form. */
+    private function headers(): CaseInsensitiveArray
+    {
+        return new CaseInsensitiveArray(['Request-Id' => $this->requestId]);
     }
 
     /** @return array<string, mixed> */
