@@ -6,7 +6,6 @@ namespace App\Billing\Controller;
 
 use App\Auth\Contract\AuthenticatedUser;
 use App\Billing\DTO\CheckoutDTO;
-use App\Billing\Exception\PaymentProviderUnavailableException;
 use App\Billing\Security\BillingVoter;
 use App\Billing\Security\WorkspaceContext;
 use App\Billing\Security\WorkspaceContextValueResolver;
@@ -20,7 +19,6 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\HttpKernel\Attribute\ValueResolver;
-use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
@@ -29,8 +27,6 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[OA\Tag(name: 'Billing')]
 final class CheckoutController extends AbstractController
 {
-    private const int RETRY_AFTER_SECONDS = 30;
-
     public function __construct(
         private readonly StartCheckout $startCheckout,
     ) {
@@ -56,11 +52,7 @@ final class CheckoutController extends AbstractController
         #[CurrentUser]
         AuthenticatedUser $user,
     ): JsonResponse {
-        try {
-            $page = $this->startCheckout->handle($workspace->workspaceId, $dto->plan(), $user->id());
-        } catch (PaymentProviderUnavailableException $exception) {
-            throw new ServiceUnavailableHttpException(self::RETRY_AFTER_SECONDS, $exception->getMessage(), $exception);
-        }
+        $page = $this->startCheckout->handle($workspace->workspaceId, $dto->plan(), $user->id());
 
         return JsonApiResponse::one(
             new ResourceItem(type: 'checkout_sessions', id: $page->id, attributes: ['url' => $page->url]),
