@@ -52,7 +52,7 @@ final class CheckoutController extends AbstractController
         #[CurrentUser]
         AuthenticatedUser $user,
     ): JsonResponse {
-        $page = $this->startCheckout->handle($workspace->workspaceId, $dto->plan(), $user->id());
+        $page = $this->startCheckout->handle($workspace->workspaceId, $dto->plan(), $user->email());
 
         return JsonApiResponse::one(
             new ResourceItem(type: 'checkout_sessions', id: $page->id, attributes: ['url' => $page->url]),

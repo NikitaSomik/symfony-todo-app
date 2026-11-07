@@ -57,6 +57,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, Authent
         return $this->id ?? throw new \LogicException('The user has no id before it is persisted.');
     }
 
+    public function email(): string
+    {
+        return $this->email;
+    }
+
     public function getEmail(): string
     {
         return $this->email;

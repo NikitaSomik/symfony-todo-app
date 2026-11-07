@@ -6,11 +6,11 @@ namespace App\Billing\Exception;
 
 use App\Shared\Http\ActionableException;
 
-final class CannotBuyPlanException extends \DomainException implements ActionableException
+final class AlreadySubscribedException extends \DomainException implements ActionableException
 {
-    public static function alreadySubscribed(): self
+    public function __construct()
     {
-        return new self('This workspace already has a subscription. Change the plan instead of buying another.');
+        parent::__construct('This workspace already has a subscription. Change the plan instead of buying another.');
     }
 
     public function errorCode(): string

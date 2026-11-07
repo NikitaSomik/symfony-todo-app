@@ -7,4 +7,6 @@ namespace App\Auth\Contract;
 interface AuthenticatedUser
 {
     public function id(): int;
+
+    public function email(): string;
 }

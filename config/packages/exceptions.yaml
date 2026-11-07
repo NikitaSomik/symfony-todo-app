@@ -8,7 +8,7 @@ framework:
         App\Auth\Exception\InvalidRefreshTokenException:
             status_code: 401
             log_level: info
-        App\Billing\Exception\CannotBuyPlanException:
+        App\Billing\Exception\AlreadySubscribedException:
             status_code: 409
             log_level: info
         App\Billing\Exception\PaymentProviderUnavailableException:

@@ -26,7 +26,7 @@ class PayerRepository extends ServiceEntityRepository
         return null === $payer ? null : $payer->getStripeCustomerId();
     }
 
-    public function saveIfAbsent(Uuid $workspaceId, string $customerId): string
+    public function saveOrGetExisting(Uuid $workspaceId, string $customerId): string
     {
         $connection = $this->getEntityManager()->getConnection();
 
@@ -35,8 +35,11 @@ class PayerRepository extends ServiceEntityRepository
             ['workspace' => $workspaceId->toRfc4122(), 'customer' => $customerId],
         );
 
-        /** @var string $saved */
         $saved = $connection->fetchOne('SELECT stripe_customer_id FROM payers WHERE workspace_id = :workspace', ['workspace' => $workspaceId->toRfc4122()]);
+
+        if (!is_string($saved)) {
+            throw new \LogicException(sprintf('The workspace %s has no payer right after saving one.', $workspaceId->toRfc4122()));
+        }
 
         return $saved;
     }

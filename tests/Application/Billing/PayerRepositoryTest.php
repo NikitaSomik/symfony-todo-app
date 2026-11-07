@@ -22,7 +22,7 @@ final class PayerRepositoryTest extends KernelTestCase
         $workspaceId = Uuid::v7();
 
         self::assertNull($this->payers()->findCustomerId($workspaceId));
-        self::assertSame('cus_first', $this->payers()->saveIfAbsent($workspaceId, 'cus_first'));
+        self::assertSame('cus_first', $this->payers()->saveOrGetExisting($workspaceId, 'cus_first'));
         self::assertSame('cus_first', $this->payers()->findCustomerId($workspaceId));
     }
 
@@ -30,9 +30,9 @@ final class PayerRepositoryTest extends KernelTestCase
     public function aCustomerSavedSecondShouldGiveWayToTheFirst(): void
     {
         $workspaceId = Uuid::v7();
-        $this->payers()->saveIfAbsent($workspaceId, 'cus_first');
+        $this->payers()->saveOrGetExisting($workspaceId, 'cus_first');
 
-        self::assertSame('cus_first', $this->payers()->saveIfAbsent($workspaceId, 'cus_second'));
+        self::assertSame('cus_first', $this->payers()->saveOrGetExisting($workspaceId, 'cus_second'));
         self::assertSame('cus_first', $this->payers()->findCustomerId($workspaceId));
     }
 
@@ -42,8 +42,8 @@ final class PayerRepositoryTest extends KernelTestCase
         $first = Uuid::v7();
         $second = Uuid::v7();
 
-        $this->payers()->saveIfAbsent($first, 'cus_first');
-        $this->payers()->saveIfAbsent($second, 'cus_second');
+        $this->payers()->saveOrGetExisting($first, 'cus_first');
+        $this->payers()->saveOrGetExisting($second, 'cus_second');
 
         self::assertSame('cus_first', $this->payers()->findCustomerId($first));
         self::assertSame('cus_second', $this->payers()->findCustomerId($second));

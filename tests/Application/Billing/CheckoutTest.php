@@ -73,7 +73,7 @@ final class CheckoutTest extends ApiTestCase
     public function aWorkspaceThatHasACustomerShouldBuyAsThatCustomer(): void
     {
         $workspace = WorkspaceFactory::createOne(['owner' => $this->user]);
-        static::getContainer()->get(PayerRepository::class)->saveIfAbsent($workspace->getId(), 'cus_existing');
+        static::getContainer()->get(PayerRepository::class)->saveOrGetExisting($workspace->getId(), 'cus_existing');
 
         $this->checkout($workspace);
 
@@ -86,7 +86,7 @@ final class CheckoutTest extends ApiTestCase
     public function aWorkspaceWhoseCustomerAlreadySubscribedInStripeShouldNotBuyAgain(): void
     {
         $workspace = WorkspaceFactory::createOne(['owner' => $this->user]);
-        static::getContainer()->get(PayerRepository::class)->saveIfAbsent($workspace->getId(), 'cus_paid');
+        static::getContainer()->get(PayerRepository::class)->saveOrGetExisting($workspace->getId(), 'cus_paid');
         $this->stripe()->subscribedCustomers = ['cus_paid'];
 
         $response = $this->checkout($workspace);
