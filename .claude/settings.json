@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(make help)",
+      "Bash(make verify)",
+      "Bash(make verify-fast)",
+      "Bash(make run-cs)",
+      "Bash(make fix-cs)",
+      "Bash(make run-phpstan)",
+      "Bash(make run-deptrac)",
+      "Bash(make run-tests)",
+      "Bash(make lint-container)",
+      "Bash(bin/verify-fast)",
+      "Bash(docker compose ps:*)",
+      "Bash(docker compose exec -T app vendor/bin/phpunit:*)",
+      "Bash(docker compose exec -T app vendor/bin/phpstan:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)"
+    ],
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(gh pr create:*)",
+      "Bash(gh pr merge:*)"
+    ],
+    "deny": [
+      "Bash(composer require:*)",
+      "Bash(composer remove:*)",
+      "Bash(composer update:*)",
+      "Bash(make db-drop)",
+      "Bash(make db-wipe)",
+      "Bash(make db-reset)",
+      "Bash(make db-fresh)",
+      "Bash(make db-restore:*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|MultiEdit|Write|NotebookEdit|Bash",
+        "hooks": [
+          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard.py\"" }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/format_php.py\"", "timeout": 120 }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/stop_verify.py\"", "timeout": 600 }
+        ]
+      }
+    ]
+  }
+}

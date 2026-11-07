@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# Quick checks over the PHP files this branch changed, committed or not: style, the service
+# container, PHPStan, module boundaries, the unit tests and the changed tests. `make verify`
+# runs everything CI runs. Exit 3 means the checks could not run at all.
+set -uo pipefail
+cd "$(dirname "$0")/.."
+
+exec_app() { docker compose exec -T app "$@"; }
+
+if ! docker compose ps --status running --services 2>/dev/null | grep -qx app; then
+    echo "The app container is not running; start it with 'make up'. Nothing was checked." >&2
+    exit 3
+fi
+
+base=$(git merge-base HEAD origin/main 2>/dev/null || echo HEAD)
+
+changed=()
+analysed=()
+tests=()
+while IFS= read -r file; do
+    [ -f "$file" ] || continue
+    changed+=("$file")
+    case "$file" in
+        src/*|fixtures/*) analysed+=("$file") ;;
+        tests/*Test.php) tests+=("$file") ;;
+    esac
+done < <({ git diff --name-only --diff-filter=ACMR "$base"; git ls-files --others --exclude-standard; } | grep -E '\.php$' | sort -u)
+
+if [ ${#changed[@]} -eq 0 ]; then
+    echo "No PHP files changed; nothing to check."
+    exit 0
+fi
+
+failed=()
+step() {
+    local name=$1
+    shift
+    echo "==> $name"
+    if ! "$@"; then
+        failed+=("$name")
+    fi
+}
+
+step "code style" exec_app vendor/bin/php-cs-fixer fix --dry-run --diff --path-mode=intersection -- "${changed[@]}"
+step "service container" exec_app php bin/console lint:container
+if [ ${#analysed[@]} -gt 0 ]; then
+    step "phpstan" exec_app vendor/bin/phpstan analyse --no-progress -- "${analysed[@]}"
+fi
+step "module boundaries" exec_app vendor/bin/deptrac analyse --no-progress
+step "unit tests" exec_app vendor/bin/phpunit tests/Unit
+for test in ${tests[@]+"${tests[@]}"}; do
+    case "$test" in
+        tests/Unit/*) ;;
+        *) step "test $test" exec_app vendor/bin/phpunit "$test" ;;
+    esac
+done
+
+if [ ${#failed[@]} -gt 0 ]; then
+    echo
+    echo "Failed: ${failed[*]}" >&2
+    exit 1
+fi
+
+echo
+echo "All quick checks passed. Run 'make verify' for everything CI runs."

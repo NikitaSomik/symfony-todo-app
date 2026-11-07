@@ -170,7 +170,8 @@ worker runs the code it started with, so `make restart-worker` after changing a 
 ## Commands
 
 ```sh
-make check-code      # code style, static analysis, tests
+make verify          # everything CI runs
+make verify-fast     # quick checks of the changed PHP files
 make run-tests
 make run-phpstan
 make run-cs
