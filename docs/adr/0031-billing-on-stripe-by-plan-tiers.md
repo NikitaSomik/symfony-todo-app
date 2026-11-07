@@ -97,9 +97,10 @@ There is no frontend yet; one comes later. The API is its only client until then
   account, sandbox and live; it is a second guard, not a replacement for the check.
 - **When Stripe does not answer, the client is told to try again.** A connection failure,
   the rate limit or a 5xx from Stripe is `503` with the code
-  `payment_provider_unavailable` and `Retry-After: 30`; Stripe's client waits 10 seconds
-  an attempt, with one retry, instead of its default 80 seconds. A request Stripe refuses
-  as invalid is our bug and stays a `500`.
+  `payment_provider_unavailable` and `Retry-After: 30`; Stripe's client waits 30 seconds
+  an attempt (`STRIPE_TIMEOUT_SECONDS`), with one retry, instead of its default 80 seconds,
+  and nginx waits 75 seconds for the app, longer than both attempts. A request Stripe
+  refuses as invalid is our bug and stays a `500`.
 - **A plan change has its own endpoint whose answer says what comes next.**
   `POST /api/v1/workspaces/{id}/billing/plan-change` with `{"plan": "business"}` answers
   `{"next": "redirect", "url": …}`: a Portal session opened on the confirmation of that

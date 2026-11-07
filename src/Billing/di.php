@@ -29,7 +29,7 @@ return static function (ContainerConfigurator $di): void {
             ])
         ->set(StripeClient::class)
             ->factory([StripeClientFactory::class, 'create'])
-            ->args(['%env(STRIPE_SECRET_KEY)%'])
+            ->args(['%env(STRIPE_SECRET_KEY)%', '%env(int:STRIPE_TIMEOUT_SECONDS)%'])
         ->alias(PaymentProvider::class, StripePaymentProvider::class)
         // SwitchablePlanLimits decorates this while BILLING_LIMITS exists (#[AsDecorator]).
         ->alias(PlanLimits::class, WorkspacePlanLimits::class);
