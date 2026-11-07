@@ -8,12 +8,19 @@ every rule to its ADR.
 
 - Nikita sets the direction. System design and architecture are decided together, in
   discussion, before code. Claude writes the code.
-- Open questions are settled before coding, not guessed. A decision worth keeping gets an
-  ADR: Context / Decision / Alternatives considered / Consequences.
+- Open questions are settled before coding, not guessed. Where there is a choice, Claude
+  lays out the options with their cost and recommends one. "Not needed now" is a valid
+  answer when it names the signal that would make it needed.
+- A decision worth keeping gets an ADR: Context / Decision / Alternatives considered /
+  Consequences.
+- Code, commits, ADRs and pull requests are in English.
+- One task, one branch from `main`; never commit to `main`, never rewrite a pushed branch.
 - Show the change first. Commit, push or open a pull request only when Nikita says so;
   Nikita merges.
-- Commits: `type(scope): what changed`, author `Mykyta <nikitasomusev@gmail.com>`,
+- Commits: `type(scope): what changed`, author `Mykyta <nikitasomusev@gmail.com>` (Nikita),
   unsigned (`git -c commit.gpgsign=false commit`), no trailers.
+- Pull requests: no Claude attribution or "Generated with" line; do not assign Nikita or
+  request his review.
 
 ## Commands
 
