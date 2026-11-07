@@ -8,6 +8,7 @@
 # migration that is already on main, and a file outside .claude/scope.txt when that exists.
 set -uo pipefail
 cd "$(dirname "$0")/.."
+export XDEBUG_MODE=off
 
 if [ ! -x vendor/bin/phpunit ] || ! command -v php >/dev/null; then
     echo "Run it in the app container: make verify-fast" >&2

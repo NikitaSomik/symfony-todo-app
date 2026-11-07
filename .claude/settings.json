@@ -60,7 +60,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ \"$CLAUDE_CODE_REMOTE\" = true ] || docker compose --project-directory \"$CLAUDE_PROJECT_DIR\" exec -T app vendor/bin/php-cs-fixer fix --quiet || true",
+            "command": "[ \"$CLAUDE_CODE_REMOTE\" = true ] || docker compose --project-directory \"$CLAUDE_PROJECT_DIR\" exec -T -e XDEBUG_MODE=off app vendor/bin/php-cs-fixer fix --quiet || true",
             "timeout": 60
           }
         ]
