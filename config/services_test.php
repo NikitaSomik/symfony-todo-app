@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-use App\Billing\Checkout\CheckoutPages;
+use App\Billing\Payment\PaymentProvider;
 use App\Tests\Support\AuditLogFailureToggle;
-use App\Tests\Support\CheckoutPagesStub;
 use App\Tests\Support\ConcurrentTokenExchange;
 use App\Tests\Support\FailAuditLogEventSubscriber;
+use App\Tests\Support\PaymentProviderStub;
 use App\Tests\Support\PwnedPasswordsStub;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
@@ -21,6 +21,6 @@ return static function (ContainerConfigurator $di): void {
         ->args([service('doctrine.dbal.default_connection')])
         ->tag('doctrine.event_listener', ['event' => 'postLoad'])
         ->set(PwnedPasswordsStub::class)
-        ->set(CheckoutPagesStub::class)
-        ->alias(CheckoutPages::class, CheckoutPagesStub::class)->public();
+        ->set(PaymentProviderStub::class)
+        ->alias(PaymentProvider::class, PaymentProviderStub::class)->public();
 };

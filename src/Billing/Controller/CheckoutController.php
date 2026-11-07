@@ -6,6 +6,7 @@ namespace App\Billing\Controller;
 
 use App\Auth\Contract\AuthenticatedUser;
 use App\Billing\DTO\CheckoutDTO;
+use App\Billing\Exception\PaymentProviderUnavailableException;
 use App\Billing\Security\BillingVoter;
 use App\Billing\Security\WorkspaceContext;
 use App\Billing\Security\WorkspaceContextValueResolver;
@@ -19,6 +20,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\HttpKernel\Attribute\ValueResolver;
+use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
@@ -27,6 +29,8 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[OA\Tag(name: 'Billing')]
 final class CheckoutController extends AbstractController
 {
+    private const int RETRY_AFTER_SECONDS = 30;
+
     public function __construct(
         private readonly StartCheckout $startCheckout,
     ) {
@@ -41,9 +45,9 @@ final class CheckoutController extends AbstractController
     #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
     #[OA\Response(response: 403, description: 'The user may not manage billing in this workspace')]
     #[OA\Response(response: 404, description: 'Workspace not found, or the user is not a member of it')]
-    #[OA\Response(response: 409, description: 'The workspace already has a paid plan; the code is `already_subscribed`')]
+    #[OA\Response(response: 409, description: 'The workspace already has a subscription, paid or being paid; the code is `already_subscribed`')]
     #[OA\Response(ref: '#/components/responses/ValidationError', response: 422)]
-    #[OA\Response(response: 503, description: 'Stripe did not answer; the code is `payment_provider_unavailable`, and the request can be repeated')]
+    #[OA\Response(response: 503, description: 'Stripe did not answer; the code is `payment_provider_unavailable`, and the request can be repeated after `Retry-After` seconds', headers: [new OA\Header(header: 'Retry-After', description: 'Seconds to wait before asking again', schema: new OA\Schema(type: 'integer'))])]
     public function checkout(
         #[MapRequestPayload(acceptFormat: 'json')]
         CheckoutDTO $dto,
@@ -52,7 +56,11 @@ final class CheckoutController extends AbstractController
         #[CurrentUser]
         AuthenticatedUser $user,
     ): JsonResponse {
-        $page = $this->startCheckout->handle($workspace->workspaceId, $dto->plan(), $user->id());
+        try {
+            $page = $this->startCheckout->handle($workspace->workspaceId, $dto->plan(), $user->id());
+        } catch (PaymentProviderUnavailableException $exception) {
+            throw new ServiceUnavailableHttpException(self::RETRY_AFTER_SECONDS, $exception->getMessage(), $exception);
+        }
 
         return JsonApiResponse::one(
             new ResourceItem(type: 'checkout_sessions', id: $page->id, attributes: ['url' => $page->url]),

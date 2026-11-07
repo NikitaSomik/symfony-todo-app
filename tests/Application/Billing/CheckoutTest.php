@@ -7,12 +7,13 @@ namespace App\Tests\Application\Billing;
 use App\Auth\Entity\User;
 use App\Billing\Enum\Plan;
 use App\Billing\Exception\PaymentProviderUnavailableException;
+use App\Billing\Repository\PayerRepository;
 use App\Billing\Repository\SubscriptionRepository;
 use App\Fixtures\Auth\UserFactory;
 use App\Fixtures\Billing\SubscriptionFactory;
 use App\Fixtures\Workspace\WorkspaceFactory;
 use App\Tests\ApiTestCase;
-use App\Tests\Support\CheckoutPagesStub;
+use App\Tests\Support\PaymentProviderStub;
 use App\Workspace\Entity\Workspace;
 use App\Workspace\Enum\WorkspaceRole;
 use PHPUnit\Framework\Attributes\Test;
@@ -37,9 +38,9 @@ final class CheckoutTest extends ApiTestCase
         return $this->post($this->route('api_billing_checkout', ['id' => $workspace->getId()->toRfc4122()]), $body);
     }
 
-    private function pages(): CheckoutPagesStub
+    private function stripe(): PaymentProviderStub
     {
-        return static::getContainer()->get(CheckoutPagesStub::class);
+        return static::getContainer()->get(PaymentProviderStub::class);
     }
 
     #[Test]
@@ -54,7 +55,45 @@ final class CheckoutTest extends ApiTestCase
         self::assertResponseStatusCodeSame(201);
         self::assertSame('checkout_sessions', $this->jsonData($response)['type']);
         self::assertSame('https://checkout.stripe.test/c/pay/cs_test_stub', $this->jsonAttributes($response)['url']);
-        self::assertEquals([['workspaceId' => $workspace->getId(), 'plan' => $expected, 'buyerEmail' => $this->user->getEmail()]], $this->pages()->opened);
+        self::assertEquals([['customerId' => 'cus_stub_1', 'workspaceId' => $workspace->getId(), 'plan' => $expected]], $this->stripe()->opened);
+    }
+
+    #[Test]
+    public function theFirstPurchaseShouldCreateTheWorkspacesCustomerWithTheBuyersEmail(): void
+    {
+        $workspace = WorkspaceFactory::createOne(['owner' => $this->user]);
+
+        $this->checkout($workspace);
+
+        self::assertEquals([['workspaceId' => $workspace->getId(), 'email' => $this->user->getEmail()]], $this->stripe()->createdCustomers);
+        self::assertSame('cus_stub_1', static::getContainer()->get(PayerRepository::class)->findCustomerId($workspace->getId()));
+    }
+
+    #[Test]
+    public function aWorkspaceThatHasACustomerShouldBuyAsThatCustomer(): void
+    {
+        $workspace = WorkspaceFactory::createOne(['owner' => $this->user]);
+        static::getContainer()->get(PayerRepository::class)->saveIfAbsent($workspace->getId(), 'cus_existing');
+
+        $this->checkout($workspace);
+
+        self::assertResponseStatusCodeSame(201);
+        self::assertSame([], $this->stripe()->createdCustomers);
+        self::assertSame('cus_existing', $this->stripe()->opened[0]['customerId']);
+    }
+
+    #[Test]
+    public function aWorkspaceWhoseCustomerAlreadySubscribedInStripeShouldNotBuyAgain(): void
+    {
+        $workspace = WorkspaceFactory::createOne(['owner' => $this->user]);
+        static::getContainer()->get(PayerRepository::class)->saveIfAbsent($workspace->getId(), 'cus_paid');
+        $this->stripe()->subscribedCustomers = ['cus_paid'];
+
+        $response = $this->checkout($workspace);
+
+        self::assertResponseStatusCodeSame(409);
+        self::assertSame('already_subscribed', $this->json($response)['errors'][0]['code']);
+        self::assertSame([], $this->stripe()->opened);
     }
 
     #[Test]
@@ -67,7 +106,7 @@ final class CheckoutTest extends ApiTestCase
         $this->checkout($workspace);
 
         self::assertResponseStatusCodeSame(403);
-        self::assertSame([], $this->pages()->opened);
+        self::assertSame([], $this->stripe()->opened);
     }
 
     #[Test]
@@ -116,18 +155,19 @@ final class CheckoutTest extends ApiTestCase
 
         self::assertResponseStatusCodeSame(409);
         self::assertSame('already_subscribed', $this->json($response)['errors'][0]['code']);
-        self::assertSame(['plan' => 'team'], $this->json($response)['errors'][0]['meta']);
-        self::assertSame([], $this->pages()->opened);
+        self::assertSame([], $this->stripe()->createdCustomers);
+        self::assertSame([], $this->stripe()->opened);
     }
 
     #[Test]
     public function aPaymentProviderThatDoesNotAnswerShouldBeAskedAgainLater(): void
     {
-        $this->pages()->failure = PaymentProviderUnavailableException::because(new ApiConnectionException('Could not connect to Stripe.'));
+        $this->stripe()->failure = PaymentProviderUnavailableException::because(new ApiConnectionException('Could not connect to Stripe.'));
 
         $response = $this->checkout(WorkspaceFactory::createOne(['owner' => $this->user]));
 
         self::assertResponseStatusCodeSame(503);
+        self::assertResponseHeaderSame('Retry-After', '30');
         self::assertSame('payment_provider_unavailable', $this->json($response)['errors'][0]['code']);
     }
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Billing\Checkout;
+namespace App\Billing\Payment;
 
 /** A payment page opened for one purchase; the customer pays there, not with us. */
 final readonly class CheckoutPage

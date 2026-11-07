@@ -230,13 +230,21 @@
                         "description": "Workspace not found, or the user is not a member of it"
                     },
                     "409": {
-                        "description": "The workspace already has a paid plan; the code is `already_subscribed`"
+                        "description": "The workspace already has a subscription, paid or being paid; the code is `already_subscribed`"
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationError"
                     },
                     "503": {
-                        "description": "Stripe did not answer; the code is `payment_provider_unavailable`, and the request can be repeated"
+                        "description": "Stripe did not answer; the code is `payment_provider_unavailable`, and the request can be repeated after `Retry-After` seconds",
+                        "headers": {
+                            "Retry-After": {
+                                "description": "Seconds to wait before asking again",
+                                "schema": {
+                                    "type": "integer"
+                                }
+                            }
+                        }
                     }
                 }
             }

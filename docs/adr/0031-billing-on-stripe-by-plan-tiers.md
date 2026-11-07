@@ -44,8 +44,13 @@ There is no frontend yet; one comes later. The API is its only client until then
 - **Paying is a permission, `manage_billing`, held by owners**
   ([0022](0022-code-asks-for-a-permission.md)). A workspace always keeps an owner
   ([0019](0019-workspaces-members-and-roles.md)), so it always has someone who can pay.
-- **The payer's details are their own record, `Payer`:** the invoice email, address and
-  VAT number. Invoices may go to an address that belongs to no member.
+- **A workspace pays as one Stripe customer, its `Payer`.** One customer per workspace,
+  not per user, as is usual for a team's billing: an owner of two workspaces pays for each
+  separately, and one live subscription per customer then means one per workspace. The
+  customer is created on the first purchase, with the email of the owner who buys and the
+  workspace id in its metadata, and only its id is kept here; the invoice email, address
+  and VAT number live on the customer in Stripe, edited in the Customer Portal, so
+  invoices may go to an address that belongs to no member.
 
 ### Where the truth is
 
@@ -78,21 +83,23 @@ There is no frontend yet; one comes later. The API is its only client until then
   Checkout: it changes its plan instead. A personal workspace is bought like any other: a
   user who wants more people where they already work moves that workspace to a paid
   plan, rather than starting again in a new one. The owner's email fills the page, and the
-  customer comes back with the session id in the return address. Only a payment changes
-  the plan.
-- **One page per half hour, and a second payment is taken back.** Asking again within the
-  same half-hour window, for the same plan, by the same owner, sends Stripe the same
-  idempotency key and gets the same page back, so a double click or a second tab cannot
-  pay twice. A page expires within an hour. A page opened in the next half hour, or by
-  another owner, is a new one, and our own check sees a paid plan only once the webhook
-  has written it, so two payments for one workspace stay possible: the webhook step
-  cancels and refunds the subscription that comes second for the same `workspace_id`.
+  customer comes back with the session id in the return address. Only a payment changes the
+  plan.
+- **A workspace with a subscription does not buy another.** Before a page opens, our copy
+  of the plan is checked, and then Stripe is asked for the customer's subscriptions: any
+  that is not `canceled` or `incomplete_expired` (paid, being paid or owing) answers `409`
+  with the code `already_subscribed`. Asking Stripe covers the time before the webhook
+  writes our copy. A page expires in an hour, not Stripe's default day. Two pages opened
+  before either is paid can still both be paid: the webhook step cancels and refunds the
+  subscription that comes second for the same customer. Stripe's Checkout setting "Limit
+  customers to one subscription", which sends a customer who already has one to the
+  Customer Portal, works on the same customer and is switched on in the Dashboard of each
+  account, sandbox and live; it is a second guard, not a replacement for the check.
 - **When Stripe does not answer, the client is told to try again.** A connection failure,
   the rate limit or a 5xx from Stripe is `503` with the code
-  `payment_provider_unavailable`; Stripe's client waits 10 seconds an attempt, with one
-  retry, instead of its default 80 seconds. A request Stripe refuses as invalid is our bug
-  and stays a `500`. A workspace that already pays gets `409` with the code
-  `already_subscribed`.
+  `payment_provider_unavailable` and `Retry-After: 30`; Stripe's client waits 10 seconds
+  an attempt, with one retry, instead of its default 80 seconds. A request Stripe refuses
+  as invalid is our bug and stays a `500`.
 - **A plan change has its own endpoint whose answer says what comes next.**
   `POST /api/v1/workspaces/{id}/billing/plan-change` with `{"plan": "business"}` answers
   `{"next": "redirect", "url": …}`: a Portal session opened on the confirmation of that
@@ -116,9 +123,10 @@ There is no frontend yet; one comes later. The API is its only client until then
   transport, or the outbox Symfony 8.2 brings if it is adopted by then
   ([0023](0023-facts-announced-after-the-commit.md) named billing as the reason) — and a
   worker sends it with the message id as the idempotency key. Opening a Checkout page is
-  not such a change: it writes nothing here and the customer is waiting for its address,
-  so it calls Stripe in the request, outside any transaction, and a failure is an error the
-  customer can retry. The outbox starts with the first change that touches both sides.
+  not such a change: the customer is waiting for its address, so it calls Stripe in the
+  request, outside any transaction, and a failure is an error the customer can retry. The
+  one thing it keeps is a new customer's id, written after Stripe has created it; two first
+  purchases at once keep the customer saved first, and the other stays in Stripe, empty. The outbox starts with the first change that touches both sides.
 - **Every night the subscriptions are reconciled with Stripe**, from Symfony Scheduler, to
   catch a webhook that never arrived.
 - **Payments and payers outlive the workspace.** No cascade from the workspace: invoices

@@ -4,21 +4,13 @@ declare(strict_types=1);
 
 namespace App\Billing\Exception;
 
-use App\Billing\Enum\Plan;
 use App\Shared\Http\ActionableException;
 
 final class CannotBuyPlanException extends \DomainException implements ActionableException
 {
-    private function __construct(
-        string $message,
-        private readonly Plan $plan,
-    ) {
-        parent::__construct($message);
-    }
-
-    public static function alreadySubscribed(Plan $plan): self
+    public static function alreadySubscribed(): self
     {
-        return new self('This workspace already has a paid plan. Change the plan instead of buying another.', $plan);
+        return new self('This workspace already has a subscription. Change the plan instead of buying another.');
     }
 
     public function errorCode(): string
@@ -33,6 +25,6 @@ final class CannotBuyPlanException extends \DomainException implements Actionabl
 
     public function errorMeta(): array
     {
-        return ['plan' => $this->plan->value];
+        return [];
     }
 }

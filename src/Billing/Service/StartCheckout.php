@@ -5,36 +5,54 @@ declare(strict_types=1);
 namespace App\Billing\Service;
 
 use App\Auth\Contract\UserDirectory;
-use App\Billing\Checkout\CheckoutPage;
-use App\Billing\Checkout\CheckoutPages;
 use App\Billing\Enum\Plan;
 use App\Billing\Exception\CannotBuyPlanException;
+use App\Billing\Payment\CheckoutPage;
+use App\Billing\Payment\PaymentProvider;
+use App\Billing\Repository\PayerRepository;
 use App\Billing\Repository\SubscriptionRepository;
 use Symfony\Component\Uid\Uuid;
 
 /**
- * Opens a payment page and changes nothing here: the plan follows Stripe's webhook, not
- * this call, so a page left unpaid leaves no trace (ADR 0031).
+ * Opens a payment page; the plan follows Stripe's webhook, not this call (ADR 0031). The only
+ * thing kept here is the workspace's customer, created on the first purchase.
  */
 final readonly class StartCheckout
 {
     public function __construct(
         private SubscriptionRepository $subscriptions,
-        private CheckoutPages $checkoutPages,
+        private PayerRepository $payers,
+        private PaymentProvider $payments,
         private UserDirectory $users,
     ) {
     }
 
     public function handle(Uuid $workspaceId, Plan $plan, int $buyerId): CheckoutPage
     {
-        $currentPlan = $this->subscriptions->planOf($workspaceId);
+        if (Plan::FREE !== $this->subscriptions->planOf($workspaceId)) {
+            throw CannotBuyPlanException::alreadySubscribed();
+        }
 
-        if (Plan::FREE !== $currentPlan) {
-            throw CannotBuyPlanException::alreadySubscribed($currentPlan);
+        $customerId = $this->customerOf($workspaceId, $buyerId);
+
+        // Our copy of the plan follows the webhook; Stripe knows of a payment before it arrives.
+        if ($this->payments->hasSubscription($customerId)) {
+            throw CannotBuyPlanException::alreadySubscribed();
+        }
+
+        return $this->payments->openCheckout($customerId, $workspaceId, $plan);
+    }
+
+    private function customerOf(Uuid $workspaceId, int $buyerId): string
+    {
+        $customerId = $this->payers->findCustomerId($workspaceId);
+
+        if (null !== $customerId) {
+            return $customerId;
         }
 
         $buyerEmail = $this->users->findEmailById($buyerId) ?? throw new \LogicException(sprintf('The user %d who is buying does not exist.', $buyerId));
 
-        return $this->checkoutPages->open($workspaceId, $plan, $buyerEmail);
+        return $this->payers->saveIfAbsent($workspaceId, $this->payments->createCustomer($workspaceId, $buyerEmail));
     }
 }

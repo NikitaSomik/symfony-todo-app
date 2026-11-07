@@ -7,14 +7,17 @@ namespace App\Tests\Support;
 use Stripe\Exception\ApiConnectionException;
 use Stripe\HttpClient\ClientInterface;
 
-/** Answers the two calls a page needs, as Stripe's API would, and keeps what was sent. */
+/** Answers the calls Billing makes, as Stripe's API would, and keeps what was sent. */
 final class FakeStripeHttp implements ClientInterface
 {
-    /** @var list<array{method: string, url: string, headers: list<string>, params: array<string, mixed>}> */
+    /** @var list<array{method: string, url: string, params: array<string, mixed>}> */
     public array $requests = [];
 
     /** @var list<array{id: string, object: string}> */
     public array $prices = [['id' => 'price_found', 'object' => 'price']];
+
+    /** @var list<array{id: string, object: string, status: string}> */
+    public array $subscriptions = [];
 
     public int $status = 200;
 
@@ -22,39 +25,42 @@ final class FakeStripeHttp implements ClientInterface
 
     public function request($method, $absUrl, $headers, $params, $hasFile, $apiMode = 'v1', $maxNetworkRetries = null): array
     {
-        $this->requests[] = ['method' => $method, 'url' => $absUrl, 'headers' => $headers, 'params' => $params];
+        $this->requests[] = ['method' => $method, 'url' => $absUrl, 'params' => $params];
 
-        $isSession = str_contains($absUrl, '/v1/checkout/sessions');
-
-        if ($isSession && null !== $this->failure) {
+        if (null !== $this->failure) {
             throw $this->failure;
         }
 
-        if ($isSession && 200 !== $this->status) {
+        if (200 !== $this->status) {
             return [json_encode(['error' => ['type' => 'api_error', 'message' => 'Stripe answered '.$this->status]], JSON_THROW_ON_ERROR), $this->status, []];
         }
 
-        $body = $isSession
-            ? ['id' => 'cs_test_page', 'object' => 'checkout.session', 'url' => 'https://checkout.stripe.com/c/pay/cs_test_page']
-            : ['object' => 'list', 'data' => $this->prices, 'has_more' => false, 'url' => '/v1/prices'];
-
-        return [json_encode($body, JSON_THROW_ON_ERROR), 200, []];
+        return [json_encode($this->answer($absUrl), JSON_THROW_ON_ERROR), 200, []];
     }
 
-    /** @return array<string, mixed> */
-    public function sessionParams(): array
+    /** @return array<string, mixed> the params of the last request to a path such as "/v1/customers" */
+    public function sentTo(string $path): array
     {
-        return $this->requests[1]['params'];
-    }
-
-    public function idempotencyKey(int $request): ?string
-    {
-        foreach ($this->requests[$request]['headers'] as $header) {
-            if (str_starts_with($header, 'Idempotency-Key: ')) {
-                return substr($header, strlen('Idempotency-Key: '));
+        foreach (array_reverse($this->requests) as $request) {
+            if (str_ends_with((string) parse_url($request['url'], PHP_URL_PATH), $path)) {
+                return $request['params'];
             }
         }
 
-        return null;
+        throw new \LogicException(sprintf('Nothing was sent to %s.', $path));
+    }
+
+    /** @return array<string, mixed> */
+    private function answer(string $url): array
+    {
+        $path = (string) parse_url($url, PHP_URL_PATH);
+
+        return match ($path) {
+            '/v1/customers' => ['id' => 'cus_new', 'object' => 'customer'],
+            '/v1/subscriptions' => ['object' => 'list', 'data' => $this->subscriptions, 'has_more' => false, 'url' => $path],
+            '/v1/prices' => ['object' => 'list', 'data' => $this->prices, 'has_more' => false, 'url' => $path],
+            '/v1/checkout/sessions' => ['id' => 'cs_test_page', 'object' => 'checkout.session', 'url' => 'https://checkout.stripe.com/c/pay/cs_test_page'],
+            default => throw new \LogicException(sprintf('Billing does not call %s.', $path)),
+        };
     }
 }
