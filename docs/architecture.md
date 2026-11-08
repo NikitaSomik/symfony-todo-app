@@ -13,19 +13,24 @@ flowchart LR
     app[[Todo app API<br/><i>workspaces, members, tasks,<br/>plans and their limits</i>]]
     mail[Mail server<br/><i>SMTP</i>]
     hibp[Have I Been Pwned<br/><i>Pwned Passwords range API</i>]
+    stripe[Stripe<br/><i>customers, subscriptions,<br/>Checkout pages</i>]
 
     member -->|uses| client
     client -->|JSON:API over HTTPS| app
     app -->|an email to a new assignee| mail
     mail -.->|delivers| member
     app -->|5 characters of a new<br/>password's SHA-1| hibp
+    app -->|a workspace's customer,<br/>its subscriptions, a payment page| stripe
+    member -.->|pays on Stripe's<br/>Checkout page| stripe
 ```
 
-People reach the API only through a client. Two systems outside it get a call: the mail
+People reach the API only through a client. Three systems outside it get a call: the mail
 server, from the worker, when a task gets an assignee
 ([0024](adr/0024-the-assignee-is-told-by-email-from-the-worker.md)), and Have I Been Pwned,
 when someone signs up; if it does not answer, the password is accepted
-([0026](adr/0026-new-passwords-checked-against-known-breaches.md)).
+([0026](adr/0026-new-passwords-checked-against-known-breaches.md)). Stripe takes the
+payments: an owner who buys a plan is sent to Stripe's Checkout page, and the card never
+reaches the API ([0031](adr/0031-billing-on-stripe-by-plan-tiers.md)).
 
 ## Containers
 
@@ -43,15 +48,17 @@ flowchart LR
     end
 
     mail[Mail server]
+    stripe[Stripe API]
 
     client -->|HTTP, cookies| nginx
     nginx -->|FastCGI| app
-    app -->|tasks, users, refresh tokens,<br/>audit log, full-text search| db
-    app -->|JWT blocklist, rate-limit counters,<br/>query results in production| redis
+    app -->|tasks, users, refresh tokens,<br/>audit log, full-text search,<br/>workspaces' Stripe customers| db
+    app -->|JWT blocklist, rate-limit counters,<br/>Stripe price ids, query results<br/>in production| redis
     app -->|events, after the commit| mq
     mq -->|async queue| worker
     worker -->|reads the task and the email;<br/>keeps messages that still fail| db
     worker -->|SMTP| mail
+    app -->|HTTPS: 3 s to connect,<br/>30 s an attempt, one retry| stripe
 ```
 
 One codebase runs as two processes: php-fpm answers requests, and the worker handles what
@@ -63,8 +70,14 @@ retries is kept in PostgreSQL.
 One database. PostgreSQL also serves the search
 ([0013](adr/0013-task-search-postgresql-full-text.md)). Redis holds short-lived data: the
 blocklist of logged-out access tokens, read on every authenticated request, the rate-limit
-counters, and in production Doctrine's cache of query results. In development, Mailpit
-stands in for the mail server.
+counters, the id of each plan's Stripe price for an hour, and in production Doctrine's
+cache of query results. In development, Mailpit stands in for the mail server.
+
+php-fpm calls Stripe during the request that opens a payment page, outside any transaction.
+Stripe's client waits `STRIPE_TIMEOUT_SECONDS` (30) an attempt with one retry, and nginx
+waits 75 seconds for PHP, longer than two attempts, so a Stripe outage reaches the client
+as the API's `503` with `Retry-After`, not as nginx's `504`. Of a paying workspace,
+PostgreSQL keeps only its Stripe customer's id (`payers`); the invoices stay in Stripe.
 
 ## Modules
 
@@ -108,12 +121,15 @@ flowchart TB
 
     subgraph Billing
         direction TB
-        b1[Entity · Repository · Service]
+        b1[Controller · DTO · Security]
+        b2[Service · Exception]
+        b3[Entity · Enum · Repository]
+        b4[Payment port · Stripe adapter]
     end
 
     subgraph Shared
         direction TB
-        s1[Http — error rendering, request id]
+        s1[Http — error rendering, request id, Retry-After]
         s2[Api — JSON:API responses]
         s3[Messaging — EventPublisher · Logging]
         s4[Persistence · Query]
@@ -126,7 +142,8 @@ flowchart TB
     Workspace -->|writes its history| AuditLog
     Notification -->|contract only| Task
     Notification -->|contract only| Auth
-    Billing -->|implements a contract of| Workspace
+    Billing -->|contract only; implements<br/>its plan limits| Workspace
+    Billing -->|contract only| Auth
     Task --> Shared
     Workspace --> Shared
     Auth --> Shared
@@ -145,7 +162,10 @@ the workspace ([0018](adr/0018-modules-meet-through-contracts.md)). `Notificatio
 and email addresses through contracts and reacts to `Task`'s events in the worker
 ([0024](adr/0024-the-assignee-is-told-by-email-from-the-worker.md)). `Workspace` asks what a
 plan allows through a contract of its own, and `Billing` answers it, so `Workspace` knows
-nothing of plans ([0031](adr/0031-billing-on-stripe-by-plan-tiers.md)).
+nothing of plans ([0031](adr/0031-billing-on-stripe-by-plan-tiers.md)). `Billing` reads the
+buyer's id and email from `Auth`'s contract, asks `Workspace`'s whether a member may manage
+billing, and reaches Stripe only through its own `PaymentProvider` port, which
+`StripePaymentProvider` implements.
 
 ## Reacting to events
 
