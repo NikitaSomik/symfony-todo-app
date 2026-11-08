@@ -13,9 +13,9 @@ links every rule to its ADR.
 - Open questions are settled before coding, not guessed. Where there is a choice, Claude
   lays out the options with their cost and recommends one. "Not needed now" is a valid
   answer when it names the signal that would make it needed.
-- A change that involves decisions is built with the `implement` skill: questions,
-  approaches, plan, tests first, code, verify, review, report. A typo, a rename or a
-  comment is made directly.
+- A change that involves decisions is built with the `implement` skill: one plan with its
+  questions and approaches, tests first, code, verify, reviews, report. A typo, a rename
+  or a comment is made directly.
 - A decision worth keeping gets an ADR: Context / Decision / Alternatives considered /
   Consequences, updated in the same pull request as the code.
 - Code, commits, ADRs and pull requests are in English.
@@ -26,8 +26,10 @@ links every rule to its ADR.
 - Commits: one line, `type(module): lowercase imperative summary`, no period, no body, no
   trailers; author `Mykyta <nikitasomusev@gmail.com>` (Nikita), unsigned
   (`git -c commit.gpgsign=false commit`).
-- Pull requests: no Claude attribution or "Generated with" line; do not assign Nikita or
-  request his review.
+- Pull requests are described with the `pr` skill: no Claude attribution or "Generated
+  with" line; do not assign Nikita or request his review.
+- After a task that went harder than it should have, Nikita may run `/retro`: it proposes
+  changes to the checks, skills and rules, and changes nothing by itself.
 - Untracked files in `docs/`, `templates/` and `install.md` are Nikita's local notes: never
   commit them.
 
@@ -55,8 +57,8 @@ wraps it (`make help`). `make up` first.
 - A failing check is fixed in the code. Checks are never loosened: no edits to their
   configs, no `@phpstan-ignore`, no skipped tests, no test expectation changed to fit
   the code unless the change of behaviour was agreed.
-- Before a change is shown for a pull request, the `project-review` skill has gone through
-  it, and each finding is fixed or answered.
+- Before a change is shown for a pull request, the `project-review` and `security-review`
+  skills have gone through it, and each finding is fixed or answered.
 
 ## Rules the code does not show at a glance
 
