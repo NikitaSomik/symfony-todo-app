@@ -7,7 +7,8 @@ every rule to its ADR.
 ## How we work
 
 - Nikita sets the direction. System design and architecture are decided together, in
-  discussion, before code. Claude writes the code.
+  discussion, before code, with the `grill-with-docs` skill: questions in rounds, then the
+  ADRs. Claude writes the code.
 - Open questions are settled before coding, not guessed. Where there is a choice, Claude
   lays out the options with their cost and recommends one. "Not needed now" is a valid
   answer when it names the signal that would make it needed.
