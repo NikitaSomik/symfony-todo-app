@@ -1,7 +1,7 @@
 ---
 name: project-review
 description: Review this branch's changes on two axes - against the approved plan, and against the project's own rules (module contracts, transactions and facts, permissions and 404s, JSON:API errors, migrations, tests, ADRs). Use after implementing a change and before a pull request, or when asked to review a diff.
-argument-hint: "[the approved plan, pasted] [base: branch, default origin/main]"
+argument-hint: "[base: branch, default origin/main] [the approved plan, if it is not saved]"
 context: fork
 background: false
 allowed-tools: Read, Grep, Glob, Bash(git diff:*), Bash(git log:*), Bash(git show:*), Bash(git status:*), Bash(git ls-files:*)
@@ -15,8 +15,9 @@ summary of it, and you do not edit anything.
 
 ## What to review
 
-Arguments: `$ARGUMENTS`. They carry the approved plan of the change, and may name a base
-as `base: <branch>`; the base is `origin/main` otherwise.
+Arguments: `$ARGUMENTS`. They may name a base as `base: <branch>`, `origin/main` otherwise,
+and may carry the approved plan. Without it, the plan is `.claude/plans/<branch>.md` for
+the branch `git status` names.
 
 1. `git diff <base>...HEAD` for the committed changes, `git diff HEAD` and
    `git ls-files --others --exclude-standard` for the rest.

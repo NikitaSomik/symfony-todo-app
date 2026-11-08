@@ -19,8 +19,8 @@ the first time. It proposes; nothing is changed until Nikita picks.
 - The pull request: its description, review comments, CI runs, and `git log` of its
   branch.
 - The numbers from the report: how often `verify-fast` failed, what `project-review` and
-  `security-review` found, how many times Nikita corrected the work, the tokens `/usage`
-  reported.
+  `security-review` found, how many times Nikita corrected the work, the session's tokens
+  (the `usage` of its messages in the log).
 
 ## 2. Find where time or quality was lost
 

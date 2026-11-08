@@ -45,12 +45,11 @@ change the plan, which is shown again only if they change its cases. The approve
 the scope: a file outside it needs a reason in the report, another module's contract needs
 asking first, and a change of behaviour beyond the plan goes back to Nikita.
 
-Save the approved plan to `.claude/plans/<branch>.md`, which git ignores, so that a new
-session continues from it and the branch, without this one's history.
-
 ## 3. Tests first
 
 - A branch from a fresh `origin/main`, named as `CLAUDE.md` says, unless continuing one.
+- The approved plan saved to `.claude/plans/<branch>.md`, which git ignores, so that a new
+  session continues from it and the branch, without this one's history.
 - For every case in the plan, a test first: an application test through HTTP, and a unit
   test for a domain rule, shaped like the neighbouring tests. Run them and show the output:
   each fails for the right reason, not on a typo. No code for a case before its test fails.
@@ -62,16 +61,16 @@ session continues from it and the branch, without this one's history.
 - The smallest change that makes the tests pass, in the shape of the neighbouring feature:
   controller, DTO, a use case that owns one `wrapInTransaction()`, events, resource.
 - The rules in `CLAUDE.md` hold. A failing check is fixed in the code, never loosened.
-- `make verify-fast` as you go. After three failed attempts at the same problem, stop and
-  report what was tried.
+- `make verify-fast` as you go. A dead end, as `CLAUDE.md` defines it, goes to the
+  `dead-end` skill.
 
 ## 5. Finish
 
 - `make verify` green.
 - The docs from the plan: ADR, README, `make generate-openapi`, the roadmap if it moved.
-- Run the `project-review` skill with the approved plan as its argument, and the
-  `security-review` skill. Fix what they must;
-  answer each "should fix" with a fix or a reason; bring their questions to Nikita.
+- Run the `project-review` skill, which reads the plan of the branch, and the
+  `security-review` skill. Fix what they must; answer each "should fix" with a fix or a
+  reason; bring their questions to Nikita.
 
 ## 6. Report (wait)
 
@@ -80,7 +79,8 @@ The report, which becomes the pull request description:
 - What changed, as behaviour.
 - The commands run and their result: the end of `make verify`, not "tests pass".
 - How the work went: how often `verify-fast` failed, what each review found and what
-  became of it, and the tokens `/usage` reports for the session.
+  became of it, and the session's tokens, summed from the `usage` of its messages in its
+  log in `~/.claude/projects/`.
 - Open questions and what is not done.
 
 Commit, push and open the pull request when Nikita says so (`CLAUDE.md`), described with
