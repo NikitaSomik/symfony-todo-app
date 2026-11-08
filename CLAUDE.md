@@ -41,6 +41,8 @@ Everything runs in Docker: `make up` first.
   configs, no `@phpstan-ignore`, no skipped tests, no test expectation changed to fit
   the code unless the change of behaviour was agreed.
 - After three failed attempts at the same problem, stop and report what was tried.
+- Before a change is shown for a pull request, the `project-review` skill has gone through
+  it, and each finding is fixed or answered.
 
 ## Rules the code does not show at a glance
 
