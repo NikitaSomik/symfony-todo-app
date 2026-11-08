@@ -11,6 +11,9 @@ every rule to its ADR.
 - Open questions are settled before coding, not guessed. Where there is a choice, Claude
   lays out the options with their cost and recommends one. "Not needed now" is a valid
   answer when it names the signal that would make it needed.
+- A change that involves decisions is built with the `implement` skill: questions,
+  approaches, plan, tests first, code, verify, review, report. A typo, a rename or a
+  comment is made directly.
 - A decision worth keeping gets an ADR: Context / Decision / Alternatives considered /
   Consequences.
 - Code, commits, ADRs and pull requests are in English.
