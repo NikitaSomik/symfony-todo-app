@@ -1,28 +1,70 @@
 # Architecture
 
-Four views of the application. Each one links the decision record that explains why it
-looks this way.
+The views follow the [C4 model](https://c4model.com), from the outside in: the system in its
+world, the processes it runs as, the modules inside them, then the flows and states that
+matter. Each one links the decision record that explains why it looks this way.
+
+## System context
+
+```mermaid
+flowchart LR
+    member([Workspace member])
+    client[API client<br/><i>a web or mobile app,<br/>not in this repository</i>]
+    app[[Todo app API<br/><i>workspaces, members, tasks,<br/>plans and their limits</i>]]
+    mail[Mail server<br/><i>SMTP</i>]
+    hibp[Have I Been Pwned<br/><i>Pwned Passwords range API</i>]
+
+    member -->|uses| client
+    client -->|JSON:API over HTTPS| app
+    app -->|an email to a new assignee| mail
+    mail -.->|delivers| member
+    app -->|5 characters of a new<br/>password's SHA-1| hibp
+```
+
+People reach the API only through a client. Two systems outside it get a call: the mail
+server, from the worker, when a task gets an assignee
+([0024](adr/0024-the-assignee-is-told-by-email-from-the-worker.md)), and Have I Been Pwned,
+when someone signs up; if it does not answer, the password is accepted
+([0026](adr/0026-new-passwords-checked-against-known-breaches.md)).
 
 ## Containers
 
 ```mermaid
 flowchart LR
     client([API client])
-    nginx[nginx]
-    app[php-fpm<br/>Symfony 8.1]
-    db[(PostgreSQL 18)]
-    redis[(Redis 7)]
+
+    subgraph system [Todo app API]
+        nginx[nginx]
+        app[php-fpm<br/>Symfony 8.1]
+        worker[worker<br/>messenger:consume async]
+        db[(PostgreSQL 18)]
+        redis[(Redis 7)]
+        mq[[RabbitMQ 4]]
+    end
+
+    mail[Mail server]
 
     client -->|HTTP, cookies| nginx
     nginx -->|FastCGI| app
     app -->|tasks, users, refresh tokens,<br/>audit log, full-text search| db
-    app -->|JWT blocklist, rate-limit counters| redis
+    app -->|JWT blocklist, rate-limit counters,<br/>query results in production| redis
+    app -->|events, after the commit| mq
+    mq -->|async queue| worker
+    worker -->|reads the task and the email;<br/>keeps messages that still fail| db
+    worker -->|SMTP| mail
 ```
 
-One deployable application and one database. PostgreSQL also serves the search
+One codebase runs as two processes: php-fpm answers requests, and the worker handles what
+the request does not wait for. A module announces a fact only after its transaction commits
+([0023](adr/0023-facts-announced-after-the-commit.md)); the facts with a reaction in the
+worker go to RabbitMQ, today only `TaskAssigned`. A message that still fails after its
+retries is kept in PostgreSQL.
+
+One database. PostgreSQL also serves the search
 ([0013](adr/0013-task-search-postgresql-full-text.md)). Redis holds short-lived data: the
-blocklist of logged-out access tokens, read on every authenticated request, and the
-rate-limit counters.
+blocklist of logged-out access tokens, read on every authenticated request, the rate-limit
+counters, and in production Doctrine's cache of query results. In development, Mailpit
+stands in for the mail server.
 
 ## Modules
 
@@ -73,6 +115,7 @@ flowchart TB
         direction TB
         s1[Http — error rendering, request id]
         s2[Api — JSON:API responses]
+        s3[Messaging — EventPublisher · Logging]
         s4[Persistence · Query]
     end
 

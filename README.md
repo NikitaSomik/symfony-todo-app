@@ -72,8 +72,8 @@ and a limit on work in progress; then deadlines with consequences.
 | Who decides which status may follow which? | The `Task` entity; Symfony Workflow was built on a branch and compared | [0014](docs/adr/0014-task-status-changed-as-part-of-an-update.md) → [0015](docs/adr/0015-task-lifecycle-as-explicit-transitions.md) |
 | Is a blocked task a status or a flag? | A status of work in progress, as most teams use it; Jira's flag and task links were weighed | [0016](docs/adr/0016-blocked-is-a-status-of-work-in-progress.md) |
 
-All records: [docs/adr](docs/adr/README.md). Diagrams of the containers, the modules, the
-authentication flow and a task transition: [docs/architecture.md](docs/architecture.md).
+All records: [docs/adr](docs/adr/README.md). C4 diagrams of the system context, the containers
+and the modules, the authentication flow and a task transition: [docs/architecture.md](docs/architecture.md).
 
 ## Modules
 
