@@ -63,7 +63,8 @@ reader without its context, or came out of a real trade-off. A smaller decision 
 an existing ADR or nowhere. One ADR holds one decision, so that a later change supersedes
 only what it changes.
 
-Each ADR follows `docs/adr/template.md`, like the records around it:
+Each ADR follows `docs/adr/template.md` and the rules in `docs/adr/README.md`, like the
+records around it:
 
 - File `docs/adr/NNNN-the-decision-as-a-phrase.md`, numbered after the highest one; the
   title is the decision as a sentence.
@@ -74,6 +75,7 @@ Each ADR follows `docs/adr/template.md`, like the records around it:
   costs, what it makes harder, and the signal that would make us revisit it.
 - An ADR it replaces gets `Status: superseded by [NNNN](NNNN-....md)` and is otherwise left
   as it is.
+- The record gets a row in the table of `docs/adr/README.md`.
 - A new rule is linked from the README's rules and, if the code does not show it at a
   glance, from the rules in `CLAUDE.md`. `docs/roadmap.md` and `docs/architecture.md` change
   when the design changes them.
