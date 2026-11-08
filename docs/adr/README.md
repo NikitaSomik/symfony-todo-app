@@ -17,7 +17,13 @@ that were actually weighed — as the history, the notes or the author's own acc
 Records 0010–0014 were written the same way, in October 2026.
 
 Dates come from git history, and every record links the pull request that implemented it.
-New records follow [the template](template.md).
+New records follow [the template](template.md), one decision each, and are written or
+updated in the same pull request as the code. "Alternatives considered" lists only the
+options that were really weighed. A new record gets a row in the table below.
+
+A later change to a fact of an accepted record, which leaves its decision standing, is a
+dated note in place: *Extended on 2026-10-27, in #103: …* or *Withdrawn on 2026-10-08, in
+#82: …*. A changed decision is a new record that supersedes the old one.
 
 Statuses:
 
