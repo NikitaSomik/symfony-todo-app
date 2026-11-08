@@ -14,6 +14,9 @@ checks, tests first. Nikita is asked at the plan and at the report.
 ## 1. Understand
 
 - Read what the change rests on: the design doc, the ADR, the issue, the discussion.
+- Continuing a branch: its plan in `.claude/plans/`, its pull request with the review
+  comments and CI, and `git log origin/main..`. Merge a fresh `origin/main` into it; a
+  pushed branch is never rebased. The plan then covers only what is left.
 - Read the ADRs of the rules it touches, and a neighbouring feature that works the same
   way. For a change across several modules, a subagent may explore the code and report the
   files and flows that matter; read those files yourself before going on.
@@ -42,9 +45,12 @@ change the plan, which is shown again only if they change its cases. The approve
 the scope: a file outside it needs a reason in the report, another module's contract needs
 asking first, and a change of behaviour beyond the plan goes back to Nikita.
 
+Save the approved plan to `.claude/plans/<branch>.md`, which git ignores, so that a new
+session continues from it and the branch, without this one's history.
+
 ## 3. Tests first
 
-- A branch from a fresh `origin/main`, named as `CLAUDE.md` says.
+- A branch from a fresh `origin/main`, named as `CLAUDE.md` says, unless continuing one.
 - For every case in the plan, a test first: an application test through HTTP, and a unit
   test for a domain rule, shaped like the neighbouring tests. Run them and show the output:
   each fails for the right reason, not on a typo. No code for a case before its test fails.
