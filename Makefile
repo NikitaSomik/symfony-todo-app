@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
 .PHONY: help bash build up down logs cache-clear migrate \
         db-create db-drop db-wipe db-reset db-seed db-fresh db-dump db-restore \
-        run-phpstan run-deptrac run-cs fix-cs run-tests coverage lint-container validate-schema \
+        run-phpstan run-deptrac run-cs fix-cs run-tests coverage audit lint-container validate-schema \
         verify-fast verify fix-and-verify \
         generate-openapi queue-stats queue-failed restart-worker
 
@@ -87,6 +87,9 @@ coverage:       ## Generate coverage report
 	$(EXEC) env XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-html var/coverage
 	@echo "Coverage report: var/coverage/index.html"
 
+audit:          ## Check the locked dependencies against known security advisories
+	$(EXEC) composer audit --locked --no-interaction
+
 lint-container: ## Check the service definitions of the dev and prod containers
 	$(EXEC) php bin/console lint:container
 	$(EXEC) php bin/console lint:container --env=prod
@@ -101,10 +104,10 @@ verify-fast:    ## Quick checks of what the branch changed
 	$(EXEC) bin/verify-fast
 
 verify:         ## Run everything CI runs
-verify: run-cs lint-container run-phpstan run-deptrac validate-schema run-tests
+verify: audit run-cs lint-container run-phpstan run-deptrac validate-schema run-tests
 
 fix-and-verify: ## Fix cs, then everything else CI runs
-fix-and-verify: fix-cs lint-container run-phpstan run-deptrac validate-schema run-tests
+fix-and-verify: audit fix-cs lint-container run-phpstan run-deptrac validate-schema run-tests
 
 ## —— Docs —————————————————————————————————————————
 generate-openapi: ## Generate OpenAPI spec
