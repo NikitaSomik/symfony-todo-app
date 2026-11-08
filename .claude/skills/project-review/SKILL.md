@@ -1,7 +1,7 @@
 ---
 name: project-review
-description: Review this branch's changes against the project's own rules (module contracts, transactions and facts, permissions and 404s, JSON:API errors, migrations, tests, ADRs). Use after implementing a change and before a pull request, or when asked to review a diff.
-argument-hint: "[base branch, default origin/main]"
+description: Review this branch's changes on two axes - against the approved plan, and against the project's own rules (module contracts, transactions and facts, permissions and 404s, JSON:API errors, migrations, tests, ADRs). Use after implementing a change and before a pull request, or when asked to review a diff.
+argument-hint: "[the approved plan, pasted] [base: branch, default origin/main]"
 context: fork
 background: false
 allowed-tools: Read, Grep, Glob, Bash(git diff:*), Bash(git log:*), Bash(git show:*), Bash(git status:*), Bash(git ls-files:*)
@@ -15,7 +15,8 @@ summary of it, and you do not edit anything.
 
 ## What to review
 
-Base: `$ARGUMENTS`, or `origin/main` when empty.
+Arguments: `$ARGUMENTS`. They carry the approved plan of the change, and may name a base
+as `base: <branch>`; the base is `origin/main` otherwise.
 
 1. `git diff <base>...HEAD` for the committed changes, `git diff HEAD` and
    `git ls-files --others --exclude-standard` for the rest.
@@ -25,7 +26,19 @@ Base: `$ARGUMENTS`, or `origin/main` when empty.
 `make verify` already checks style, PHPStan level 10, Deptrac imports, the schema against
 the mapping and the tests. Do not report what it would catch; look for what it cannot.
 
-## Checklist
+## Against the plan
+
+When the arguments carry a plan, check the change against it before the rules:
+
+- Every case in the plan has its behaviour in the code and a test that would fail without
+  it: the main path, `404`, `403`, `422`, `409`, the race.
+- Nothing beyond the plan: a file, an endpoint or a behaviour the plan does not name is a
+  finding, unless the report gives its reason.
+- What the plan put under "not in this change" is not in it.
+
+Without a plan, say so in the report and review against the rules only.
+
+## Against the rules
 
 Go through every item that applies to the change. An item that does not apply is skipped
 silently.
@@ -91,16 +104,17 @@ silently.
 - Before accepting new code, search for what already does it: a specification, a value
   object, a helper, a factory. Name the existing one.
 
-**Style**
-- Comments only where the code is not obvious. `sprintf`, not `\sprintf`. Names in the
-  domain's words, as the ADRs use them.
+**Code**
+- The rules under "Code" in `CLAUDE.md`. Names in the domain's words, as the ADRs use them.
 
 ## Report
 
 Three groups, most serious first. Leave a group out when it is empty.
 
-- **Must fix**: a bug, a broken rule from the checklist, new behaviour without a test.
-- **Should fix**: a missing index, duplication, an unclear name, a missing ADR line.
+- **Must fix**: a bug, a broken rule from the checklist, a case of the plan missing, new
+  behaviour without a test.
+- **Should fix**: a missing index, duplication, an unclear name, a missing ADR line,
+  something beyond the plan.
 - **Questions for Nikita**: design choices and changed test expectations. Do not decide:
   give the options and what each costs.
 

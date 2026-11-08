@@ -1,6 +1,6 @@
 ---
 name: implement
-description: Build a change in symfony-todo-app that involves decisions - a new endpoint, a rule, a migration, a fix across modules - in agreed phases - questions, approaches, plan, tests first, code, verify, review, report. Use when Nikita asks to build or change something. A typo, a rename or a comment is made directly, without it.
+description: Build a change in symfony-todo-app that involves decisions - a new endpoint, a rule, a migration, a fix across modules - in agreed phases - one plan for Nikita to approve, then tests first, code, verify, reviews and a report. Use when Nikita asks to build or change something. A typo, a rename or a comment is made directly, without it.
 argument-hint: "[what to build, or the path to its design doc or ADR]"
 ---
 
@@ -9,7 +9,7 @@ argument-hint: "[what to build, or the path to its design doc or ADR]"
 What to build: $ARGUMENTS
 
 The phases follow Anthropic's `feature-dev` workflow, cut to this project: its ADRs, its
-checks, tests first. Each phase that says "wait" ends there; Nikita decides what comes next.
+checks, tests first. Nikita is asked at the plan and at the report.
 
 ## 1. Understand
 
@@ -19,41 +19,39 @@ checks, tests first. Each phase that says "wait" ends there; Nikita decides what
   files and flows that matter; read those files yourself before going on.
 - Say in a few lines what you understood the change to be.
 
-## 2. Questions (wait)
+## 2. Plan (wait)
 
-List what the design leaves open: behaviour at the edges, status codes, names in the API,
-the data model, which module owns what, what happens to existing data. Ask them all at
-once, each with your suggested answer. Wait for the answers. Skip this phase only when
-nothing is open, and say so.
+One message, in this order:
 
-## 3. Approaches (wait)
+- **Questions** the design leaves open (behaviour at the edges, status codes, names in the
+  API, the data model, which module owns what, existing data), each with the suggested
+  answer.
+- **Approaches**, when there is more than one reasonable way: two or three, each with what
+  it costs and what it makes harder later, one recommended. A choice that is a rule worth
+  keeping becomes an ADR in this change.
+- The plan, built on the suggested answers and the recommended approach:
+  - **Cases**, each with its answer: the main path, and those that break such code: someone
+    else's resource (`404`), a viewer (`403`), an empty or invalid parameter (`422`), a
+    finished task (`409`), two requests at once.
+  - **Files by module**, and any contract, migration or index.
+  - **Docs**: ADR, the README rule line, `docs/openapi.json`.
+  - **Not in this change.**
 
-When there is more than one reasonable way to build it, give two or three, each with what
-it costs and what it makes harder later, and recommend one. Wait for Nikita's choice. If a
-choice is a rule worth keeping, it becomes an ADR in this change.
+Wait. "Ok" accepts the suggested answers and the recommended approach; Nikita's corrections
+change the plan, which is shown again only if they change its cases. The approved plan is
+the scope: a file outside it needs a reason in the report, another module's contract needs
+asking first, and a change of behaviour beyond the plan goes back to Nikita.
 
-## 4. Plan (wait)
+## 3. Tests first
 
-- **Cases**, each with its answer: the main path, and those that break such code: someone
-  else's resource (`404`), a viewer (`403`), an empty or invalid parameter (`422`), a
-  finished task (`409`), two requests at once.
-- **Files by module**, and any contract, migration or index.
-- **Docs**: ADR, the README rule line, `docs/openapi.json`.
-- **Not in this change.**
-
-Wait for the go-ahead. The plan is the scope: a file outside it needs a reason in the
-report, and another module's contract needs asking first.
-
-## 5. Tests first
-
-- A branch from a fresh `origin/main`: `feat/…`, `fix/…`, `refactor/…`, `chore/…`.
+- A branch from a fresh `origin/main`, named as `CLAUDE.md` says.
 - For every case in the plan, a test first: an application test through HTTP, and a unit
   test for a domain rule, shaped like the neighbouring tests. Run them and show the output:
   each fails for the right reason, not on a typo. No code for a case before its test fails.
 - A migration, service wiring, a rename, a refactor under existing tests and docs need no
   new test first; `make verify` covers them.
 
-## 6. Code
+## 4. Code
 
 - The smallest change that makes the tests pass, in the shape of the neighbouring feature:
   controller, DTO, a use case that owns one `wrapInTransaction()`, events, resource.
@@ -61,20 +59,23 @@ report, and another module's contract needs asking first.
 - `make verify-fast` as you go. After three failed attempts at the same problem, stop and
   report what was tried.
 
-## 7. Finish
+## 5. Finish
 
 - `make verify` green.
 - The docs from the plan: ADR, README, `make generate-openapi`, the roadmap if it moved.
-- Run the `project-review` skill. Fix what it must; answer each "should fix" with a fix or
-  a reason; bring its questions to Nikita.
+- Run the `project-review` skill with the approved plan as its argument, and the
+  `security-review` skill. Fix what they must;
+  answer each "should fix" with a fix or a reason; bring their questions to Nikita.
 
-## 8. Report (wait)
+## 6. Report (wait)
+
+The report, which becomes the pull request description:
 
 - What changed, as behaviour.
 - The commands run and their result: the end of `make verify`, not "tests pass".
-- How often `verify-fast` failed on the way; what the review found and what became of it.
+- How the work went: how often `verify-fast` failed, what each review found and what
+  became of it, and the tokens `/usage` reports for the session.
 - Open questions and what is not done.
 
-Commit, push and open the pull request only when Nikita says so. The pull request follows
-the earlier ones: what changes, tests, not here, docs; no Claude attribution, and Nikita is
-neither assignee nor reviewer.
+Commit, push and open the pull request when Nikita says so (`CLAUDE.md`), described with
+the `pr` skill. A red check on it is fixed on the branch.
