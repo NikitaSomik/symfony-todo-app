@@ -218,9 +218,11 @@ final class StripePaymentProviderTest extends TestCase
     }
 
     #[Test]
-    public function aFailingStripeShouldBeLoggedWithItsRequestId(): void
+    #[TestWith([429])]
+    #[TestWith([503])]
+    public function aBusyOrFailingStripeShouldBeLoggedAsAWarningWithItsRequestId(int $status): void
     {
-        $this->stripe->status = 503;
+        $this->stripe->status = $status;
         $this->stripe->requestId = 'req_failed';
 
         try {
@@ -230,23 +232,29 @@ final class StripePaymentProviderTest extends TestCase
 
         $context = $this->onlyRecord(Level::Warning, 'Stripe request failed')->context;
         self::assertSame('req_failed', $context['stripe_request_id']);
-        self::assertSame(503, $context['http_status']);
+        self::assertSame($status, $context['http_status']);
         self::assertSame('fake_failure', $context['stripe_code']);
         self::assertInstanceOf(ApiErrorException::class, $context['exception']);
     }
 
     #[Test]
-    public function aRequestStripeRefusesShouldBeLoggedToo(): void
+    #[TestWith([400])]
+    #[TestWith([401])]
+    public function aRequestStripeRefusesShouldBeLoggedAsAnError(int $status): void
     {
-        $this->stripe->status = 400;
+        $this->stripe->status = $status;
         $this->stripe->requestId = 'req_refused';
 
         try {
             $this->openCheckout();
-        } catch (InvalidRequestException) {
+        } catch (ApiErrorException) {
         }
 
-        self::assertSame('req_refused', $this->onlyRecord(Level::Warning, 'Stripe request failed')->context['stripe_request_id']);
+        $context = $this->onlyRecord(Level::Error, 'Stripe request failed')->context;
+        self::assertSame('req_refused', $context['stripe_request_id']);
+        self::assertSame($status, $context['http_status']);
+        self::assertSame('fake_failure', $context['stripe_code']);
+        self::assertInstanceOf(ApiErrorException::class, $context['exception']);
     }
 
     #[Test]

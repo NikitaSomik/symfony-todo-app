@@ -132,17 +132,21 @@ final readonly class StripePaymentProvider implements PaymentProvider
         try {
             return $request();
         } catch (ApiErrorException $exception) {
-            $this->logger->warning('Stripe request failed', [
+            $context = [
                 'stripe_request_id' => $exception->getRequestId(),
                 'http_status' => $exception->getHttpStatus(),
                 'stripe_code' => $exception->getStripeCode(),
                 'exception' => $exception,
-            ]);
+            ];
 
-            // A 4xx other than the rate limit is a request Stripe will never accept: our fault, so it stays a 500.
             if ($exception instanceof ApiConnectionException || $exception instanceof RateLimitException || $exception->getHttpStatus() >= 500) {
+                $this->logger->warning('Stripe request failed', $context);
+
                 throw PaymentProviderUnavailableException::because($exception);
             }
+
+            // Any other refusal is a request Stripe will never accept, or a bad key: our fault, so it stays a 500.
+            $this->logger->error('Stripe request failed', $context);
 
             throw $exception;
         }
