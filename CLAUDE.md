@@ -86,11 +86,28 @@ wraps it (`make help`). `make up` first.
   on native functions (`sprintf`, not `\sprintf`).
 - A comment only for a reason the code cannot show; none that restate a name or a body, and
   none in Docker or compose files.
-- Names: a listener of a module's event is named after what it does
-  (`UnassignTasksOfMember`, `LogCreated`); a listener of a framework or library event keeps
-  the `Listener` suffix (`RequestIdListener`). An interface is named after its role;
-  `find…` may return null, `get…` throws. When a name is in doubt, look up how others name
-  it before choosing.
+- A name reads at its call site without opening the body, in the domain's words
+  ([GLOSSARY.md](GLOSSARY.md)). A method is named for all it does or returns: one that also
+  logs, saves or decides says so, or is split; one that returns something says what. A word
+  that fits any value (`data`, `info`) gives way to what the value is here, and so does a
+  library's term when the domain has its own word. When no honest name fits, the design is
+  wrong, not the name. Room for cases that do not exist yet is no reason for a vaguer name.
+- Domain code carries no type suffix such as `Entity`, `Service`, `Manager` or `Interface`
+  (a role noun such as `Generator` or `Formatter` is part of the name), except `Exception`:
+  a port is named after its role (`PaymentProvider`, its adapter `StripePaymentProvider`); a
+  fact for other modules is a past event (`TaskAssigned`), and two facts are two events, not
+  one with a mode; a use case is a verb and an object with `handle()` (`CreateTask`); an
+  exception is named after the refusal (`LastOwnerException`). A listener of a module's
+  event does one thing and is named after it. It may listen to several events when the
+  action is the same (`UnassignTasksOfMember`, for a member who left or lost
+  `work_on_tasks`), but each fact written to the audit log has a listener of its own
+  (`LogCreated`, `LogRenamed`), not one for a module's history. A class that
+  plugs into the framework keeps the framework's suffix (`RequestIdProcessor`, `TaskVoter`,
+  `WorkspaceContextValueResolver`); a listener of a framework or library event ends in
+  `Listener` (`RequestIdListener`), not `Subscriber`. `find…` may return null, `get…` throws.
+  A test is named for the behaviour it pins (`registerShouldStoreEmailLowercased`).
+- When a name is in doubt, look up how others name it to choose between options, not to
+  keep the current one.
 - Non-ASCII test data is Latin with diacritics (`MÜLLER@example.com`).
 
 ## Dead end
