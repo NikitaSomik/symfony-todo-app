@@ -74,7 +74,7 @@ step "no new ignores or skipped tests" no_new_suppressions
 step "released migrations untouched" released_migrations_untouched
 
 if [ ${#php[@]} -gt 0 ]; then
-    step "code style" vendor/bin/php-cs-fixer fix --dry-run --diff --path-mode=intersection -- "${php[@]}"
+    step "code style" vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.php --dry-run --diff --path-mode=intersection -- "${php[@]}"
     step "service container" php bin/console lint:container
     if [ ${#analysed[@]} -gt 0 ]; then
         step "phpstan" vendor/bin/phpstan analyse --no-progress -- "${analysed[@]}"
