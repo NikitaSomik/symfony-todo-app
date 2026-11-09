@@ -96,7 +96,10 @@ final readonly class StripePaymentProvider implements PaymentProvider
             'stripe_request_id' => self::requestIdOf($session),
         ]);
 
-        return new CheckoutPage($session->id, (string) $session->url);
+        return new CheckoutPage(
+            id: $session->id,
+            url: $session->url ?? throw new \LogicException(sprintf('Stripe opened the checkout page %s without an address.', $session->id)),
+        );
     }
 
     /** Prices live in Stripe; a price is found by the lookup key it shares with the plan in every account. */

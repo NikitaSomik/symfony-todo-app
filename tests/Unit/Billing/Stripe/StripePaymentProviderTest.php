@@ -158,6 +158,17 @@ final class StripePaymentProviderTest extends TestCase
     }
 
     #[Test]
+    public function aPageWithoutAnAddressShouldNotBeHandedOn(): void
+    {
+        $this->stripe->checkoutUrl = null;
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('Stripe opened the checkout page cs_test_page without an address.');
+
+        $this->openCheckout();
+    }
+
+    #[Test]
     public function aStripeThatCannotBeReachedShouldBeReportedAsUnavailable(): void
     {
         $this->stripe->failure = new ApiConnectionException('Could not connect to Stripe.');

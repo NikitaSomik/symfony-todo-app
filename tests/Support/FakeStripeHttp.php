@@ -20,6 +20,8 @@ final class FakeStripeHttp implements ClientInterface
     /** @var list<array{id: string, object: string, status: string}> */
     public array $subscriptions = [];
 
+    public ?string $checkoutUrl = 'https://checkout.stripe.com/c/pay/cs_test_page';
+
     public int $status = 200;
 
     public string $requestId = 'req_fake';
@@ -75,7 +77,7 @@ final class FakeStripeHttp implements ClientInterface
             '/v1/customers' => ['id' => 'cus_new', 'object' => 'customer'],
             '/v1/subscriptions' => ['object' => 'list', 'data' => $this->subscriptions, 'has_more' => false, 'url' => $path],
             '/v1/prices' => ['object' => 'list', 'data' => $this->prices, 'has_more' => false, 'url' => $path],
-            '/v1/checkout/sessions' => ['id' => 'cs_test_page', 'object' => 'checkout.session', 'url' => 'https://checkout.stripe.com/c/pay/cs_test_page'],
+            '/v1/checkout/sessions' => ['id' => 'cs_test_page', 'object' => 'checkout.session', 'url' => $this->checkoutUrl],
             default => throw new \LogicException(sprintf('Billing does not call %s.', $path)),
         };
     }
