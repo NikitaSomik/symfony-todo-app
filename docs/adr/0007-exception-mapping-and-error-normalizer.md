@@ -17,10 +17,6 @@ Each of the three questions is declared once, in its own place.
 
 - **Status:** `framework.exceptions` in `config/packages/exceptions.yaml` maps a domain
   exception class to a status. Modules throw domain exceptions and know nothing about HTTP.
-  *Extended on 2026-11-09, in #114: an exception whose answer needs a header declares its
-  status and headers with `#[WithHttpStatus]`, since `exceptions.yaml` cannot set a header;
-  its entry there keeps only `log_level`. `PaymentProviderUnavailableException` is the one
-  such exception, for `Retry-After` — see [0032](0032-a-workspace-buys-a-plan-through-stripe-checkout.md).*
 - **Visibility:** an exception whose message is written for API clients implements the
   `Shared\Http\ClientFacingException` marker. Any other exception is answered with the
   neutral status text, and one without a mapping with a plain `500 Server Error.`, so

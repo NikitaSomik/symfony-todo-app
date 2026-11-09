@@ -58,8 +58,11 @@ The customer waits for the page's address, so the request has to call Stripe its
   customer can retry.
 - **When Stripe does not answer, the client is told to try again.** A connection failure,
   the rate limit or a 5xx from Stripe is `503` with the code
-  `payment_provider_unavailable` and `Retry-After: 30`, both declared on the exception with
-  Symfony's `#[WithHttpStatus]`. A request Stripe refuses otherwise, invalid or with a bad
+  `payment_provider_unavailable` and `Retry-After: 30`. The status stays in
+  `exceptions.yaml`, as [0007](0007-exception-mapping-and-error-normalizer.md) keeps every
+  status in configuration; the header comes from `Shared\Http\RetryAfterListener` for any
+  exception that implements `RetryableException`, since the configuration cannot set a
+  header. A request Stripe refuses otherwise, invalid or with a bad
   key, is our bug and stays a `500`. Each failed call is logged on the `billing` channel
   with Stripe's request id, HTTP status and code: as a warning when Stripe is unavailable,
   as an error when it refuses us.
@@ -83,12 +86,12 @@ The customer waits for the page's address, so the request has to call Stripe its
   payment, and there is nothing to keep beforehand. Every purchase would then create a new
   customer, so neither our check nor Stripe's setting would see a workspace's earlier
   subscription, and the Customer Portal would need that customer found again afterwards.
-- **The `503` in `exceptions.yaml` and `Retry-After` from a listener of our own**, as
-  [0007](0007-exception-mapping-and-error-normalizer.md) keeps every status in
-  configuration. Built first, in this pull request: a marker interface in `Shared`, a
-  listener placed between the exception map and the error page, and its tests, to set one
-  header that Symfony's attribute already sets. The cost of the attribute is one
-  exception whose status is read on its class, not in the configuration.
+- **Symfony's `#[WithHttpStatus(503, headers: ['Retry-After' => '30'])]` on the
+  exception.** No interface and no listener of our own: Symfony sets the header. But the
+  status would be read on the exception's class, not in `exceptions.yaml`, the one place
+  [0007](0007-exception-mapping-and-error-normalizer.md) keeps them, and that ADR rejected
+  the attribute for this reason. A marker interface and a listener in `Shared` are the
+  cost of keeping that rule.
 - **Price ids in environment variables.** Explicit and with no call to Stripe. Each account
   has its own ids, so every environment carries a copy that must match the Dashboard, and a
   new price is a deployment.
