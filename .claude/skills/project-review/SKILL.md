@@ -107,6 +107,9 @@ silently.
 
 **Code**
 - The rules under "Code" in `CLAUDE.md`. Names in the domain's words, as the ADRs use them.
+- Every new or renamed class, method, property, array key and event: read it where it is
+  used. If knowing what it is or does needs its body, a docblock or a question, that is a
+  Should fix with a better name. A word that `GLOSSARY.md` lists under _Avoid_ is one too.
 
 ## Report
 

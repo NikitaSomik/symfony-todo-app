@@ -50,8 +50,10 @@ While answers come in:
 - Stress-test with concrete cases: two requests at once, a webhook twice, late or out of
   order, a user from another workspace, a viewer, an empty parameter, a deploy halfway
   through a migration.
-- Use the project's words (workspace, member, task, assignee, plan). When Nikita and the
-  code name the same thing differently, ask which name wins.
+- Use the words of [GLOSSARY.md](../../../GLOSSARY.md). When Nikita and the code name the
+  same thing differently, or a new term comes up, ask which name wins, and write it into
+  the glossary right then: the term, one or two sentences on what it is, the words to
+  avoid.
 
 Rounds go on until nothing is open. Then sum up the design in a few lines and ask Nikita to
 confirm it. Nothing is written before he does.
