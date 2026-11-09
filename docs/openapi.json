@@ -218,7 +218,14 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "A Stripe Checkout page; send the customer to `attributes.url`"
+                        "description": "A Stripe Checkout page; send the customer to `attributes.url`",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CheckoutSessionResponseSchema"
+                                }
+                            }
+                        }
                     },
                     "401": {
                         "$ref": "#/components/responses/UnauthorizedError"
@@ -923,9 +930,15 @@
                                     "oneOf": [
                                         {
                                             "$ref": "#/components/schemas/TaskStatus"
+                                        },
+                                        {
+                                            "type": "object",
+                                            "nullable": true,
+                                            "enum": [
+                                                null
+                                            ]
                                         }
-                                    ],
-                                    "nullable": true
+                                    ]
                                 },
                                 "due_from": {
                                     "type": "string",
@@ -1966,6 +1979,41 @@
                     },
                     "data": {
                         "$ref": "#/components/schemas/UserResource"
+                    }
+                },
+                "type": "object"
+            },
+            "CheckoutSessionResponseSchema": {
+                "required": [
+                    "jsonapi",
+                    "data"
+                ],
+                "properties": {
+                    "jsonapi": {
+                        "$ref": "#/components/schemas/JsonApiObjectSchema"
+                    },
+                    "data": {
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "example": "checkout_sessions"
+                            },
+                            "id": {
+                                "type": "string",
+                                "example": "cs_test_a1b2c3"
+                            },
+                            "attributes": {
+                                "properties": {
+                                    "url": {
+                                        "type": "string",
+                                        "format": "uri",
+                                        "example": "https://checkout.stripe.com/c/pay/cs_test_a1b2c3"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        },
+                        "type": "object"
                     }
                 },
                 "type": "object"

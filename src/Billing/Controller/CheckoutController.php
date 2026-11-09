@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Billing\Controller;
 
 use App\Auth\Contract\AuthenticatedUser;
+use App\Billing\Api\Documentation\CheckoutSessionResponseSchema;
 use App\Billing\DTO\CheckoutDTO;
 use App\Billing\Security\BillingVoter;
 use App\Billing\Security\WorkspaceContext;
 use App\Billing\Security\WorkspaceContextValueResolver;
 use App\Billing\Service\StartCheckout;
+use App\Shared\Api\Documentation\JsonApiContent;
 use App\Shared\Api\JsonApiResponse;
 use App\Shared\Api\ResourceItem;
 use Nelmio\ApiDocBundle\Attribute\Model;
@@ -37,7 +39,7 @@ final class CheckoutController extends AbstractController
     #[OA\Post(summary: 'Open a payment page to buy a plan for a workspace', description: 'Owners only. The plan changes once Stripe reports the payment, not when the page opens.')]
     #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))]
     #[OA\RequestBody(required: true, content: new OA\JsonContent(ref: new Model(type: CheckoutDTO::class)))]
-    #[OA\Response(response: 201, description: 'A Stripe Checkout page; send the customer to `attributes.url`')]
+    #[OA\Response(response: 201, description: 'A Stripe Checkout page; send the customer to `attributes.url`', content: new JsonApiContent(ref: new Model(type: CheckoutSessionResponseSchema::class)))]
     #[OA\Response(ref: '#/components/responses/UnauthorizedError', response: 401)]
     #[OA\Response(response: 403, description: 'The user may not manage billing in this workspace')]
     #[OA\Response(response: 404, description: 'Workspace not found, or the user is not a member of it')]
