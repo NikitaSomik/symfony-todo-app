@@ -18,6 +18,9 @@ final class PaymentProviderStub implements PaymentProvider
     /** @var list<string> */
     public array $subscribedCustomers = [];
 
+    /** @var list<string> */
+    public array $checkedCustomers = [];
+
     /** @var list<array{customerId: string, workspaceId: Uuid, plan: Plan}> */
     public array $opened = [];
 
@@ -34,6 +37,7 @@ final class PaymentProviderStub implements PaymentProvider
     public function hasSubscription(string $customerId): bool
     {
         $this->failIfAsked();
+        $this->checkedCustomers[] = $customerId;
 
         return in_array($customerId, $this->subscribedCustomers, true);
     }

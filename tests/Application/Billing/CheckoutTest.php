@@ -20,6 +20,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 use Stripe\Exception\ApiConnectionException;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Uid\Uuid;
 
 final class CheckoutTest extends ApiTestCase
 {
@@ -70,6 +71,15 @@ final class CheckoutTest extends ApiTestCase
     }
 
     #[Test]
+    public function aCustomerCreatedForThisPurchaseShouldNotBeCheckedForSubscriptions(): void
+    {
+        $this->checkout(WorkspaceFactory::createOne(['owner' => $this->user]));
+
+        self::assertResponseStatusCodeSame(201);
+        self::assertSame([], $this->stripe()->checkedCustomers);
+    }
+
+    #[Test]
     public function aWorkspaceThatHasACustomerShouldBuyAsThatCustomer(): void
     {
         $workspace = WorkspaceFactory::createOne(['owner' => $this->user]);
@@ -79,6 +89,7 @@ final class CheckoutTest extends ApiTestCase
 
         self::assertResponseStatusCodeSame(201);
         self::assertSame([], $this->stripe()->createdCustomers);
+        self::assertSame(['cus_existing'], $this->stripe()->checkedCustomers);
         self::assertSame('cus_existing', $this->stripe()->opened[0]['customerId']);
     }
 
@@ -110,11 +121,16 @@ final class CheckoutTest extends ApiTestCase
     }
 
     #[Test]
-    public function aStrangerShouldNotFindTheWorkspace(): void
+    public function aStrangerShouldGetTheAnswerForAMissingWorkspace(): void
     {
-        $this->checkout(WorkspaceFactory::createOne());
-
+        $foreignResponse = $this->checkout(WorkspaceFactory::createOne());
         self::assertResponseStatusCodeSame(404);
+
+        $missingResponse = $this->post($this->route('api_billing_checkout', ['id' => Uuid::v7()->toRfc4122()]), ['plan' => 'team']);
+        self::assertResponseStatusCodeSame(404);
+
+        self::assertSame($this->json($missingResponse)['errors'], $this->json($foreignResponse)['errors']);
+        self::assertSame([], $this->stripe()->opened);
     }
 
     #[Test]

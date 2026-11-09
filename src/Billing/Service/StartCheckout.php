@@ -27,7 +27,17 @@ final readonly class StartCheckout
             throw new AlreadySubscribedException();
         }
 
-        $customerId = $this->customerOf($workspaceId, $buyerEmail);
+        $customerId = $this->payers->findCustomerId($workspaceId);
+
+        if (null === $customerId) {
+            $createdId = $this->payments->createCustomer($workspaceId, $buyerEmail);
+            $customerId = $this->payers->saveOrGetExisting($workspaceId, $createdId);
+
+            // Made a moment ago, so Stripe has no subscription of it; a customer a parallel purchase saved first may have one.
+            if ($customerId === $createdId) {
+                return $this->payments->openCheckout($customerId, $workspaceId, $plan);
+            }
+        }
 
         // Our copy of the plan follows the webhook; Stripe knows of a payment before it arrives.
         if ($this->payments->hasSubscription($customerId)) {
@@ -35,16 +45,5 @@ final readonly class StartCheckout
         }
 
         return $this->payments->openCheckout($customerId, $workspaceId, $plan);
-    }
-
-    private function customerOf(Uuid $workspaceId, string $buyerEmail): string
-    {
-        $customerId = $this->payers->findCustomerId($workspaceId);
-
-        if (null !== $customerId) {
-            return $customerId;
-        }
-
-        return $this->payers->saveOrGetExisting($workspaceId, $this->payments->createCustomer($workspaceId, $buyerEmail));
     }
 }
