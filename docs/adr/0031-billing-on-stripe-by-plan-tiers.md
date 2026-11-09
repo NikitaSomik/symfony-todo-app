@@ -75,8 +75,8 @@ There is no frontend yet; one comes later. The API is its only client until then
   retries and receipts stay on Stripe's pages. The workspace id travels in the metadata of
   the subscription and the customer, so a webhook that arrives before
   `checkout.session.completed` still finds its workspace. One open Checkout per workspace.
-  *Superseded on 2026-11-09, in #114: the id travels on the Checkout session and the
-  subscription; a page is not opened for a workspace with a subscription in Stripe and
+  *Superseded on 2026-11-09, in #114: the id travels on the customer, the Checkout session
+  (also as `client_reference_id`) and the subscription; a page is not opened for a workspace with a subscription in Stripe and
   expires in an hour, and two pages paid before the webhook are settled by refunding the
   second — see [0032](0032-a-workspace-buys-a-plan-through-stripe-checkout.md).*
 - **A plan change has its own endpoint whose answer says what comes next.**

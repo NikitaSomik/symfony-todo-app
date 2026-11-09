@@ -83,6 +83,12 @@ The customer waits for the page's address, so the request has to call Stripe its
   payment, and there is nothing to keep beforehand. Every purchase would then create a new
   customer, so neither our check nor Stripe's setting would see a workspace's earlier
   subscription, and the Customer Portal would need that customer found again afterwards.
+- **The `503` in `exceptions.yaml` and `Retry-After` from a listener of our own**, as
+  [0007](0007-exception-mapping-and-error-normalizer.md) keeps every status in
+  configuration. Built first, in this pull request: a marker interface in `Shared`, a
+  listener placed between the exception map and the error page, and its tests, to set one
+  header that Symfony's attribute already sets. The cost of the attribute is one
+  exception whose status is read on its class, not in the configuration.
 - **Price ids in environment variables.** Explicit and with no call to Stripe. Each account
   has its own ids, so every environment carries a copy that must match the Dashboard, and a
   new price is a deployment.
