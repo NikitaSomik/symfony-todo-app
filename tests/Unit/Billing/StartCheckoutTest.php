@@ -45,7 +45,16 @@ final class StartCheckoutTest extends TestCase
     }
 
     #[Test]
-    public function aCustomerSavedFirstByAParallelPurchaseShouldBeChecked(): void
+    public function aCustomerSavedFirstByAParallelPurchaseShouldBeCheckedAndBuyWhenItHasNoSubscription(): void
+    {
+        $this->startCheckout(savedCustomerId: 'cus_parallel')->handle(Uuid::v7(), Plan::TEAM, 'owner@example.com');
+
+        self::assertSame(['cus_parallel'], $this->stripe->checkedCustomers);
+        self::assertSame('cus_parallel', $this->stripe->opened[0]['customerId']);
+    }
+
+    #[Test]
+    public function aCustomerSavedFirstByAParallelPurchaseShouldNotBuyWhenItHasASubscription(): void
     {
         $this->stripe->subscribedCustomers = ['cus_parallel'];
 

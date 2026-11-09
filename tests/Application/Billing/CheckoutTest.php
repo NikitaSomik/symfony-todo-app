@@ -191,6 +191,7 @@ final class CheckoutTest extends ApiTestCase
     #[TestWith([['plan' => 'free']])]
     #[TestWith([['plan' => 'enterprise']])]
     #[TestWith([['plan' => '']])]
+    #[TestWith([['interval' => 'month']])]
     public function onlyAPaidPlanShouldBeBought(array $body): void
     {
         $this->checkout(WorkspaceFactory::createOne(['owner' => $this->user]), $body);
