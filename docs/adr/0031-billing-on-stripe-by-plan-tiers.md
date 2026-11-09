@@ -2,7 +2,7 @@
 
 - Status: accepted
 - Date: 2026-10-29
-- Implemented in: #109 (the personal mark), #110 (plans and limits), #113 (shadow mode), #114 (Checkout); the rest step by step (see Consequences)
+- Implemented in: #109 (the personal mark), #110 (plans and limits), #113 (shadow mode), #114 (Checkout, decided in [0032](0032-a-workspace-buys-a-plan-through-stripe-checkout.md)); the rest step by step (see Consequences)
 
 ## Context
 
@@ -44,13 +44,10 @@ There is no frontend yet; one comes later. The API is its only client until then
 - **Paying is a permission, `manage_billing`, held by owners**
   ([0022](0022-code-asks-for-a-permission.md)). A workspace always keeps an owner
   ([0019](0019-workspaces-members-and-roles.md)), so it always has someone who can pay.
-- **A workspace pays as one Stripe customer, its `Payer`.** One customer per workspace,
-  not per user, as is usual for a team's billing: an owner of two workspaces pays for each
-  separately, and one live subscription per customer then means one per workspace. The
-  customer is created on the first purchase, with the email of the owner who buys and the
-  workspace id in its metadata, and only its id is kept here; the invoice email, address
-  and VAT number live on the customer in Stripe, edited in the Customer Portal, so
-  invoices may go to an address that belongs to no member.
+- **The payer's details are their own record, `Payer`:** the invoice email, address and
+  VAT number. Invoices may go to an address that belongs to no member.
+  *Superseded on 2026-11-09, in #114: `Payer` keeps only the workspace's Stripe customer
+  id; the details live on the customer in Stripe — see [0032](0032-a-workspace-buys-a-plan-through-stripe-checkout.md).*
 
 ### Where the truth is
 
@@ -76,31 +73,12 @@ There is no frontend yet; one comes later. The API is its only client until then
 
 - **Buying is Stripe Checkout; managing is the Customer Portal.** Card forms, 3-D Secure,
   retries and receipts stay on Stripe's pages. The workspace id travels in the metadata of
-  the subscription and the Checkout session, so a webhook that arrives before
-  `checkout.session.completed` still finds its workspace. A price is found by its lookup
-  key, `team` or `business`, the plan's own name, so the code holds no price id that differs
-  between the sandbox and the live account. A workspace that already pays cannot open a
-  Checkout: it changes its plan instead. A personal workspace is bought like any other: a
-  user who wants more people where they already work moves that workspace to a paid
-  plan, rather than starting again in a new one. The owner's email fills the page, and the
-  customer comes back with the session id in the return address. Only a payment changes the
-  plan.
-- **A workspace with a subscription does not buy another.** Before a page opens, our copy
-  of the plan is checked, and then Stripe is asked for the customer's subscriptions: any
-  that is not `canceled` or `incomplete_expired` (paid, being paid or owing) answers `409`
-  with the code `already_subscribed`. Asking Stripe covers the time before the webhook
-  writes our copy. A page expires in an hour, not Stripe's default day. Two pages opened
-  before either is paid can still both be paid: the webhook step cancels and refunds the
-  subscription that comes second for the same customer. Stripe's Checkout setting "Limit
-  customers to one subscription", which sends a customer who already has one to the
-  Customer Portal, works on the same customer and is switched on in the Dashboard of each
-  account, sandbox and live; it is a second guard, not a replacement for the check.
-- **When Stripe does not answer, the client is told to try again.** A connection failure,
-  the rate limit or a 5xx from Stripe is `503` with the code
-  `payment_provider_unavailable` and `Retry-After: 30`; Stripe's client waits 30 seconds
-  an attempt (`STRIPE_TIMEOUT_SECONDS`), with one retry, instead of its default 80 seconds,
-  and nginx waits 75 seconds for the app, longer than both attempts. A request Stripe
-  refuses as invalid is our bug and stays a `500`.
+  the subscription and the customer, so a webhook that arrives before
+  `checkout.session.completed` still finds its workspace. One open Checkout per workspace.
+  *Superseded on 2026-11-09, in #114: the id travels on the Checkout session and the
+  subscription; a page is not opened for a workspace with a subscription in Stripe and
+  expires in an hour, and two pages paid before the webhook are settled by refunding the
+  second — see [0032](0032-a-workspace-buys-a-plan-through-stripe-checkout.md).*
 - **A plan change has its own endpoint whose answer says what comes next.**
   `POST /api/v1/workspaces/{id}/billing/plan-change` with `{"plan": "business"}` answers
   `{"next": "redirect", "url": …}`: a Portal session opened on the confirmation of that
@@ -123,11 +101,9 @@ There is no frontend yet; one comes later. The API is its only client until then
   as a message in the same transaction as the change — an outbox on Messenger's Doctrine
   transport, or the outbox Symfony 8.2 brings if it is adopted by then
   ([0023](0023-facts-announced-after-the-commit.md) named billing as the reason) — and a
-  worker sends it with the message id as the idempotency key. Opening a Checkout page is
-  not such a change: the customer is waiting for its address, so it calls Stripe in the
-  request, outside any transaction, and a failure is an error the customer can retry. The
-  one thing it keeps is a new customer's id, written after Stripe has created it; two first
-  purchases at once keep the customer saved first, and the other stays in Stripe, empty. The outbox starts with the first change that touches both sides.
+  worker sends it with the message id as the idempotency key.
+  *Extended on 2026-11-09, in #114: opening a Checkout page is not such a change; it calls
+  Stripe in the request, outside any transaction — see [0032](0032-a-workspace-buys-a-plan-through-stripe-checkout.md).*
 - **Every night the subscriptions are reconciled with Stripe**, from Symfony Scheduler, to
   catch a webhook that never arrived.
 - **Payments and payers outlive the workspace.** No cascade from the workspace: invoices
@@ -156,9 +132,10 @@ There is no frontend yet; one comes later. The API is its only client until then
   the earliest workspace each user created, because a personal workspace is created at
   registration. Being its owner is not enough, since an owner may be promoted in a team
   older than their account, and its name proves nothing: it can be renamed, and a team may
-  call itself Personal. A report of what would be marked comes before the update. The mark only
-  keeps the personal workspace out of the count of team workspaces on Free; for its own
-  members it is on a plan like any other.
+  call itself Personal. A report of what would be marked comes before the update. A personal workspace
+  stays on Free, up to three members, and cannot move to a paid plan.
+  *Superseded on 2026-11-09, in #114: a personal workspace is bought like any other; the
+  mark only keeps it out of the count of team workspaces on Free — see [0032](0032-a-workspace-buys-a-plan-through-stripe-checkout.md).*
 - **Migrations run before the code that needs them**, and filling a column is a step of
   its own, so old and new code can run side by side.
 - **A plan lives in Billing's own table.** A workspace without a row there is on Free,

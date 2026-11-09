@@ -30,7 +30,8 @@ server, from the worker, when a task gets an assignee
 when someone signs up; if it does not answer, the password is accepted
 ([0026](adr/0026-new-passwords-checked-against-known-breaches.md)). Stripe takes the
 payments: an owner who buys a plan is sent to Stripe's Checkout page, and the card never
-reaches the API ([0031](adr/0031-billing-on-stripe-by-plan-tiers.md)).
+reaches the API ([0031](adr/0031-billing-on-stripe-by-plan-tiers.md),
+[0032](adr/0032-a-workspace-buys-a-plan-through-stripe-checkout.md)).
 
 ## Containers
 
@@ -75,8 +76,10 @@ cache of query results. In development, Mailpit stands in for the mail server.
 
 php-fpm calls Stripe during the request that opens a payment page, outside any transaction.
 Stripe's client waits `STRIPE_TIMEOUT_SECONDS` (30) an attempt with one retry, and nginx
-waits 75 seconds for PHP, longer than two attempts, so a Stripe outage reaches the client
-as the API's `503` with `Retry-After`, not as nginx's `504`. Of a paying workspace,
+waits 75 seconds for PHP, longer than two attempts, so a call Stripe does not answer
+reaches the client as the API's `503` with `Retry-After`, not as nginx's `504`. The
+guarantee is per call, not per request: a Stripe slow on several calls in a row can still
+end in nginx's `504` ([0032](adr/0032-a-workspace-buys-a-plan-through-stripe-checkout.md)). Of a paying workspace,
 PostgreSQL keeps only its Stripe customer's id (`payers`); the invoices stay in Stripe.
 
 ## Modules
