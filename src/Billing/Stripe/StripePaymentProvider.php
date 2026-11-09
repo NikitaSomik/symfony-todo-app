@@ -50,7 +50,13 @@ final readonly class StripePaymentProvider implements PaymentProvider
                 'metadata' => ['workspace_id' => $workspaceId->toRfc4122()],
             ]);
         } catch (ApiErrorException $exception) {
-            throw $this->translated($exception);
+            $this->logFailure($exception);
+
+            if ($this->isUnavailable($exception)) {
+                throw PaymentProviderUnavailableException::because($exception);
+            }
+
+            throw $exception;
         }
 
         $this->logger->info('Stripe customer created', [
@@ -67,7 +73,13 @@ final readonly class StripePaymentProvider implements PaymentProvider
         try {
             $subscriptions = $this->stripe->subscriptions->all(['customer' => $customerId, 'status' => 'all', 'limit' => 100]);
         } catch (ApiErrorException $exception) {
-            throw $this->translated($exception);
+            $this->logFailure($exception);
+
+            if ($this->isUnavailable($exception)) {
+                throw PaymentProviderUnavailableException::because($exception);
+            }
+
+            throw $exception;
         }
 
         foreach ($subscriptions->data as $subscription) {
@@ -81,13 +93,13 @@ final readonly class StripePaymentProvider implements PaymentProvider
 
     public function openCheckout(string $customerId, Uuid $workspaceId, Plan $plan): CheckoutPage
     {
-        $price = $this->priceOf($plan);
+        $priceId = $this->priceIdFor($plan);
 
         try {
             $session = $this->stripe->checkout->sessions->create([
                 'mode' => 'subscription',
                 'customer' => $customerId,
-                'line_items' => [['price' => $price, 'quantity' => 1]],
+                'line_items' => [['price' => $priceId, 'quantity' => 1]],
                 'client_reference_id' => $workspaceId->toRfc4122(),
                 // On the subscription too, so a webhook that comes before the session's own still finds its workspace.
                 'subscription_data' => ['metadata' => ['workspace_id' => $workspaceId->toRfc4122()]],
@@ -97,7 +109,13 @@ final readonly class StripePaymentProvider implements PaymentProvider
                 'cancel_url' => $this->returnUrl.'?checkout=cancelled',
             ]);
         } catch (ApiErrorException $exception) {
-            throw $this->translated($exception);
+            $this->logFailure($exception);
+
+            if ($this->isUnavailable($exception)) {
+                throw PaymentProviderUnavailableException::because($exception);
+            }
+
+            throw $exception;
         }
 
         $this->logger->info('Stripe checkout page opened', [
@@ -115,21 +133,27 @@ final readonly class StripePaymentProvider implements PaymentProvider
     }
 
     /** Prices live in Stripe; a price is found by the lookup key it shares with the plan in every account. */
-    private function priceOf(Plan $plan): string
+    private function priceIdFor(Plan $plan): string
     {
         return $this->cache->get('billing.stripe_price.'.$plan->value, function (ItemInterface $item) use ($plan): string {
             $item->expiresAfter(self::PRICE_CACHE_SECONDS);
 
-            return $this->findPrice($plan);
+            return $this->fetchPriceId($plan);
         });
     }
 
-    private function findPrice(Plan $plan): string
+    private function fetchPriceId(Plan $plan): string
     {
         try {
             $prices = $this->stripe->prices->all(['lookup_keys' => [$plan->value], 'active' => true, 'limit' => 1]);
         } catch (ApiErrorException $exception) {
-            throw $this->translated($exception);
+            $this->logFailure($exception);
+
+            if ($this->isUnavailable($exception)) {
+                throw PaymentProviderUnavailableException::because($exception);
+            }
+
+            throw $exception;
         }
 
         if ([] === $prices->data) {
@@ -139,8 +163,13 @@ final readonly class StripePaymentProvider implements PaymentProvider
         return $prices->data[0]->id;
     }
 
-    /** Stripe being down becomes the port's exception; any other refusal is our fault and stays a 500. */
-    private function translated(ApiErrorException $exception): \Throwable
+    /** Stripe being down or throttling us passes, and the client may try again; any other refusal is our fault. */
+    private function isUnavailable(ApiErrorException $exception): bool
+    {
+        return $exception instanceof ApiConnectionException || $exception instanceof RateLimitException || $exception->getHttpStatus() >= 500;
+    }
+
+    private function logFailure(ApiErrorException $exception): void
     {
         $context = [
             'stripe_request_id' => $exception->getRequestId(),
@@ -149,15 +178,11 @@ final readonly class StripePaymentProvider implements PaymentProvider
             'exception' => $exception,
         ];
 
-        if ($exception instanceof ApiConnectionException || $exception instanceof RateLimitException || $exception->getHttpStatus() >= 500) {
+        if ($this->isUnavailable($exception)) {
             $this->logger->warning('Stripe request failed', $context);
-
-            return PaymentProviderUnavailableException::because($exception);
+        } else {
+            $this->logger->error('Stripe request failed', $context);
         }
-
-        $this->logger->error('Stripe request failed', $context);
-
-        return $exception;
     }
 
     private static function requestIdOf(StripeObject $object): ?string
