@@ -192,6 +192,21 @@ final class StripePaymentProviderTest extends TestCase
     }
 
     #[Test]
+    public function aStripeThatFailsToFindThePriceShouldBeReportedAsUnavailable(): void
+    {
+        $this->stripe->status = 503;
+
+        try {
+            $this->openCheckout();
+            self::fail('A price lookup Stripe did not answer was not reported as unavailable.');
+        } catch (PaymentProviderUnavailableException) {
+        }
+
+        self::assertSame(1, $this->stripe->countSentTo('/v1/prices'));
+        self::assertSame(0, $this->stripe->countSentTo('/v1/checkout/sessions'));
+    }
+
+    #[Test]
     public function aRequestStripeRefusesShouldStayOurError(): void
     {
         $this->stripe->status = 400;
