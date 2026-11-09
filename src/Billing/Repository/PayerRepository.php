@@ -30,15 +30,16 @@ class PayerRepository extends ServiceEntityRepository
     {
         $connection = $this->getEntityManager()->getConnection();
 
-        $connection->executeStatement(
-            'INSERT INTO payers (workspace_id, stripe_customer_id) VALUES (:workspace, :customer) ON CONFLICT (workspace_id) DO NOTHING',
+        // The no-op update is what makes RETURNING give back the row that was already there.
+        $saved = $connection->fetchOne(
+            'INSERT INTO payers (workspace_id, stripe_customer_id) VALUES (:workspace, :customer)
+             ON CONFLICT (workspace_id) DO UPDATE SET stripe_customer_id = payers.stripe_customer_id
+             RETURNING stripe_customer_id',
             ['workspace' => $workspaceId->toRfc4122(), 'customer' => $customerId],
         );
 
-        $saved = $connection->fetchOne('SELECT stripe_customer_id FROM payers WHERE workspace_id = :workspace', ['workspace' => $workspaceId->toRfc4122()]);
-
         if (!is_string($saved)) {
-            throw new \LogicException(sprintf('The workspace %s has no payer right after saving one.', $workspaceId->toRfc4122()));
+            throw new \LogicException(sprintf('The upsert returned no payer for the workspace %s.', $workspaceId->toRfc4122()));
         }
 
         return $saved;
