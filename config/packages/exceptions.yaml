@@ -11,8 +11,9 @@ framework:
         App\Billing\Exception\AlreadySubscribedException:
             status_code: 409
             log_level: info
-        # The status and Retry-After come from #[WithHttpStatus] on the class; a status_code here would drop the header.
-        App\Billing\Exception\PaymentProviderUnavailableException: { log_level: warning }
+        App\Billing\Exception\PaymentProviderUnavailableException:
+            status_code: 503
+            log_level: warning
         App\Billing\Exception\PlanLimitExceededException:
             status_code: 403
             log_level: info

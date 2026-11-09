@@ -132,7 +132,7 @@ flowchart TB
 
     subgraph Shared
         direction TB
-        s1[Http — error rendering, request id]
+        s1[Http — error rendering, request id, Retry-After]
         s2[Api — JSON:API responses]
         s3[Messaging — EventPublisher · Logging]
         s4[Persistence · Query]
