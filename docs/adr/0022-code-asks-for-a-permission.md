@@ -17,14 +17,18 @@ could delete a task, because writing and deleting were one check
 
 - **A permission names something code can ask for.** `Workspace\Contract\WorkspacePermission`
   has four: `view`, `manage_workspace`, `work_on_tasks`, `delete_tasks`.
+  *Extended on 2026-11-09, in #114: a fifth, `manage_billing`, held by owners only, lets
+  its holder buy a plan for the workspace
+  ([0031](0031-billing-on-stripe-by-plan-tiers.md),
+  [0032](0032-a-workspace-buys-a-plan-through-stripe-checkout.md)).*
 - **A role is a set of permissions, and one place says which.**
   `WorkspaceRole::permissions()` is the whole table:
 
-  | | view | manage workspace | work on tasks | delete tasks |
-  |---|---|---|---|---|
-  | owner | yes | yes | yes | yes |
-  | member | yes | | yes | |
-  | viewer | yes | | | |
+  | | view | manage workspace | work on tasks | delete tasks | manage billing |
+  |---|---|---|---|---|---|
+  | owner | yes | yes | yes | yes | yes |
+  | member | yes | | yes | | |
+  | viewer | yes | | | | |
 
 - **Everyone has a set of permissions in every workspace; a stranger's is empty.** Nothing
   outside `Workspace` is handed a role that may be missing: `WorkspaceAccess` answers

@@ -8,6 +8,12 @@ framework:
         App\Auth\Exception\InvalidRefreshTokenException:
             status_code: 401
             log_level: info
+        App\Billing\Exception\AlreadySubscribedException:
+            status_code: 409
+            log_level: info
+        App\Billing\Exception\PaymentProviderUnavailableException:
+            status_code: 503
+            log_level: info
         App\Billing\Exception\PlanLimitExceededException:
             status_code: 403
             log_level: info

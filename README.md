@@ -19,8 +19,8 @@ The rules it enforces now:
   nobody else can read it, change it, or learn that it exists
   ([0020](docs/adr/0020-a-task-belongs-to-a-workspace.md),
   [0011](docs/adr/0011-foreign-task-answers-404.md)).
-- **A role is a set of permissions.** An owner manages the workspace, works on tasks and
-  deletes them; a member works on them; a viewer reads. Code asks for the permission,
+- **A role is a set of permissions.** An owner manages the workspace, works on tasks,
+  deletes them and pays for the plan; a member works on them; a viewer reads. Code asks for the permission,
   never for the role, and someone outside the workspace simply has none ([0022](docs/adr/0022-code-asks-for-a-permission.md)).
 - **A task is held by someone who can work on it.** It is assigned to an owner or a
   member, never to a viewer, and whoever leaves, is removed or becomes a viewer is taken
@@ -51,6 +51,12 @@ The rules it enforces now:
 - **People work together in workspaces.** A workspace has owners, members and viewers,
   always at least one owner, and every user starts with a personal one
   ([0019](docs/adr/0019-workspaces-members-and-roles.md)).
+- **An owner buys a plan on Stripe's page.** The API answers `201` with the address of a
+  Stripe Checkout page; a workspace that already has a subscription gets `409`
+  `already_subscribed`, and when Stripe does not answer the client gets `503`
+  `payment_provider_unavailable` with `Retry-After`. The plan changes only once Stripe
+  reports the payment ([0032](docs/adr/0032-a-workspace-buys-a-plan-through-stripe-checkout.md),
+  [0031](docs/adr/0031-billing-on-stripe-by-plan-tiers.md)).
 
 What comes next ([roadmap](docs/roadmap.md)): review by someone other than the assignee
 and a limit on work in progress; then deadlines with consequences.
@@ -86,13 +92,17 @@ flowchart LR
     Workspace -->|writes its history| AuditLog
     Notification -->|contract only| Task
     Notification -->|contract only| Auth
+    Billing -->|contract only| Workspace
+    Billing -->|contract only| Auth
 ```
 
 An arrow reads "depends on". Every module also uses `Shared`, which depends on none. `Auth` — registration, login, refresh, logout. `Task` — tasks, their lifecycle, search and
 history. `Workspace` — who works together and in which role. `AuditLog` — who changed what; modules write to it, and it knows none of them
 ([0017](docs/adr/0017-audit-log-as-its-own-module.md)). `Notification` — tells people what
 happened to their work, from the worker; nothing depends on it
-([0024](docs/adr/0024-the-assignee-is-told-by-email-from-the-worker.md)). `Shared` — technical code every
+([0024](docs/adr/0024-the-assignee-is-told-by-email-from-the-worker.md)). `Billing` — plans,
+their limits and buying them on Stripe; it answers `Workspace`'s question of what a plan
+allows ([0031](docs/adr/0031-billing-on-stripe-by-plan-tiers.md)). `Shared` — technical code every
 module uses: error rendering, JSON:API responses.
 
 ## Task lifecycle

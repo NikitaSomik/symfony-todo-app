@@ -186,6 +186,76 @@
                 }
             }
         },
+        "/api/v1/workspaces/{id}/billing/checkout": {
+            "post": {
+                "tags": [
+                    "Billing"
+                ],
+                "summary": "Open a payment page to buy a plan for a workspace",
+                "description": "Owners only. The plan changes once Stripe reports the payment, not when the page opens.",
+                "operationId": "post_api_billing_checkout",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CheckoutDTO"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "A Stripe Checkout page; send the customer to `attributes.url`",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CheckoutSessionResponseSchema"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    },
+                    "403": {
+                        "description": "The user may not manage billing in this workspace"
+                    },
+                    "404": {
+                        "description": "Workspace not found, or the user is not a member of it"
+                    },
+                    "409": {
+                        "description": "The workspace already has a subscription, paid or being paid; the code is `already_subscribed`"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "503": {
+                        "description": "Stripe did not answer; the code is `payment_provider_unavailable`, and the request can be repeated after `Retry-After` seconds",
+                        "headers": {
+                            "Retry-After": {
+                                "description": "Seconds to wait before asking again",
+                                "schema": {
+                                    "type": "integer"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/tasks/{id}/assignee": {
             "put": {
                 "tags": [
@@ -860,9 +930,15 @@
                                     "oneOf": [
                                         {
                                             "$ref": "#/components/schemas/TaskStatus"
+                                        },
+                                        {
+                                            "type": "object",
+                                            "nullable": true,
+                                            "enum": [
+                                                null
+                                            ]
                                         }
-                                    ],
-                                    "nullable": true
+                                    ]
                                 },
                                 "due_from": {
                                     "type": "string",
@@ -1577,6 +1653,21 @@
                 },
                 "type": "object"
             },
+            "CheckoutDTO": {
+                "required": [
+                    "plan"
+                ],
+                "properties": {
+                    "plan": {
+                        "type": "string",
+                        "enum": [
+                            "team",
+                            "business"
+                        ]
+                    }
+                },
+                "type": "object"
+            },
             "AssignTaskDTO": {
                 "required": [
                     "user_id"
@@ -1888,6 +1979,41 @@
                     },
                     "data": {
                         "$ref": "#/components/schemas/UserResource"
+                    }
+                },
+                "type": "object"
+            },
+            "CheckoutSessionResponseSchema": {
+                "required": [
+                    "jsonapi",
+                    "data"
+                ],
+                "properties": {
+                    "jsonapi": {
+                        "$ref": "#/components/schemas/JsonApiObjectSchema"
+                    },
+                    "data": {
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "example": "checkout_sessions"
+                            },
+                            "id": {
+                                "type": "string",
+                                "example": "cs_test_a1b2c3"
+                            },
+                            "attributes": {
+                                "properties": {
+                                    "url": {
+                                        "type": "string",
+                                        "format": "uri",
+                                        "example": "https://checkout.stripe.com/c/pay/cs_test_a1b2c3"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        },
+                        "type": "object"
                     }
                 },
                 "type": "object"
@@ -2628,6 +2754,9 @@
         },
         {
             "name": "Profile"
+        },
+        {
+            "name": "Billing"
         },
         {
             "name": "Task assignee"

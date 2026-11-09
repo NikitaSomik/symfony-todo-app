@@ -12,6 +12,12 @@ enum Plan: string
 
     public const int TEAM_WORKSPACES_ON_FREE = 1;
 
+    /** @return list<self> */
+    public static function paid(): array
+    {
+        return [self::TEAM, self::BUSINESS];
+    }
+
     public function memberLimit(): int
     {
         return match ($this) {
@@ -26,7 +32,6 @@ enum Plan: string
         return ucfirst($this->value);
     }
 
-    /** The plan a team moves to when it outgrows this one; the last one has none. */
     public function next(): ?self
     {
         return match ($this) {

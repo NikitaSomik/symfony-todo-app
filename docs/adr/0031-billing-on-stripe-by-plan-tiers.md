@@ -2,7 +2,7 @@
 
 - Status: accepted
 - Date: 2026-10-29
-- Implemented in: #109 (the personal mark), #110 (plans and limits), #113 (shadow mode); the rest step by step (see Consequences)
+- Implemented in: #109 (the personal mark), #110 (plans and limits), #113 (shadow mode), #114 (Checkout, decided in [0032](0032-a-workspace-buys-a-plan-through-stripe-checkout.md)); the rest step by step (see Consequences)
 
 ## Context
 
@@ -46,6 +46,8 @@ There is no frontend yet; one comes later. The API is its only client until then
   ([0019](0019-workspaces-members-and-roles.md)), so it always has someone who can pay.
 - **The payer's details are their own record, `Payer`:** the invoice email, address and
   VAT number. Invoices may go to an address that belongs to no member.
+  *Superseded on 2026-11-09, in #114: `Payer` keeps only the workspace's Stripe customer
+  id; the details live on the customer in Stripe — see [0032](0032-a-workspace-buys-a-plan-through-stripe-checkout.md).*
 
 ### Where the truth is
 
@@ -73,6 +75,10 @@ There is no frontend yet; one comes later. The API is its only client until then
   retries and receipts stay on Stripe's pages. The workspace id travels in the metadata of
   the subscription and the customer, so a webhook that arrives before
   `checkout.session.completed` still finds its workspace. One open Checkout per workspace.
+  *Superseded on 2026-11-09, in #114: the id travels on the customer, the Checkout session
+  (also as `client_reference_id`) and the subscription; a page is not opened for a workspace with a subscription in Stripe and
+  expires in an hour, and two pages paid before the webhook are settled by refunding the
+  second — see [0032](0032-a-workspace-buys-a-plan-through-stripe-checkout.md).*
 - **A plan change has its own endpoint whose answer says what comes next.**
   `POST /api/v1/workspaces/{id}/billing/plan-change` with `{"plan": "business"}` answers
   `{"next": "redirect", "url": …}`: a Portal session opened on the confirmation of that
@@ -96,6 +102,8 @@ There is no frontend yet; one comes later. The API is its only client until then
   transport, or the outbox Symfony 8.2 brings if it is adopted by then
   ([0023](0023-facts-announced-after-the-commit.md) named billing as the reason) — and a
   worker sends it with the message id as the idempotency key.
+  *Extended on 2026-11-09, in #114: opening a Checkout page is not such a change; it calls
+  Stripe in the request, outside any transaction — see [0032](0032-a-workspace-buys-a-plan-through-stripe-checkout.md).*
 - **Every night the subscriptions are reconciled with Stripe**, from Symfony Scheduler, to
   catch a webhook that never arrived.
 - **Payments and payers outlive the workspace.** No cascade from the workspace: invoices
@@ -126,6 +134,8 @@ There is no frontend yet; one comes later. The API is its only client until then
   older than their account, and its name proves nothing: it can be renamed, and a team may
   call itself Personal. A report of what would be marked comes before the update. A personal workspace
   stays on Free, up to three members, and cannot move to a paid plan.
+  *Superseded on 2026-11-09, in #114: a personal workspace is bought like any other; the
+  mark only keeps it out of the count of team workspaces on Free — see [0032](0032-a-workspace-buys-a-plan-through-stripe-checkout.md).*
 - **Migrations run before the code that needs them**, and filling a column is a step of
   its own, so old and new code can run side by side.
 - **A plan lives in Billing's own table.** A workspace without a row there is on Free,
