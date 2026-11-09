@@ -5,18 +5,14 @@ declare(strict_types=1);
 namespace App\Billing\Exception;
 
 use App\Shared\Http\ActionableException;
-use App\Shared\Http\RetryableException;
+use Symfony\Component\HttpKernel\Attribute\WithHttpStatus;
 
-final class PaymentProviderUnavailableException extends \RuntimeException implements ActionableException, RetryableException
+#[WithHttpStatus(503, headers: ['Retry-After' => '30'])]
+final class PaymentProviderUnavailableException extends \RuntimeException implements ActionableException
 {
     public static function because(\Throwable $previous): self
     {
         return new self('The payment provider did not answer. Try again shortly.', previous: $previous);
-    }
-
-    public function retryAfterSeconds(): int
-    {
-        return 30;
     }
 
     public function errorCode(): string
