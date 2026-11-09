@@ -65,7 +65,8 @@ The customer waits for the page's address, so the request has to call Stripe its
   header. A request Stripe refuses otherwise, invalid or with a bad
   key, is our bug and stays a `500`. Each failed call is logged on the `billing` channel
   with Stripe's request id, HTTP status and code: as a warning when Stripe is unavailable,
-  as an error when it refuses us.
+  as an error when it refuses us. That warning is the record of an outage, so the `503`
+  that follows is logged by the exception map only at `info`.
 - **Timeouts are ours, not the library's.** Stripe's client gives up connecting after
   3 seconds and waits `STRIPE_TIMEOUT_SECONDS` (30) for an answer, with one retry, instead
   of 30 and 80 seconds by default. nginx waits 75 seconds for PHP, longer than two attempts
