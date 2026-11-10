@@ -1,8 +1,8 @@
 # 0033. A workspace has one open Checkout page: a new one closes the others, and a paid one answers 409
 
 - Status: accepted
-- Date: YYYY-MM-DD
-- Implemented in: #PR
+- Date: 2026-11-11
+- Implemented in: #129
 
 ## Context
 
