@@ -332,6 +332,120 @@ final class StripePaymentProviderTest extends TestCase
         self::assertSame([['price' => 'price_added', 'quantity' => 1]], $this->stripe->sentTo('/v1/checkout/sessions')['line_items']);
     }
 
+    #[Test]
+    public function everyOpenPageOfTheCustomerShouldBeExpired(): void
+    {
+        $this->stripe->checkoutSessions = ['cs_open_1' => 'open', 'cs_paid' => 'complete', 'cs_open_2' => 'open'];
+
+        $this->provider()->closeOpenCheckoutPages('cus_workspace');
+
+        self::assertSame(['customer' => 'cus_workspace', 'status' => 'open', 'limit' => 100], $this->stripe->sentTo('/v1/checkout/sessions'));
+        self::assertSame(1, $this->stripe->countSentTo('/v1/checkout/sessions/cs_open_1/expire'));
+        self::assertSame(1, $this->stripe->countSentTo('/v1/checkout/sessions/cs_open_2/expire'));
+        self::assertSame(0, $this->stripe->countSentTo('/v1/checkout/sessions/cs_paid/expire'));
+        self::assertSame(['cs_open_1' => 'expired', 'cs_paid' => 'complete', 'cs_open_2' => 'expired'], $this->stripe->checkoutSessions);
+    }
+
+    #[Test]
+    public function openPagesOnEveryPageOfTheListShouldBeExpired(): void
+    {
+        $this->stripe->checkoutSessions = ['cs_open_1' => 'open', 'cs_open_2' => 'open', 'cs_open_3' => 'open'];
+        $this->stripe->checkoutSessionsPerPage = 2;
+
+        $this->provider()->closeOpenCheckoutPages('cus_workspace');
+
+        self::assertSame(2, $this->stripe->countSentTo('/v1/checkout/sessions'));
+        self::assertSame(['cs_open_1' => 'expired', 'cs_open_2' => 'expired', 'cs_open_3' => 'expired'], $this->stripe->checkoutSessions);
+    }
+
+    #[Test]
+    public function aCustomerWithoutOpenPagesShouldHaveNothingExpired(): void
+    {
+        $this->stripe->checkoutSessions = ['cs_paid' => 'complete'];
+
+        $this->provider()->closeOpenCheckoutPages('cus_workspace');
+
+        self::assertSame(1, $this->stripe->countSentTo('/v1/checkout/sessions'));
+        self::assertSame(0, $this->stripe->countSentTo('/expire'));
+    }
+
+    #[Test]
+    #[TestWith(['complete'])]
+    #[TestWith(['expired'])]
+    public function aPageThatFinishedBeforeItCouldBeExpiredShouldBeLeftAsItIs(string $status): void
+    {
+        $this->stripe->checkoutSessions = ['cs_finished' => 'open', 'cs_open' => 'open'];
+        $this->stripe->refusedExpiries = ['cs_finished' => $status];
+
+        $this->provider()->closeOpenCheckoutPages('cus_workspace');
+
+        self::assertSame(1, $this->stripe->countSentTo('/v1/checkout/sessions/cs_finished'));
+        self::assertSame('expired', $this->stripe->checkoutSessions['cs_open']);
+        self::assertFalse($this->log->hasWarningRecords());
+        self::assertFalse($this->log->hasErrorRecords());
+    }
+
+    #[Test]
+    public function aPageStripeRefusesToExpireWhileItIsStillOpenShouldStayOurError(): void
+    {
+        $this->stripe->checkoutSessions = ['cs_stuck' => 'open'];
+        $this->stripe->refusedExpiries = ['cs_stuck' => 'open'];
+        $this->stripe->requestId = 'req_refused';
+
+        try {
+            $this->provider()->closeOpenCheckoutPages('cus_workspace');
+            self::fail('A page Stripe would not expire was taken as closed.');
+        } catch (InvalidRequestException) {
+        }
+
+        $context = $this->onlyRecord(Level::Error, 'Stripe request failed')->context;
+        self::assertSame('req_refused', $context['stripe_request_id']);
+        self::assertSame(400, $context['http_status']);
+    }
+
+    #[Test]
+    #[TestWith(['/v1/checkout/sessions', 503])]
+    #[TestWith(['/expire', 503])]
+    #[TestWith(['/expire', 429])]
+    #[TestWith(['/v1/checkout/sessions/cs_finished', 503])]
+    public function aStripeThatFailsWhileClosingPagesShouldBeReportedAsUnavailable(string $failingPath, int $status): void
+    {
+        $this->stripe->checkoutSessions = ['cs_finished' => 'open'];
+        $this->stripe->refusedExpiries = ['cs_finished' => 'complete'];
+        $this->stripe->failingPath = $failingPath;
+        $this->stripe->status = $status;
+
+        $this->expectException(PaymentProviderUnavailableException::class);
+
+        $this->provider()->closeOpenCheckoutPages('cus_workspace');
+    }
+
+    #[Test]
+    public function aStripeThatCannotBeReachedWhileExpiringShouldBeReportedAsUnavailable(): void
+    {
+        $this->stripe->checkoutSessions = ['cs_open' => 'open'];
+        $this->stripe->failingPath = '/expire';
+        $this->stripe->failure = new ApiConnectionException('Could not connect to Stripe.');
+
+        $this->expectException(PaymentProviderUnavailableException::class);
+
+        $this->provider()->closeOpenCheckoutPages('cus_workspace');
+    }
+
+    #[Test]
+    public function aClosedPageShouldBeLoggedWithStripesRequestId(): void
+    {
+        $this->stripe->checkoutSessions = ['cs_open' => 'open'];
+        $this->stripe->requestId = 'req_expire';
+
+        $this->provider()->closeOpenCheckoutPages('cus_workspace');
+
+        self::assertSame(
+            ['customer_id' => 'cus_workspace', 'session_id' => 'cs_open', 'stripe_request_id' => 'req_expire'],
+            $this->onlyRecord(Level::Info, 'Stripe checkout page closed')->context,
+        );
+    }
+
     private function onlyRecord(Level $level, string $message): LogRecord
     {
         $records = array_values(array_filter($this->log->getRecords(), static fn (LogRecord $record): bool => $record->level === $level && $record->message === $message));

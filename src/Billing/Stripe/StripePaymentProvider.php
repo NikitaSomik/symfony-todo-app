@@ -13,6 +13,7 @@ use Psr\Clock\ClockInterface;
 use Psr\Log\LoggerInterface;
 use Stripe\Exception\ApiConnectionException;
 use Stripe\Exception\ApiErrorException;
+use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\RateLimitException;
 use Stripe\StripeClient;
 use Stripe\StripeObject;
@@ -31,6 +32,8 @@ final readonly class StripePaymentProvider implements PaymentProvider
     private const int PRICE_CACHE_SECONDS = 60 * 60;
 
     private const array FINISHED_STATUSES = ['canceled', 'incomplete_expired'];
+
+    private const string OPEN_PAGE_STATUS = 'open';
 
     public function __construct(
         private StripeClient $stripe,
@@ -66,6 +69,13 @@ final readonly class StripePaymentProvider implements PaymentProvider
         ]);
 
         return $customer->id;
+    }
+
+    public function closeOpenCheckoutPages(string $customerId): void
+    {
+        foreach ($this->openCheckoutPageIdsOf($customerId) as $sessionId) {
+            $this->closeCheckoutPage($customerId, $sessionId);
+        }
     }
 
     public function hasSubscription(string $customerId): bool
@@ -132,6 +142,73 @@ final readonly class StripePaymentProvider implements PaymentProvider
         );
     }
 
+    /** @return list<string> */
+    private function openCheckoutPageIdsOf(string $customerId): array
+    {
+        $sessionIds = [];
+
+        try {
+            $sessions = $this->stripe->checkout->sessions->all(['customer' => $customerId, 'status' => self::OPEN_PAGE_STATUS, 'limit' => 100]);
+
+            foreach ($sessions->autoPagingIterator() as $session) {
+                $sessionIds[] = $session->id;
+            }
+        } catch (ApiErrorException $exception) {
+            $this->logFailure($exception);
+
+            if ($this->isUnavailable($exception)) {
+                throw PaymentProviderUnavailableException::because($exception);
+            }
+
+            throw $exception;
+        }
+
+        return $sessionIds;
+    }
+
+    private function closeCheckoutPage(string $customerId, string $sessionId): void
+    {
+        try {
+            $session = $this->stripe->checkout->sessions->expire($sessionId);
+        } catch (ApiErrorException $exception) {
+            // Stripe refuses to expire a page that is no longer open, so the refusal alone does not tell a page paid meanwhile from our mistake.
+            if ($this->isInvalidRequest($exception) && !$this->isCheckoutPageOpen($sessionId)) {
+                return;
+            }
+
+            $this->logFailure($exception);
+
+            if ($this->isUnavailable($exception)) {
+                throw PaymentProviderUnavailableException::because($exception);
+            }
+
+            throw $exception;
+        }
+
+        $this->logger->info('Stripe checkout page closed', [
+            'customer_id' => $customerId,
+            'session_id' => $sessionId,
+            'stripe_request_id' => self::requestIdOf($session),
+        ]);
+    }
+
+    private function isCheckoutPageOpen(string $sessionId): bool
+    {
+        try {
+            $session = $this->stripe->checkout->sessions->retrieve($sessionId);
+        } catch (ApiErrorException $exception) {
+            $this->logFailure($exception);
+
+            if ($this->isUnavailable($exception)) {
+                throw PaymentProviderUnavailableException::because($exception);
+            }
+
+            throw $exception;
+        }
+
+        return self::OPEN_PAGE_STATUS === $session->status;
+    }
+
     /** Prices live in Stripe; a price is found by the lookup key it shares with the plan in every account. */
     private function priceIdFor(Plan $plan): string
     {
@@ -161,6 +238,12 @@ final readonly class StripePaymentProvider implements PaymentProvider
         }
 
         return $prices->data[0]->id;
+    }
+
+    /** Stripe's RateLimitException is an InvalidRequestException too, and it passes. */
+    private function isInvalidRequest(ApiErrorException $exception): bool
+    {
+        return $exception instanceof InvalidRequestException && !$this->isUnavailable($exception);
     }
 
     /** Stripe being down or throttling us passes, and the client may try again; any other refusal is our fault. */

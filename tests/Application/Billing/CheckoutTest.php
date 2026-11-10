@@ -19,6 +19,7 @@ use App\Workspace\Enum\WorkspaceRole;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 use Stripe\Exception\ApiConnectionException;
+use Stripe\Exception\InvalidRequestException;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;
 
@@ -37,6 +38,14 @@ final class CheckoutTest extends ApiTestCase
     private function checkout(Workspace $workspace, array $body = ['plan' => 'team']): Response
     {
         return $this->post($this->route('api_billing_checkout', ['id' => $workspace->getId()->toRfc4122()]), $body);
+    }
+
+    private function workspaceWithCustomer(string $customerId): Workspace
+    {
+        $workspace = WorkspaceFactory::createOne(['owner' => $this->user]);
+        static::getContainer()->get(PayerRepository::class)->saveOrGetExisting($workspace->getId(), $customerId);
+
+        return $workspace;
     }
 
     private function stripe(): PaymentProviderStub
@@ -108,6 +117,66 @@ final class CheckoutTest extends ApiTestCase
     }
 
     #[Test]
+    public function aWorkspaceThatHasACustomerShouldHaveItsOpenPagesClosedBeforeItsSubscriptionsAreChecked(): void
+    {
+        $workspace = $this->workspaceWithCustomer('cus_existing');
+
+        $this->checkout($workspace);
+
+        self::assertResponseStatusCodeSame(201);
+        self::assertSame(['cus_existing'], $this->stripe()->closedPagesOf);
+        self::assertSame(['closeOpenCheckoutPages', 'hasSubscription', 'openCheckout'], $this->stripe()->calls);
+    }
+
+    #[Test]
+    public function aPagePaidWhileTheNewOneWasOpeningShouldStopTheNewOne(): void
+    {
+        $workspace = $this->workspaceWithCustomer('cus_paying');
+        $this->stripe()->paidWhileClosing = ['cus_paying'];
+
+        $response = $this->checkout($workspace);
+
+        self::assertResponseStatusCodeSame(409);
+        self::assertSame('already_subscribed', $this->json($response)['errors'][0]['code']);
+        self::assertSame([], $this->stripe()->opened);
+    }
+
+    #[Test]
+    public function aWorkspaceCreatingItsCustomerShouldHaveNoPagesClosed(): void
+    {
+        $this->checkout(WorkspaceFactory::createOne(['owner' => $this->user]));
+
+        self::assertResponseStatusCodeSame(201);
+        self::assertSame([], $this->stripe()->closedPagesOf);
+    }
+
+    #[Test]
+    public function aPageStripeWillNotCloseShouldFailThePurchase(): void
+    {
+        $workspace = $this->workspaceWithCustomer('cus_stuck');
+        $this->stripe()->closingFailure = new InvalidRequestException('This Checkout Session is not open.', 400);
+
+        $this->checkout($workspace);
+
+        self::assertResponseStatusCodeSame(500);
+        self::assertSame([], $this->stripe()->checkedCustomers);
+        self::assertSame([], $this->stripe()->opened);
+    }
+
+    #[Test]
+    public function aPaymentProviderThatDoesNotAnswerWhileClosingPagesShouldBeAskedAgainLater(): void
+    {
+        $workspace = $this->workspaceWithCustomer('cus_existing');
+        $this->stripe()->closingFailure = PaymentProviderUnavailableException::because(new ApiConnectionException('Could not connect to Stripe.'));
+
+        $response = $this->checkout($workspace);
+
+        self::assertResponseStatusCodeSame(503);
+        self::assertSame('payment_provider_unavailable', $this->json($response)['errors'][0]['code']);
+        self::assertSame([], $this->stripe()->opened);
+    }
+
+    #[Test]
     #[TestWith([WorkspaceRole::MEMBER])]
     #[TestWith([WorkspaceRole::VIEWER])]
     public function someoneWhoIsNotAnOwnerShouldNotBuy(WorkspaceRole $role): void
@@ -117,7 +186,7 @@ final class CheckoutTest extends ApiTestCase
         $this->checkout($workspace);
 
         self::assertResponseStatusCodeSame(403);
-        self::assertSame([], $this->stripe()->opened);
+        self::assertSame([], $this->stripe()->calls);
     }
 
     #[Test]
@@ -130,7 +199,7 @@ final class CheckoutTest extends ApiTestCase
         self::assertResponseStatusCodeSame(404);
 
         self::assertSame($this->json($missingResponse)['errors'], $this->json($foreignResponse)['errors']);
-        self::assertSame([], $this->stripe()->opened);
+        self::assertSame([], $this->stripe()->calls);
     }
 
     #[Test]

@@ -41,6 +41,9 @@ The customer waits for the page's address, so the request has to call Stripe its
   stay payable. Two pages opened before either is paid can still both be paid; the
   webhook step cancels and refunds the subscription that comes second for the same
   customer.
+  *Superseded on YYYY-MM-DD, in #PR: a new page first closes the customer's open ones, and
+  one paid meanwhile answers `409`; nothing is refunded automatically — see
+  [0033](0033-a-workspace-has-one-open-checkout-page.md).*
 - **A personal workspace is bought like any other.** A user who wants more people where
   they already work moves that workspace to a paid plan instead of starting again in a new
   one. The personal mark only keeps it out of the count of team workspaces on Free.
@@ -106,8 +109,12 @@ The customer waits for the page's address, so the request has to call Stripe its
   Stripe that is slow but answers can still end in nginx's `504`, and the page it opened
   goes unused and expires within the hour. Accepted: a Stripe that slow is rare, and the
   customer can try again.
+  *Extended on YYYY-MM-DD, in #PR: closing the customer's open pages first adds one listing,
+  one expiry per open page and one read per refused expiry — see
+  [0033](0033-a-workspace-has-one-open-checkout-page.md).*
 - A customer created by a purchase that lost the race stays in Stripe, empty.
 - "Limit customers to one subscription" lives in the Dashboard: a new Stripe account has to
   switch it on, and nothing in the code would notice if it were off.
 - The webhook step owns the refund of a second subscription; until it lands, two pages paid
   within the same hour mean two subscriptions.
+  *Superseded on YYYY-MM-DD, in #PR: see [0033](0033-a-workspace-has-one-open-checkout-page.md).*

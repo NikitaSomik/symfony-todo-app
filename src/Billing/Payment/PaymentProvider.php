@@ -15,6 +15,8 @@ interface PaymentProvider
 {
     public function createCustomer(Uuid $workspaceId, string $email): string;
 
+    public function closeOpenCheckoutPages(string $customerId): void;
+
     public function hasSubscription(string $customerId): bool;
 
     public function openCheckout(string $customerId, Uuid $workspaceId, Plan $plan): CheckoutPage;
