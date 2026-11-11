@@ -386,6 +386,25 @@ final class StripePaymentProviderTest extends TestCase
     }
 
     #[Test]
+    #[TestWith(['complete'])]
+    #[TestWith(['expired'])]
+    public function aPageNoLongerOpenWhenItWasExpiredShouldBeLoggedWithItsStatusAndBothRequests(string $status): void
+    {
+        $this->stripe->checkoutSessions = ['cs_finished' => 'open'];
+        $this->stripe->refusedExpiries = ['cs_finished' => $status];
+        $this->stripe->refusedExpiryRequestId = 'req_refused';
+        $this->stripe->requestId = 'req_read';
+
+        $this->provider()->closeOpenCheckoutPages('cus_workspace');
+
+        self::assertSame(
+            ['customer_id' => 'cus_workspace', 'session_id' => 'cs_finished', 'status' => $status, 'refused_request_id' => 'req_refused', 'stripe_request_id' => 'req_read'],
+            $this->onlyRecord(Level::Info, 'Stripe checkout page no longer open')->context,
+        );
+        self::assertCount(0, array_filter($this->log->getRecords(), static fn (LogRecord $record): bool => 'Stripe checkout page closed' === $record->message));
+    }
+
+    #[Test]
     public function aPageStripeRefusesToExpireWhileItIsStillOpenShouldStayOurError(): void
     {
         $this->stripe->checkoutSessions = ['cs_stuck' => 'open'];
@@ -401,6 +420,7 @@ final class StripePaymentProviderTest extends TestCase
         $context = $this->onlyRecord(Level::Error, 'Stripe request failed')->context;
         self::assertSame('req_refused', $context['stripe_request_id']);
         self::assertSame(400, $context['http_status']);
+        self::assertFalse($this->log->hasInfoThatContains('Stripe checkout page no longer open'));
     }
 
     #[Test]

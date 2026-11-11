@@ -35,6 +35,9 @@ answers with an error.
 - **A page Stripe refuses to expire is read again.** If it is `complete` or `expired`, it
   was paid or ran out meanwhile, and Checkout goes on; if it is still `open`, the refusal is
   ours, logged as an `error` and answered `500`. Stripe's error message is not parsed.
+  *Extended on 2026-11-11, in #131: a page found `complete` or `expired` is an `info` line in
+  the `billing` log with its status and the ids of the refused expiry and of the read, the
+  one trace of the race this record is about.*
 - **Nothing is stored for it.** Stripe holds the open sessions; we keep no session id and
   no plan of an open page.
 - **Two requests at the same moment are not serialized.** A double click opens two pages,
