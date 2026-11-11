@@ -68,6 +68,11 @@ asking first, and a change of behaviour beyond the plan goes back to Nikita.
 
 - `make verify` green.
 - The docs from the plan: ADR, README, `make generate-openapi`, the roadmap if it moved.
+  The ADR this change implements turns `accepted`, in the record and in the table; a fact
+  of an older ADR that this change makes untrue gets a dated note there. `Date` and
+  `Implemented in` are filled once the pull request has its number.
+- Commit the work locally, not pushed: `security-review` reads the commits against
+  `origin/HEAD`, which a fresh clone may lack (`git remote set-head origin main`).
 - Run the `project-review` skill, which reads the plan of the branch, and the
   `security-review` skill. Fix what they must; answer each "should fix" with a fix or a
   reason; bring their questions to Nikita.
@@ -83,5 +88,5 @@ The report, which becomes the pull request description:
   log in `~/.claude/projects/`.
 - Open questions and what is not done.
 
-Commit, push and open the pull request when Nikita says so (`CLAUDE.md`), described with
+Push and open the pull request when Nikita says so (`CLAUDE.md`), described with
 the `pr` skill. A red check on it is fixed on the branch.

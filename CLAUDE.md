@@ -21,8 +21,8 @@ links every rule to its ADR.
 - Code, commits, ADRs and pull requests are in English.
 - One task, one branch from `main`, named `feature|fix|refactor|chore/<module>-<what>`;
   never commit to `main`, never rewrite a pushed branch.
-- Show the change first. Commit, push or open a pull request only when Nikita says so;
-  Nikita merges.
+- Commit locally as the work goes; push or open a pull request only when Nikita says so;
+  Nikita merges. A commit not yet pushed may be amended.
 - Commits: one line, `type(module): lowercase imperative summary`, no period, no body, no
   trailers; author `Mykyta <nikitasomusev@gmail.com>` (Nikita), unsigned
   (`git -c commit.gpgsign=false commit`).
