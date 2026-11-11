@@ -57,7 +57,7 @@ The rules it enforces now:
   `payment_provider_unavailable` with `Retry-After`. The plan changes only once Stripe
   reports the payment ([0032](docs/adr/0032-a-workspace-buys-a-plan-through-stripe-checkout.md),
   [0031](docs/adr/0031-billing-on-stripe-by-plan-tiers.md)). A new page closes the
-  workspace's other open ones, so one payment is all a workspace can make
+  workspace's other open ones, so a page left open in another tab can no longer be paid
   ([0033](docs/adr/0033-a-workspace-has-one-open-checkout-page.md)).
 
 What comes next ([roadmap](docs/roadmap.md)): review by someone other than the assignee
