@@ -17,7 +17,8 @@ summary of it, and you do not edit anything.
 
 Arguments: `$ARGUMENTS`. They may name a base as `base: <branch>`, `origin/main` otherwise,
 and may carry the approved plan. Without it, the plan is `.claude/plans/<branch>.md` for
-the branch `git status` names, or the ticket whose path that file holds.
+the branch `git status` names, or the ticket whose path that file holds, with the spec it
+names.
 
 1. `git diff <base>...HEAD` for the committed changes, `git diff HEAD` and
    `git ls-files --others --exclude-standard` for the rest.
@@ -33,6 +34,8 @@ When the arguments carry a plan, check the change against it before the rules:
 
 - Every case in the plan has its behaviour in the code and a test that would fail without
   it: the main path, `404`, `403`, `422`, `409`, the race.
+- Each case is tested at the seam the plan names, and its expected value does not come from
+  the code under test.
 - Nothing beyond the plan: a file, an endpoint or a behaviour the plan does not name is a
   finding, unless the report gives its reason.
 - What the plan put under "not in this change" is not in it.

@@ -97,6 +97,10 @@ _Avoid_: buyer (for the record), billing account
 These name how the project is built, not the task tracker it is.
 
 **Ticket**:
-One future pull request, written by `grill-with-docs` and built by `implement`; never a Task.
-An epic is a ticket that orders the tickets of a larger change.
+One future pull request, cut by `to-tickets` and built by `implement`; never a Task.
 _Avoid_: task, issue, story (for this)
+
+**Spec**:
+The design of work that shows a sign in `to-spec`, such as more than one ticket, written after
+a grill: the decisions, the flow, the seams to test at. Its tickets name it.
+_Avoid_: epic, PRD
