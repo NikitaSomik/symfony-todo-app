@@ -237,7 +237,7 @@
                         "description": "Workspace not found, or the user is not a member of it"
                     },
                     "409": {
-                        "description": "The workspace already has a subscription, paid or being paid; the code is `already_subscribed`"
+                        "description": "The workspace already has a subscription, paid or being paid, including through another of its pages paid while this one was being opened; the code is `already_subscribed`"
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationError"

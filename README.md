@@ -56,7 +56,9 @@ The rules it enforces now:
   `already_subscribed`, and when Stripe does not answer the client gets `503`
   `payment_provider_unavailable` with `Retry-After`. The plan changes only once Stripe
   reports the payment ([0032](docs/adr/0032-a-workspace-buys-a-plan-through-stripe-checkout.md),
-  [0031](docs/adr/0031-billing-on-stripe-by-plan-tiers.md)).
+  [0031](docs/adr/0031-billing-on-stripe-by-plan-tiers.md)). A new page closes the
+  workspace's other open ones, so one payment is all a workspace can make
+  ([0033](docs/adr/0033-a-workspace-has-one-open-checkout-page.md)).
 
 What comes next ([roadmap](docs/roadmap.md)): review by someone other than the assignee
 and a limit on work in progress; then deadlines with consequences.

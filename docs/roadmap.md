@@ -203,7 +203,8 @@ Each decision, with the alternatives that lost and what it costs, is an
 - [x] `personal` on workspaces, filled from the earliest workspace each user created
 - [x] `shadow` mode — log who would be refused, count it, nobody is refused
 - [x] Checkout for the first purchase — `POST /workspaces/{id}/billing/checkout`, owners only (`manage_billing`), a price found by its lookup key, one Stripe customer per workspace, `409 already_subscribed` from our plan or Stripe's subscriptions, `503 payment_provider_unavailable` with `Retry-After`
-- [ ] Webhooks — a signed endpoint, an inbox, a worker that fetches the subscription again; a second subscription for the same customer cancelled and refunded
+- [x] One open Checkout page per workspace — a new page closes the others, a paid one answers `409` ([ADR 0033](adr/0033-a-workspace-has-one-open-checkout-page.md))
+- [ ] Webhooks — a signed endpoint, an inbox, a worker that fetches the subscription again; a second subscription for the same customer logged as an `error` with both ids and refunded by hand ([ADR 0033](adr/0033-a-workspace-has-one-open-checkout-page.md))
 - [ ] Plan changes — `POST /workspaces/{id}/billing/plan-change` answering `next: redirect` to the Customer Portal, and the outbox on Messenger's Doctrine transport with it
 - [ ] Email to owners over a limit, thirty days ahead; a release plan and runbook, rehearsed on seeded data
 - [ ] `BILLING_LIMITS=on`, then the setting removed

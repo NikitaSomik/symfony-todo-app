@@ -45,6 +45,23 @@ final class StartCheckoutTest extends TestCase
     }
 
     #[Test]
+    public function theCustomerThisPurchaseCreatedShouldHaveNoPagesToClose(): void
+    {
+        $this->startCheckout(savedCustomerId: 'cus_stub_1')->handle(Uuid::v7(), Plan::TEAM, 'owner@example.com');
+
+        self::assertSame([], $this->stripe->closedPagesOf);
+    }
+
+    #[Test]
+    public function aCustomerSavedFirstByAParallelPurchaseShouldHaveItsPagesClosedBeforeItIsChecked(): void
+    {
+        $this->startCheckout(savedCustomerId: 'cus_parallel')->handle(Uuid::v7(), Plan::TEAM, 'owner@example.com');
+
+        self::assertSame(['cus_parallel'], $this->stripe->closedPagesOf);
+        self::assertSame(['createCustomer', 'closeOpenCheckoutPages', 'hasSubscription', 'openCheckout'], $this->stripe->calls);
+    }
+
+    #[Test]
     public function aCustomerSavedFirstByAParallelPurchaseShouldBeCheckedAndBuyWhenItHasNoSubscription(): void
     {
         $this->startCheckout(savedCustomerId: 'cus_parallel')->handle(Uuid::v7(), Plan::TEAM, 'owner@example.com');

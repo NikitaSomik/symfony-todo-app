@@ -66,3 +66,4 @@ Statuses:
 | [0030](0030-a-task-in-review-goes-back-to-work.md) | A task in review can be sent back to work, without a reason of its own | accepted | 2026-10-27 |
 | [0031](0031-billing-on-stripe-by-plan-tiers.md) | A workspace pays on Stripe for a plan sized by its members; Stripe decides the status, the application derives access | accepted | 2026-10-29 |
 | [0032](0032-a-workspace-buys-a-plan-through-stripe-checkout.md) | A workspace buys a plan through Stripe Checkout, as its own Stripe customer, and Stripe is asked before a page opens | accepted | 2026-11-09 |
+| [0033](0033-a-workspace-has-one-open-checkout-page.md) | A workspace has one open Checkout page: a new one closes the others, and a paid one answers 409 | accepted | 2026-11-11 |

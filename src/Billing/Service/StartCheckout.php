@@ -39,6 +39,9 @@ final readonly class StartCheckout
             }
         }
 
+        // Closed first, so that a page paid meanwhile shows up as a subscription below and no other can be paid after it.
+        $this->payments->closeOpenCheckoutPages($customerId);
+
         // Our copy of the plan follows the webhook; Stripe knows of a payment before it arrives.
         if ($this->payments->hasSubscription($customerId)) {
             throw new AlreadySubscribedException();
