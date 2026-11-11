@@ -1,19 +1,25 @@
 ---
 name: implement
-description: Build a change in symfony-todo-app that involves decisions - a new endpoint, a rule, a migration, a fix across modules - in agreed phases - one plan for Nikita to approve, then tests first, code, verify, reviews and a report. Use when Nikita asks to build or change something. A typo, a rename or a comment is made directly, without it.
-argument-hint: "[what to build, or the path to its design doc or ADR]"
+description: Build a change in symfony-todo-app that involves decisions - a new endpoint, a rule, a migration, a fix across modules - in agreed phases - an approved ticket or one plan for Nikita to approve, then tests first, code, verify, reviews and a report. Use when Nikita asks to build or change something. A typo, a rename or a comment is made directly, without it.
+argument-hint: "[the ticket to build, or what to build and the path to its design doc or ADR]"
 ---
 
 # Implement a change
 
-What to build: $ARGUMENTS
+What to build: $ARGUMENTS (a ticket, a design doc or an ADR)
 
 The phases follow Anthropic's `feature-dev` workflow, cut to this project: its ADRs, its
 checks, tests first. Nikita is asked at the plan and at the report.
 
 ## 1. Understand
 
-- Read what the change rests on: the design doc, the ADR, the issue, the discussion.
+- Read what the change rests on: the ticket, the ADR, the design doc, the discussion.
+- A ticket Nikita approved is the approved plan. Take it only while it says `status: open`
+  (never `waiting`, never `kind: epic`): set `status: in-progress` first and read the file
+  again, so that no other session takes it, then go to phase 3. A ticket of an epic is taken
+  only when the tickets before it are `done`; one whose `pr:` is merged is set `done` here.
+- A ticket that needs a second pull request or another module's contract is not taken:
+  propose an epic and the split, by the signs in `grill-with-docs`.
 - Continuing a branch: its plan in `.claude/plans/`, its pull request with the review
   comments and CI, and `git log origin/main..`. Merge a fresh `origin/main` into it; a
   pushed branch is never rebased. The plan then covers only what is left.
@@ -24,7 +30,7 @@ checks, tests first. Nikita is asked at the plan and at the report.
 
 ## 2. Plan (wait)
 
-One message, in this order:
+Skipped when an approved ticket is the plan. Otherwise one message, in this order:
 
 - **Questions** the design leaves open (behaviour at the edges, status codes, names in the
   API, the data model, which module owns what, existing data), each with the suggested
@@ -49,7 +55,12 @@ asking first, and a change of behaviour beyond the plan goes back to Nikita.
 
 - A branch from a fresh `origin/main`, named as `CLAUDE.md` says, unless continuing one.
 - The approved plan saved to `.claude/plans/<branch>.md`, which git ignores, so that a new
-  session continues from it and the branch, without this one's history.
+  session continues from it and the branch, without this one's history. For a ticket the
+  file holds only the ticket's path, and the ticket gets `branch:`: a correction goes into
+  the ticket, the one copy.
+- The scope holds in this phase and the next: when a ticket turns out to need a second pull
+  request or another module's contract, stop, propose the epic and the split, and go back
+  to Nikita instead of widening it.
 - For every case in the plan, a test first: an application test through HTTP, and a unit
   test for a domain rule, shaped like the neighbouring tests. Run them and show the output:
   each fails for the right reason, not on a typo. No code for a case before its test fails.
@@ -86,7 +97,9 @@ The report, which becomes the pull request description:
 - How the work went: how often `verify-fast` failed, what each review found and what
   became of it, and the session's tokens, summed from the `usage` of its messages in its
   log in `~/.claude/projects/`.
-- Open questions and what is not done.
+- Open questions and what is not done. A question that outlives the change becomes a ticket
+  of its own with `status: waiting` and its `signal:`, and the report names it.
 
 Push and open the pull request when Nikita says so (`CLAUDE.md`), described with
-the `pr` skill. A red check on it is fixed on the branch.
+the `pr` skill. A red check on it is fixed on the branch. The ticket gets `pr:` when the pull
+request opens, and `status: done` when it is merged.

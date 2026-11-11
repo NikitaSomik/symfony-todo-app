@@ -91,3 +91,12 @@ _Avoid_: membership, contract
 **Payer**:
 The one who pays for a workspace: its customer in Stripe.
 _Avoid_: buyer (for the record), billing account
+
+## Working on the project
+
+These name how the project is built, not the task tracker it is.
+
+**Ticket**:
+One future pull request, written by `grill-with-docs` and built by `implement`; never a Task.
+An epic is a ticket that orders the tickets of a larger change.
+_Avoid_: task, issue, story (for this)

@@ -17,7 +17,7 @@ summary of it, and you do not edit anything.
 
 Arguments: `$ARGUMENTS`. They may name a base as `base: <branch>`, `origin/main` otherwise,
 and may carry the approved plan. Without it, the plan is `.claude/plans/<branch>.md` for
-the branch `git status` names.
+the branch `git status` names, or the ticket whose path that file holds.
 
 1. `git diff <base>...HEAD` for the committed changes, `git diff HEAD` and
    `git ls-files --others --exclude-standard` for the rest.
@@ -99,9 +99,20 @@ silently.
 - Every changed or deleted assertion in an existing test is listed under questions: it is
   fine only if the change of behaviour was agreed.
 
+**Logs** ([0009](../../../docs/adr/0009-production-logging.md), [0032](../../../docs/adr/0032-a-workspace-buys-a-plan-through-stripe-checkout.md), [0033](../../../docs/adr/0033-a-workspace-has-one-open-checkout-page.md))
+- A call to Stripe logs in the `billing` channel: `info` for what it changed at Stripe, with
+  Stripe's request id; `warning` when Stripe is unavailable and the client may retry;
+  `error` when the refusal is ours.
+- A branch decided by a race (a page paid meanwhile, a row another request saved first) has
+  an `info` line of its own, so that the race can be found later.
+- No line on the ordinary path that only says the code ran, and no email, name, token or
+  card detail in a context.
+
 **Decisions and reuse**
 - A change that adds or alters a rule needs an ADR (`docs/adr/template.md`) and its line in
   the README's rule list. Say which rule, and whether an existing ADR should be amended.
+- The README's rule line promises what the ADR decides and no more: a guarantee the ADR
+  limits (a race it leaves open, a case caught later) is not stated as absolute.
 - Before accepting new code, search for what already does it: a specification, a value
   object, a helper, a factory. Name the existing one.
 
