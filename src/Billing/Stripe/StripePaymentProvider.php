@@ -11,6 +11,7 @@ use App\Billing\Payment\PaymentProvider;
 use Monolog\Attribute\WithMonologChannel;
 use Psr\Clock\ClockInterface;
 use Psr\Log\LoggerInterface;
+use Stripe\Checkout\Session;
 use Stripe\Exception\ApiConnectionException;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
@@ -172,8 +173,20 @@ final readonly class StripePaymentProvider implements PaymentProvider
             $session = $this->stripe->checkout->sessions->expire($sessionId);
         } catch (ApiErrorException $exception) {
             // Stripe refuses to expire a page that is no longer open, so the refusal alone does not tell a page paid meanwhile from our mistake.
-            if ($this->isInvalidRequest($exception) && !$this->isCheckoutPageOpen($sessionId)) {
-                return;
+            if ($this->isInvalidRequest($exception)) {
+                $session = $this->fetchCheckoutSession($sessionId);
+
+                if (self::OPEN_PAGE_STATUS !== $session->status) {
+                    $this->logger->info('Stripe checkout page no longer open', [
+                        'customer_id' => $customerId,
+                        'session_id' => $sessionId,
+                        'status' => $session->status,
+                        'refused_request_id' => $exception->getRequestId(),
+                        'stripe_request_id' => self::requestIdOf($session),
+                    ]);
+
+                    return;
+                }
             }
 
             $this->logFailure($exception);
@@ -192,7 +205,7 @@ final readonly class StripePaymentProvider implements PaymentProvider
         ]);
     }
 
-    private function isCheckoutPageOpen(string $sessionId): bool
+    private function fetchCheckoutSession(string $sessionId): Session
     {
         try {
             $session = $this->stripe->checkout->sessions->retrieve($sessionId);
@@ -206,7 +219,7 @@ final readonly class StripePaymentProvider implements PaymentProvider
             throw $exception;
         }
 
-        return self::OPEN_PAGE_STATUS === $session->status;
+        return $session;
     }
 
     /** Prices live in Stripe; a price is found by the lookup key it shares with the plan in every account. */

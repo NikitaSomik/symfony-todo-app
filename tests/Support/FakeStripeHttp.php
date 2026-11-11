@@ -37,6 +37,9 @@ final class FakeStripeHttp implements ClientInterface
 
     public string $requestId = 'req_fake';
 
+    /** The request id of a refused expiry, when it should differ from $requestId. */
+    public ?string $refusedExpiryRequestId = null;
+
     public ?ApiConnectionException $failure = null;
 
     public function request($method, $absUrl, $headers, $params, $hasFile, $apiMode = 'v1', $maxNetworkRetries = null): array
@@ -59,7 +62,7 @@ final class FakeStripeHttp implements ClientInterface
         if (null !== $expiredId && array_key_exists($expiredId, $this->refusedExpiries)) {
             $this->checkoutSessions[$expiredId] = $this->refusedExpiries[$expiredId];
 
-            return [$this->error(400), 400, $this->headers()];
+            return [$this->error(400), 400, $this->headers($this->refusedExpiryRequestId ?? $this->requestId)];
         }
 
         return [json_encode($this->answer($method, $path, $params), JSON_THROW_ON_ERROR), 200, $this->headers()];
@@ -85,9 +88,9 @@ final class FakeStripeHttp implements ClientInterface
     }
 
     /** Stripe's own client hands its headers over in this case-insensitive form. */
-    private function headers(): CaseInsensitiveArray
+    private function headers(?string $requestId = null): CaseInsensitiveArray
     {
-        return new CaseInsensitiveArray(['Request-Id' => $this->requestId]);
+        return new CaseInsensitiveArray(['Request-Id' => $requestId ?? $this->requestId]);
     }
 
     private function error(int $status): string
