@@ -29,21 +29,25 @@ spec holds its design, stop and propose `/to-spec` first.
   migration, then the endpoint) is not one: it cannot be tested on its own.
 - A change that is easier after a refactor gets the refactor as its own ticket, first.
 - A wide refactor goes expand, migrate, contract: the new form beside the old, the callers
-  moved in batches, the old form removed, each a ticket.
+  moved in batches, each blocked by the expand, and the old form removed in a ticket blocked
+  by every batch.
 - `Blocked by` names the tickets that must be merged first. None is the best case: tickets
   without blockers can be built at once.
 
 ## 3. Agree the cut
 
-Show the slices as a numbered list: the title, `Blocked by`, what it delivers. Nikita
-corrects; show it again until he approves it.
+Show the slices as a numbered list, blockers first: the title, `Blocked by`, what it
+delivers. Say where you would merge or split and which blocker you doubt, and why, so that
+"yes" accepts it; Nikita confirms or corrects the size and the blockers. Show it again until
+he approves it.
 
 ## 4. Write them
 
 - The folder of the spec, or `/mnt/project-files/tickets/` when it exists (a cloud
   thread), otherwise `.claude/tickets/`, which git ignores. A file `NNN-what-it-builds.md`,
-  numbered after the highest file there, from [ticket-template.md](ticket-template.md),
-  with `status: draft`.
+  numbered after the highest file there in the order of the approved list, so that among
+  the new tickets a blocker has the lower number, from [ticket-template.md](ticket-template.md), with
+  `status: draft`.
 - Each ticket names its ADRs and its spec; the behaviour as cases, each with its answer,
   the allowed one and the refused one (`404`, `403`, `422`, `409`, two requests at once);
   the seam of each case, from the spec when there is one; the modules, with any contract,

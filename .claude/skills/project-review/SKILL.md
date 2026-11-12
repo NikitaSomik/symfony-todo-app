@@ -21,7 +21,8 @@ the branch `git status` names, or the ticket whose path that file holds, with th
 names.
 
 1. `git diff <base>...HEAD` for the committed changes, `git diff HEAD` and
-   `git ls-files --others --exclude-standard` for the rest.
+   `git ls-files --others --exclude-standard` for the rest. When the base does not resolve
+   or all three are empty, say so and stop.
 2. Read each changed file in full where the diff alone hides the context, and the code it
    calls. Read the ADRs the change touches, in `docs/adr/`.
 
@@ -124,6 +125,31 @@ silently.
 - Every new or renamed class, method, property, array key and event: read it where it is
   used. If knowing what it is or does needs its body, a docblock or a question, that is a
   Should fix with a better name. A word that `GLOSSARY.md` lists under _Avoid_ is one too.
+
+**Design smells** (Fowler, _Refactoring_, ch. 3)
+
+A smell is a judgement call, at most a Should fix, named as a possibility ("possible
+Feature Envy") with the hunk. A rule in `CLAUDE.md` or an ADR wins over it: what they
+prescribe is no smell. Names are checked under Code above.
+- Duplicated Code: the same logic in two hunks or files. Extract it, call it from both.
+- Feature Envy: a method that uses another object's data more than its own. Move it there.
+- Data Clumps: the same few fields or parameters travelling together. One type for them.
+- Primitive Obsession: a string or an int standing for a domain concept. A value object.
+- Repeated Switches: the same `if`/`match` on the same value (an enum, a status) in several
+  places. One map or
+  polymorphism.
+- Shotgun Surgery: the same small edit repeated in many classes for one kind of change (a new
+  status added to every `match`). Gather what changes together. A vertical slice through
+  the layers is not this.
+- Divergent Change: one class edited for unrelated reasons. Split it.
+- Speculative Generality: a parameter, an interface or a hook that no case of the plan and
+  no code needs. Remove it. A `Contract/` interface, a port with one adapter and a seam for
+  a test fake (`TaskIdGenerator`) are prescribed, not speculative.
+- Message Chains: navigation through objects (`$task->workspace()->owner()->email()`), not a
+  fluent builder. One method on the first.
+- Middle Man: a class that only passes calls on, other than a `Contract/` or a port. Call
+  the real one.
+- Refused Bequest: a subclass that ignores most of what it inherits. Composition.
 
 ## Report
 

@@ -37,9 +37,11 @@ would settle it.
 ## 3. Agree the seams
 
 A seam is where a behaviour is tested: through HTTP in an application test, at a use case,
-at a domain rule, at an adapter against its fake (`FakeStripeHttp`). The fewer seams, the
-better; the existing ones first. Propose them, each case with its seam, and wait for
-Nikita's answer before writing.
+at a domain rule, at an adapter against its fake (`FakeStripeHttp`). The existing ones
+first, and the highest that can observe the behaviour; the fewer seams, the better: one
+through HTTP at best, plus a unit test for each domain rule, as `project-review` asks. Name
+the neighbouring tests each seam follows. Propose them, each case with its seam
+and what it catches and misses, and wait for Nikita's answer before writing.
 
 ## 4. Write it
 

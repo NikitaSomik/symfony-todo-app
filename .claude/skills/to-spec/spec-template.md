@@ -30,7 +30,8 @@ else's resource `404`, a viewer `403`, an empty or invalid parameter `422`, a fi
 
 ## Seams
 
-Where each case is tested, as agreed with Nikita.
+Where each case is tested, as agreed with Nikita: each seam with what it catches and misses,
+and the neighbouring tests it follows.
 
 ## Rollout
 

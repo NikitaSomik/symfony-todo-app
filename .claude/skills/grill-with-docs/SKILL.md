@@ -47,6 +47,9 @@ While answers come in:
 
 - Check each answer against the accepted ADRs. When it contradicts one, say which, and ask
   Nikita whether the answer changes or the old ADR is superseded.
+- When Nikita says how something works now, check it in the code. When the code says
+  otherwise, show where: the code is how it works now, and the question is whether the code
+  changes or the design follows it.
 - Stress-test with concrete cases: two requests at once, a webhook twice, late or out of
   order, a user from another workspace, a viewer, an empty parameter, a deploy halfway
   through a migration.
