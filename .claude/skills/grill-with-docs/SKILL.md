@@ -9,8 +9,8 @@ argument-hint: "[the plan, design or question to discuss]"
 Topic: $ARGUMENTS
 
 Settle the design with Nikita, then keep what was decided in `docs/adr/`. This skill writes
-no code. When the design is settled and Nikita wants it built, the `implement` skill takes
-it from there, with the ADRs as its input.
+no code and no tickets: `to-spec` and `to-tickets` take the settled design from here, and
+`implement` builds it one ticket at a time.
 
 ## 1. Learn what is already decided
 
@@ -47,6 +47,9 @@ While answers come in:
 
 - Check each answer against the accepted ADRs. When it contradicts one, say which, and ask
   Nikita whether the answer changes or the old ADR is superseded.
+- When Nikita says how something works now, check it in the code. When the code says
+  otherwise, show where: the code is how it works now, and the question is whether the code
+  changes or the design follows it.
 - Stress-test with concrete cases: two requests at once, a webhook twice, late or out of
   order, a user from another workspace, a viewer, an empty parameter, a deploy halfway
   through a migration.
@@ -82,10 +85,16 @@ records around it:
   glance, from the rules in `CLAUDE.md`. `docs/roadmap.md` and `docs/architecture.md` change
   when the design changes them.
 
-Show the ADRs as a diff. They are drafts until Nikita says they are right. Commit, push and
-the pull request follow `CLAUDE.md`: only when Nikita says so.
+Show the ADRs as a diff. They are drafts until Nikita says they are right. Commits, push and
+the pull request follow `CLAUDE.md`.
 
 ## 4. Hand over
 
-End with the ADRs written, the questions left open on purpose (each with its signal), and
-the next step, usually `implement` with the ADR.
+End with the ADRs written, the decisions that stayed out of them in a few lines, and the
+next step:
+
+- `/to-spec` when the work shows one of the signs in [to-spec](../to-spec/SKILL.md), and
+  which;
+- `/to-tickets` otherwise, straight from this discussion.
+
+Either one reads this conversation, so it runs in this session, before it is cleared.

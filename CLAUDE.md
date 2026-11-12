@@ -8,14 +8,16 @@ links every rule to its ADR.
 
 - Nikita sets the direction. System design and architecture are decided together, in
   discussion, before code, with the `grill-with-docs` skill: questions in rounds, then the
-  ADRs. Claude writes the code.
+  ADRs. Nikita runs `/to-spec` for work that shows one of its signs (more than one ticket,
+  two modules, an asynchronous flow, a rollout in steps, three ADRs) and `/to-tickets` to cut
+  the work into tickets. Claude writes the code.
 - Answer the question asked; do not jump to plans, pull requests or side topics.
 - Open questions are settled before coding, not guessed. Where there is a choice, Claude
   lays out the options with their cost and recommends one. "Not needed now" is a valid
   answer when it names the signal that would make it needed.
-- A change that involves decisions is built with the `implement` skill: one plan with its
-  questions and approaches, tests first, code, verify, reviews, report. A typo, a rename
-  or a comment is made directly.
+- A change that involves decisions is built with the `implement` skill: an approved ticket
+  or one plan with its questions and approaches, tests first, code, verify, reviews,
+  report. A typo, a rename or a comment is made directly.
 - A decision worth keeping gets an ADR: Context / Decision / Alternatives considered /
   Consequences, updated in the same pull request as the code.
 - Code, commits, ADRs and pull requests are in English.

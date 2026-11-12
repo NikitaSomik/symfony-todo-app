@@ -91,3 +91,16 @@ _Avoid_: membership, contract
 **Payer**:
 The one who pays for a workspace: its customer in Stripe.
 _Avoid_: buyer (for the record), billing account
+
+## Working on the project
+
+These name how the project is built, not the task tracker it is.
+
+**Ticket**:
+One future pull request, cut by `to-tickets` and built by `implement`; never a Task.
+_Avoid_: task, issue, story (for this)
+
+**Spec**:
+The design of work that shows a sign in `to-spec`, such as more than one ticket, written after
+a grill: the decisions, the flow, the seams to test at. Its tickets name it.
+_Avoid_: epic, PRD

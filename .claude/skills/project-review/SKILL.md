@@ -17,10 +17,12 @@ summary of it, and you do not edit anything.
 
 Arguments: `$ARGUMENTS`. They may name a base as `base: <branch>`, `origin/main` otherwise,
 and may carry the approved plan. Without it, the plan is `.claude/plans/<branch>.md` for
-the branch `git status` names.
+the branch `git status` names, or the ticket whose path that file holds, with the spec it
+names.
 
 1. `git diff <base>...HEAD` for the committed changes, `git diff HEAD` and
-   `git ls-files --others --exclude-standard` for the rest.
+   `git ls-files --others --exclude-standard` for the rest. When the base does not resolve
+   or all three are empty, say so and stop.
 2. Read each changed file in full where the diff alone hides the context, and the code it
    calls. Read the ADRs the change touches, in `docs/adr/`.
 
@@ -33,6 +35,8 @@ When the arguments carry a plan, check the change against it before the rules:
 
 - Every case in the plan has its behaviour in the code and a test that would fail without
   it: the main path, `404`, `403`, `422`, `409`, the race.
+- Each case is tested at the seam the plan names, and its expected value does not come from
+  the code under test.
 - Nothing beyond the plan: a file, an endpoint or a behaviour the plan does not name is a
   finding, unless the report gives its reason.
 - What the plan put under "not in this change" is not in it.
@@ -99,9 +103,20 @@ silently.
 - Every changed or deleted assertion in an existing test is listed under questions: it is
   fine only if the change of behaviour was agreed.
 
+**Logs** ([0009](../../../docs/adr/0009-production-logging.md), [0032](../../../docs/adr/0032-a-workspace-buys-a-plan-through-stripe-checkout.md), [0033](../../../docs/adr/0033-a-workspace-has-one-open-checkout-page.md))
+- A call to Stripe logs in the `billing` channel: `info` for what it changed at Stripe, with
+  Stripe's request id; `warning` when Stripe is unavailable and the client may retry;
+  `error` when the refusal is ours.
+- A branch decided by a race (a page paid meanwhile, a row another request saved first) has
+  an `info` line of its own, so that the race can be found later.
+- No line on the ordinary path that only says the code ran, and no email, name, token or
+  card detail in a context.
+
 **Decisions and reuse**
 - A change that adds or alters a rule needs an ADR (`docs/adr/template.md`) and its line in
   the README's rule list. Say which rule, and whether an existing ADR should be amended.
+- The README's rule line promises what the ADR decides and no more: a guarantee the ADR
+  limits (a race it leaves open, a case caught later) is not stated as absolute.
 - Before accepting new code, search for what already does it: a specification, a value
   object, a helper, a factory. Name the existing one.
 
@@ -110,6 +125,31 @@ silently.
 - Every new or renamed class, method, property, array key and event: read it where it is
   used. If knowing what it is or does needs its body, a docblock or a question, that is a
   Should fix with a better name. A word that `GLOSSARY.md` lists under _Avoid_ is one too.
+
+**Design smells** (Fowler, _Refactoring_, ch. 3)
+
+A smell is a judgement call, at most a Should fix, named as a possibility ("possible
+Feature Envy") with the hunk. A rule in `CLAUDE.md` or an ADR wins over it: what they
+prescribe is no smell. Names are checked under Code above.
+- Duplicated Code: the same logic in two hunks or files. Extract it, call it from both.
+- Feature Envy: a method that uses another object's data more than its own. Move it there.
+- Data Clumps: the same few fields or parameters travelling together. One type for them.
+- Primitive Obsession: a string or an int standing for a domain concept. A value object.
+- Repeated Switches: the same `if`/`match` on the same value (an enum, a status) in several
+  places. One map or
+  polymorphism.
+- Shotgun Surgery: the same small edit repeated in many classes for one kind of change (a new
+  status added to every `match`). Gather what changes together. A vertical slice through
+  the layers is not this.
+- Divergent Change: one class edited for unrelated reasons. Split it.
+- Speculative Generality: a parameter, an interface or a hook that no case of the plan and
+  no code needs. Remove it. A `Contract/` interface, a port with one adapter and a seam for
+  a test fake (`TaskIdGenerator`) are prescribed, not speculative.
+- Message Chains: navigation through objects (`$task->workspace()->owner()->email()`), not a
+  fluent builder. One method on the first.
+- Middle Man: a class that only passes calls on, other than a `Contract/` or a port. Call
+  the real one.
+- Refused Bequest: a subclass that ignores most of what it inherits. Composition.
 
 ## Report
 
