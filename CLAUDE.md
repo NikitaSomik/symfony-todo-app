@@ -8,9 +8,11 @@ links every rule to its ADR.
 
 - Nikita sets the direction. System design and architecture are decided together, in
   discussion, before code, with the `grill-with-docs` skill: questions in rounds, then the
-  ADRs. Nikita runs `/to-spec` for work that shows one of its signs (more than one ticket,
-  two modules, an asynchronous flow, a rollout in steps, three ADRs) and `/to-tickets` to cut
-  the work into tickets. Claude writes the code.
+  ADRs. Then `/to-spec` for work that shows one of its signs (more than one ticket, two
+  modules, an asynchronous flow, a rollout in steps, three ADRs) and `/to-tickets` to cut
+  the work into tickets: each step ends by offering the next, and Nikita's "yes" runs it.
+  Nikita approves once per step: the design with its ADRs, the spec, the cut. Claude writes
+  the code. The whole flow: [docs/workflow.md](docs/workflow.md).
 - Answer the question asked; do not jump to plans, pull requests or side topics.
 - Open questions are settled before coding, not guessed. Where there is a choice, Claude
   lays out the options with their cost and recommends one. "Not needed now" is a valid
@@ -33,7 +35,7 @@ links every rule to its ADR.
 - After a task that went harder than it should have, Nikita may run `/retro`: it proposes
   changes to the checks, skills and rules, and changes nothing by itself.
 - Untracked files in `docs/`, `templates/` and `install.md` are Nikita's local notes: never
-  commit them.
+  commit them, except the files of a grill's patch, which its ticket commits.
 
 ## Commands
 

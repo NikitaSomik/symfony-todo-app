@@ -1,8 +1,7 @@
 ---
 name: to-tickets
-description: Cut a settled design in symfony-todo-app into tickets - one per future pull request, each a complete slice with its cases, seams and blockers - for implement to build. Use when Nikita types /to-tickets after grill-with-docs or to-spec.
+description: Cut a settled design in symfony-todo-app into tickets - one per future pull request, each a complete slice with its cases, seams and blockers - for implement to build. Use when Nikita types /to-tickets, or says yes when another skill offers it; never on its own initiative.
 argument-hint: "[the spec's path, an ADR, a ticket to split, or nothing for the design just settled]"
-disable-model-invocation: true
 ---
 
 # Cut the tickets
@@ -20,7 +19,8 @@ tests. This skill writes no code.
 The spec when there is one, otherwise the conversation or the ticket to split; the ADRs it
 names; [GLOSSARY.md](../../../GLOSSARY.md); the code of the modules involved, to see what
 each slice touches. When the work shows a sign in [to-spec](../to-spec/SKILL.md) and no
-spec holds its design, stop and propose `/to-spec` first.
+spec holds its design, stop and ask whether to write the spec first, so that "yes" runs
+`to-spec`.
 
 ## 2. Draft the slices
 
@@ -37,17 +37,19 @@ spec holds its design, stop and propose `/to-spec` first.
 ## 3. Agree the cut
 
 Show the slices as a numbered list, blockers first: the title, `Blocked by`, what it
-delivers. Say where you would merge or split and which blocker you doubt, and why, so that
-"yes" accepts it; Nikita confirms or corrects the size and the blockers. Show it again until
-he approves it.
+delivers, and, when no spec holds them, each slice's cases and their seams. Say where you
+would merge or split and which blocker you doubt, and why, so that "yes" accepts it;
+Nikita confirms or corrects the size and the blockers. Show it again until he approves it.
+This is the one approval of the tickets: their cases and seams come from the spec he
+approved, or from this list.
 
 ## 4. Write them
 
 - The folder of the spec, or `/mnt/project-files/tickets/` when it exists (a cloud
   thread), otherwise `.claude/tickets/`, which git ignores. A file `NNN-what-it-builds.md`,
   numbered after the highest file there in the order of the approved list, so that among
-  the new tickets a blocker has the lower number, from [ticket-template.md](ticket-template.md), with
-  `status: draft`.
+  the new tickets a blocker has the lower number, from
+  [ticket-template.md](ticket-template.md), with `status: open`.
 - Each ticket names its ADRs and its spec; the behaviour as cases, each with its answer,
   the allowed one and the refused one (`404`, `403`, `422`, `409`, two requests at once);
   the seam of each case, from the spec when there is one; the modules, with any contract,
@@ -57,7 +59,11 @@ he approves it.
   which go stale: `implement` finds the files.
 - A question left open on purpose is a ticket with `status: waiting` and the `signal:` that
   would make it needed; `implement` does not take it until Nikita opens it.
-- The Docs of the last ticket that implements an ADR say that it turns the ADR `accepted`.
-- Show the tickets. A ticket Nikita approves turns `open`: his approval of its plan, which
-  `implement` builds from. The next step is `implement` with a ticket whose blockers are
-  done.
+- Exactly one ticket carries the grill's patch (`grill-<topic>.patch`, all of the grill's
+  edits): the first in the approved list that implements one of its ADRs, or the first
+  ticket when the grill wrote none. Its Docs name the patch. The Docs of the last ticket
+  that implements an ADR say that it turns the ADR `accepted`; when that is another ticket,
+  it is blocked by the carrier.
+- End with the list of files written and the questions left open, and ask whether to
+  build the first ticket without blockers, so that "yes" runs `implement` with it. Nikita
+  may still correct a ticket's file before it is taken; the file is the plan.
