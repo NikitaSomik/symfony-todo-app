@@ -67,3 +67,6 @@ Statuses:
 | [0031](0031-billing-on-stripe-by-plan-tiers.md) | A workspace pays on Stripe for a plan sized by its members; Stripe decides the status, the application derives access | accepted | 2026-10-29 |
 | [0032](0032-a-workspace-buys-a-plan-through-stripe-checkout.md) | A workspace buys a plan through Stripe Checkout, as its own Stripe customer, and Stripe is asked before a page opens | accepted | 2026-11-09 |
 | [0033](0033-a-workspace-has-one-open-checkout-page.md) | A workspace has one open Checkout page: a new one closes the others, and a paid one answers 409 | accepted | 2026-11-11 |
+| [0034](0034-meetings-run-in-a-separate-go-service.md) | Meetings run in a separate Go service, Meet, behind the same origin | proposed | — |
+| [0035](0035-access-tokens-signed-with-rs256.md) | Access tokens are signed with RS256, so that Meet can verify them without minting them | proposed | — |
+| [0036](0036-meet-asks-the-monolith-for-permissions-and-limits.md) | Meet asks the monolith, on an internal endpoint, what a user may do and what the plan allows | proposed | — |
