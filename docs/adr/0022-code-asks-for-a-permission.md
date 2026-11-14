@@ -21,7 +21,7 @@ could delete a task, because writing and deleting were one check
   its holder buy a plan for the workspace
   ([0031](0031-billing-on-stripe-by-plan-tiers.md),
   [0032](0032-a-workspace-buys-a-plan-through-stripe-checkout.md)).*
-  *Extended on 2026-11-14, in #PR: a sixth, `host_meetings`, held by owners and members, lets
+  *Extended on 2026-11-14, in #135: a sixth, `host_meetings`, held by owners and members, lets
   its holder start a meeting; a viewer joins with `view`
   ([0036](0036-meet-asks-the-monolith-for-permissions-and-limits.md)).*
 - **A role is a set of permissions, and one place says which.**
