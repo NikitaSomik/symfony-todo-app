@@ -13,4 +13,7 @@ interface PlanLimits
 
     /** @param list<Uuid> $ownedTeamWorkspaceIds */
     public function ensureCanCreateTeamWorkspace(array $ownedTeamWorkspaceIds): void;
+
+    /** @return MeetingLimits|null null while a plan does not bound meetings */
+    public function findMeetingLimits(Uuid $workspaceId): ?MeetingLimits;
 }

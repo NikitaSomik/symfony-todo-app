@@ -19,6 +19,11 @@ with a cost per minute — bandwidth — so a plan has to bound it.
   The answer gives the user's permissions in the workspace and the plan's limits for
   meetings. An empty list of permissions means the user is not a member, and Meet answers
   `404`, as for a meeting that does not exist.
+- **The answer is plain JSON, not a JSON:API document**
+  (`{"permissions": [...], "limits": {"participants": 10, "minutes": 120}}`): it is read by
+  one service of ours, not by API clients, and
+  [0008](0008-json-api-responses-plain-json-requests.md) is about those. A refusal keeps the
+  application's error format.
 - **The endpoint is internal**: under `/internal`, reachable only on the private network
   between the containers; nginx does not route it from outside.
 - **Meet proves itself with a service token** in a header, a secret held in both services'

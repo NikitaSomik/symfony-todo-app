@@ -8,8 +8,10 @@ use App\Billing\Enum\LimitMode;
 use App\Billing\Enum\Plan;
 use App\Billing\Exception\PlanLimitExceededException;
 use App\Billing\Service\SwitchablePlanLimits;
+use App\Workspace\Contract\MeetingLimits;
 use App\Workspace\Contract\PlanLimits;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Uid\Uuid;
@@ -64,5 +66,28 @@ final class SwitchablePlanLimitsTest extends TestCase
         $this->expectException(PlanLimitExceededException::class);
 
         (new SwitchablePlanLimits($this->refusingLimits(), LimitMode::ON, $this->createStub(LoggerInterface::class)))->ensureCanCreateTeamWorkspace([Uuid::v7()]);
+    }
+
+    #[Test]
+    public function offShouldGiveNoMeetingLimitsWithoutAskingTheRules(): void
+    {
+        $limits = $this->createMock(PlanLimits::class);
+        $limits->expects(self::never())->method('findMeetingLimits');
+
+        self::assertNull((new SwitchablePlanLimits($limits, LimitMode::OFF, $this->createStub(LoggerInterface::class)))->findMeetingLimits(Uuid::v7()));
+    }
+
+    #[Test]
+    #[TestWith([LimitMode::SHADOW])]
+    #[TestWith([LimitMode::ON])]
+    public function shadowAndOnShouldGiveTheMeetingLimitsOfTheRules(LimitMode $mode): void
+    {
+        $meetingLimits = new MeetingLimits(participants: 10, minutes: 120);
+        $limits = $this->createStub(PlanLimits::class);
+        $limits->method('findMeetingLimits')->willReturn($meetingLimits);
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::never())->method('info');
+
+        self::assertSame($meetingLimits, (new SwitchablePlanLimits($limits, $mode, $logger))->findMeetingLimits(Uuid::v7()));
     }
 }

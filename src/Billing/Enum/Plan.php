@@ -27,6 +27,15 @@ enum Plan: string
         };
     }
 
+    public function meetingMinutes(): int
+    {
+        return match ($this) {
+            self::FREE => 40,
+            self::TEAM => 120,
+            self::BUSINESS => 240,
+        };
+    }
+
     public function label(): string
     {
         return ucfirst($this->value);

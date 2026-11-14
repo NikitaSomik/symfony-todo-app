@@ -6,6 +6,7 @@ namespace App\Billing\Service;
 
 use App\Billing\Enum\LimitMode;
 use App\Billing\Exception\PlanLimitExceededException;
+use App\Workspace\Contract\MeetingLimits;
 use App\Workspace\Contract\PlanLimits;
 use Monolog\Attribute\WithMonologChannel;
 use Psr\Log\LoggerInterface;
@@ -39,6 +40,15 @@ final readonly class SwitchablePlanLimits implements PlanLimits
     public function ensureCanCreateTeamWorkspace(array $ownedTeamWorkspaceIds): void
     {
         $this->apply(fn () => $this->limits->ensureCanCreateTeamWorkspace($ownedTeamWorkspaceIds), []);
+    }
+
+    public function findMeetingLimits(Uuid $workspaceId): ?MeetingLimits
+    {
+        if (LimitMode::OFF === $this->mode) {
+            return null;
+        }
+
+        return $this->limits->findMeetingLimits($workspaceId);
     }
 
     /**

@@ -7,6 +7,7 @@ namespace App\Billing\Service;
 use App\Billing\Enum\Plan;
 use App\Billing\Exception\PlanLimitExceededException;
 use App\Billing\Repository\SubscriptionRepository;
+use App\Workspace\Contract\MeetingLimits;
 use App\Workspace\Contract\PlanLimits;
 use Symfony\Component\Uid\Uuid;
 
@@ -33,5 +34,12 @@ final readonly class WorkspacePlanLimits implements PlanLimits
         if ($onFree >= Plan::TEAM_WORKSPACES_ON_FREE) {
             throw PlanLimitExceededException::forTeamWorkspaces($onFree);
         }
+    }
+
+    public function findMeetingLimits(Uuid $workspaceId): MeetingLimits
+    {
+        $plan = $this->subscriptions->planOf($workspaceId);
+
+        return new MeetingLimits(participants: $plan->memberLimit(), minutes: $plan->meetingMinutes());
     }
 }

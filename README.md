@@ -20,7 +20,7 @@ The rules it enforces now:
   ([0020](docs/adr/0020-a-task-belongs-to-a-workspace.md),
   [0011](docs/adr/0011-foreign-task-answers-404.md)).
 - **A role is a set of permissions.** An owner manages the workspace, works on tasks,
-  deletes them and pays for the plan; a member works on them; a viewer reads. Code asks for the permission,
+  deletes them and pays for the plan; a member works on them; both may host a meeting; a viewer reads. Code asks for the permission,
   never for the role, and someone outside the workspace simply has none ([0022](docs/adr/0022-code-asks-for-a-permission.md)).
 - **A task is held by someone who can work on it.** It is assigned to an owner or a
   member, never to a viewer, and whoever leaves, is removed or becomes a viewer is taken

@@ -27,7 +27,7 @@ Owner, member or viewer: a named set of permissions in one workspace.
 _Avoid_: access level, group
 
 **Permission**:
-Something code may ask whether a member can do: `view`, `manage_workspace`, `work_on_tasks`, `delete_tasks`.
+Something code may ask whether a member can do: `view`, `manage_workspace`, `work_on_tasks`, `delete_tasks`, `manage_billing`, `host_meetings`.
 _Avoid_: right, privilege, capability
 
 **Actor**:
@@ -74,6 +74,12 @@ _Avoid_: activity, log line
 Something that happened in a module, announced to the others after the commit; its class is named in the past tense.
 _Avoid_: notification, message (for the fact itself)
 
+## Meetings
+
+**Meeting**:
+A video call inside one workspace, started by a member and joined by its members; `open` until it ends, then `ended`. It runs in Meet, a service of its own.
+_Avoid_: call (in code), conference, room (a room is LiveKit's, one per meeting)
+
 ## Billing
 
 **Plan**:
@@ -81,7 +87,7 @@ Free, Team or Business: how many members a workspace may have.
 _Avoid_: tier (in code), package, product
 
 **Plan limit**:
-The number of members a plan allows, and the number of team workspaces on Free.
+The number of members a plan allows, the number of team workspaces on Free, and the participants and minutes of a meeting.
 _Avoid_: quota, cap, seat limit
 
 **Subscription**:
