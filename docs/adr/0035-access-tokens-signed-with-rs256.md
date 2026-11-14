@@ -1,8 +1,8 @@
 # 0035. Access tokens are signed with RS256, so that Meet can verify them without minting them
 
 - Status: accepted — supersedes [0003](0003-jwt-signed-with-hs256.md)
-- Date: YYYY-MM-DD — when the decision reached `main`, taken from git history
-- Implemented in: #PR
+- Date: 2026-11-14
+- Implemented in: #134
 
 ## Context
 
