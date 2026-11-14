@@ -17,9 +17,9 @@ with a cost per minute — bandwidth — so a plan has to bound it.
 
 - **Meet asks the monolith every time it has to know what a user may do: when a meeting
   starts, when it is read and when someone joins.** It keeps no answer for the next
-  request. The answer gives the user's permissions in the workspace and the plan's limits for
-  meetings. An empty list of permissions means the user is not a member, and Meet answers
-  `404`, as for a meeting that does not exist.
+  request. The answer gives the user's permissions in the workspace and the plan's limits
+  for meetings. An empty list of permissions means the user is not a member, and Meet
+  answers `404`, as for a meeting that does not exist.
 - **The answer is plain JSON, not a JSON:API document**
   (`{"permissions": [...], "limits": {"participants": 10, "minutes": 120}}`): it is read by
   one service of ours, not by API clients, and
