@@ -16,8 +16,8 @@ enum WorkspaceRole: string
     public function permissions(): array
     {
         return match ($this) {
-            self::OWNER => [WorkspacePermission::VIEW, WorkspacePermission::MANAGE_WORKSPACE, WorkspacePermission::WORK_ON_TASKS, WorkspacePermission::DELETE_TASKS, WorkspacePermission::MANAGE_BILLING],
-            self::MEMBER => [WorkspacePermission::VIEW, WorkspacePermission::WORK_ON_TASKS],
+            self::OWNER => [WorkspacePermission::VIEW, WorkspacePermission::MANAGE_WORKSPACE, WorkspacePermission::WORK_ON_TASKS, WorkspacePermission::DELETE_TASKS, WorkspacePermission::MANAGE_BILLING, WorkspacePermission::HOST_MEETINGS],
+            self::MEMBER => [WorkspacePermission::VIEW, WorkspacePermission::WORK_ON_TASKS, WorkspacePermission::HOST_MEETINGS],
             self::VIEWER => [WorkspacePermission::VIEW],
         };
     }

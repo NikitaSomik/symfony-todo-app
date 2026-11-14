@@ -28,6 +28,9 @@ final class WorkspaceRoleTest extends TestCase
     #[TestWith([WorkspaceRole::OWNER, WorkspacePermission::MANAGE_BILLING, true])]
     #[TestWith([WorkspaceRole::MEMBER, WorkspacePermission::MANAGE_BILLING, false])]
     #[TestWith([WorkspaceRole::VIEWER, WorkspacePermission::MANAGE_BILLING, false])]
+    #[TestWith([WorkspaceRole::OWNER, WorkspacePermission::HOST_MEETINGS, true])]
+    #[TestWith([WorkspaceRole::MEMBER, WorkspacePermission::HOST_MEETINGS, true])]
+    #[TestWith([WorkspaceRole::VIEWER, WorkspacePermission::HOST_MEETINGS, false])]
     public function roleShouldCarryExactlyItsPermissions(WorkspaceRole $role, WorkspacePermission $permission, bool $allowed): void
     {
         self::assertSame($allowed, $role->can($permission));

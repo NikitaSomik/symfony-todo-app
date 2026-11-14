@@ -11,6 +11,11 @@ security:
             entity:
                 class: App\Auth\Entity\User
                 property: id
+        # Not people: the services that call the internal endpoints.
+        services:
+            memory:
+                users:
+                    meet: ~
 
     firewalls:
         dev:
@@ -39,6 +44,17 @@ security:
             logout:
                 path: api_auth_logout
 
+        # Called by Meet over the private network, never by a browser: a service token in the
+        # Authorization header, and no cookie counts here.
+        internal:
+            pattern: ^/internal
+            stateless: true
+            provider: services
+            entry_point: App\Auth\Security\Authentication\EntryPoint\ApiAuthenticationEntryPoint
+            access_token:
+                token_handler: App\Workspace\Security\MeetServiceTokenHandler
+                failure_handler: App\Auth\Security\Authentication\Lexik\AuthenticationFailureHandler
+
         api:
             pattern: ^/api
             stateless: true
@@ -50,6 +66,7 @@ security:
     access_control:
         - { path: ^/api/v1/auth, roles: PUBLIC_ACCESS }
         - { path: ^/api/v1,      roles: IS_AUTHENTICATED_FULLY }
+        - { path: ^/internal,    roles: IS_AUTHENTICATED_FULLY }
 
 when@test:
     security:

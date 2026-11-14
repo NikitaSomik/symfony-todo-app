@@ -28,6 +28,10 @@ There is no frontend yet; one comes later. The API is its only client until then
   Business up to 50. Every member counts — owner, member and viewer alike. A tier has one
   price for the workspace, monthly or yearly; prices live in Stripe and are a product
   decision, not code.
+  *Extended on 2026-11-14, in #PR: a plan also bounds a meeting — as many participants as
+  it has members, and 40, 120 or 240 minutes on Free, Team or Business — under the same
+  `BILLING_LIMITS`: `off` bounds nothing, `shadow` and `on` give the limits
+  ([0036](0036-meet-asks-the-monolith-for-permissions-and-limits.md)).*
 - **A team that outgrows its tier moves to the next one.** No extra charge per person.
 - **On Free an owner has one team workspace.** The personal workspace created at
   registration does not count toward it.
