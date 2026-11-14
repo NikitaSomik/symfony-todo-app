@@ -15,8 +15,9 @@ with a cost per minute — bandwidth — so a plan has to bound it.
 
 ## Decision
 
-- **Meet asks the monolith at two moments: when a meeting starts and when someone joins.**
-  The answer gives the user's permissions in the workspace and the plan's limits for
+- **Meet asks the monolith every time it has to know what a user may do: when a meeting
+  starts, when it is read and when someone joins.** It keeps no answer for the next
+  request. The answer gives the user's permissions in the workspace and the plan's limits for
   meetings. An empty list of permissions means the user is not a member, and Meet answers
   `404`, as for a meeting that does not exist.
 - **The answer is plain JSON, not a JSON:API document**
@@ -42,8 +43,8 @@ with a cost per minute — bandwidth — so a plan has to bound it.
   next meeting.
 - **The limits follow `BILLING_LIMITS`** like the others: with it `off`, a meeting is not
   bounded by the plan.
-- **When the monolith does not answer, Meet refuses** to start or join, with `503`; it
-  never guesses a permission.
+- **When the monolith does not answer, Meet refuses** to start, read or join, with `503`;
+  it never guesses a permission.
 
 ## Alternatives considered
 
@@ -67,8 +68,8 @@ with a cost per minute — bandwidth — so a plan has to bound it.
 ## Consequences
 
 - An internal API in the monolith: one more contract to version, tested from both sides.
-- Every start and every join waits on one call to the monolith, so Meet sets a short
-  timeout on it.
+- Every start, every read and every join waits on one call to the monolith, so Meet sets
+  a short timeout on it.
 - The service token is a secret to rotate in two environments at once.
 - A workspace that downgrades keeps its running meetings on the old limits until they end.
 - Revisit when Meet must work while the monolith is down, when more services call the
