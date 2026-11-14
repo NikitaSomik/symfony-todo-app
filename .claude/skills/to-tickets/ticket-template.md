@@ -1,5 +1,5 @@
 ---
-status: draft           # draft | open (approved) | waiting | in-progress | done
+status: open            # open | waiting | in-progress | done
 signal:                 # for waiting: what would make it needed
 spec:                   # the spec's file, if there is one
 blocked-by:             # the tickets' files that must be merged first
@@ -30,8 +30,9 @@ What changes in each module, with any contract, migration or index.
 
 ## Docs
 
-ADR status (`accepted` only with the last ticket that implements it), the README rule line,
-`docs/openapi.json`, the roadmap.
+The grill's patch this ticket carries, if it is the one; the ADR status (`accepted` only
+with the last ticket that implements it); the README rule line, `docs/openapi.json`, the
+roadmap.
 
 ## Not in this change
 

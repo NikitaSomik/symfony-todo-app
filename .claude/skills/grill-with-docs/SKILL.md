@@ -58,15 +58,15 @@ While answers come in:
   the glossary right then: the term, one or two sentences on what it is, the words to
   avoid.
 
-Rounds go on until nothing is open. Then sum up the design in a few lines and ask Nikita to
-confirm it. Nothing is written before he does.
+Rounds go on until nothing is open. Then write the ADRs, uncommitted, and show them with
+the design summed up in a few lines, in one message: one confirmation covers both.
 
 ## 3. Write the ADRs
 
-Propose which decisions get an ADR. One does when it is hard to reverse, would surprise a
-reader without its context, or came out of a real trade-off. A smaller decision goes into
-an existing ADR or nowhere. One ADR holds one decision, so that a later change supersedes
-only what it changes.
+Choose which decisions get an ADR; the summary names those that got none, each with its
+reason. One does when it is hard to reverse, would surprise a reader without its context,
+or came out of a real trade-off. A smaller decision goes into an existing ADR or nowhere.
+One ADR holds one decision, so that a later change supersedes only what it changes.
 
 Each ADR follows `docs/adr/template.md` and the rules in `docs/adr/README.md`, like the
 records around it:
@@ -85,16 +85,24 @@ records around it:
   glance, from the rules in `CLAUDE.md`. `docs/roadmap.md` and `docs/architecture.md` change
   when the design changes them.
 
-Show the ADRs as a diff. They are drafts until Nikita says they are right. Commits, push and
-the pull request follow `CLAUDE.md`.
+Show the ADRs as a diff, after the summary. They are drafts until Nikita says they are
+right; his corrections go into them, and the design is shown again only if they change it.
+They stay uncommitted, and one ticket carries them into its pull request. So that a
+session that ends or a cloud container that goes away does not lose them, all of the
+grill's edits (the ADRs and their rows in the table, a superseded ADR's status, the
+glossary, the rule lines in the README and `CLAUDE.md`, the roadmap, the architecture) are
+saved as one patch: `git add -N` the new files, then
+`git diff -- docs/ GLOSSARY.md README.md CLAUDE.md > <folder>/grill-<topic>.patch`, where
+the folder is `/mnt/project-files/tickets/` when it exists, otherwise `.claude/tickets/`.
 
 ## 4. Hand over
 
-End with the ADRs written, the decisions that stayed out of them in a few lines, and the
-next step:
+That same message ends with the next step: "yes" approves the design and the ADRs and runs
+it; "stop" approves only. A correction is applied and the offer made again. On "yes" or
+"stop", the patch is saved first, then the next step runs.
 
-- `/to-spec` when the work shows one of the signs in [to-spec](../to-spec/SKILL.md), and
+- `to-spec` when the work shows one of the signs in [to-spec](../to-spec/SKILL.md), and
   which;
-- `/to-tickets` otherwise, straight from this discussion.
+- `to-tickets` otherwise, straight from this discussion.
 
 Either one reads this conversation, so it runs in this session, before it is cleared.

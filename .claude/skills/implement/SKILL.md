@@ -18,12 +18,12 @@ checks, tests first. Nikita is asked at the plan and at the report.
   (`git log origin/main --grep "(#N)"`) turns `done`, and a spec (`kind: spec`) whose
   tickets are all `done` turns `done` too.
 - Read what the change rests on: the ticket and its spec, the ADR, the discussion.
-- A ticket is the approved plan. Take it only while it says `status: open` (never `draft`,
-  `waiting` or a spec) and every ticket in its `blocked-by` is `done`: set
-  `status: in-progress` first and read the file again, so that no other session takes it.
+- A ticket is the approved plan. Take it only while it says `status: open` (never `waiting`
+  or a spec) and every ticket in its `blocked-by` is `done`: set `status: in-progress`
+  first and read the file again, so that no other session takes it.
   A ticket `in-progress` is taken only when its `branch:` is the branch being continued.
 - A ticket that needs a second pull request or a contract it does not name is not taken:
-  propose the split, which `/to-tickets` cuts from the ticket.
+  ask whether to split it, so that "yes" runs `to-tickets` with the ticket.
 - Continuing a branch: its plan in `.claude/plans/`, its pull request with the review
   comments and CI, and `git log origin/main..`. Merge a fresh `origin/main` into it; a
   pushed branch is never rebased. The plan then covers only what is left.
@@ -60,13 +60,17 @@ asking first, and a change of behaviour beyond the plan goes back to Nikita.
 ## 3. Tests first
 
 - A branch from a fresh `origin/main`, named as `CLAUDE.md` says, unless continuing one.
+  When the ticket carries a grill's patch: if the working tree already holds its edits,
+  keep them; otherwise `git apply --3way --index` it. A new ADR whose number `main` has
+  taken meanwhile is renumbered, with its links. The patch's files are committed with the
+  ticket: they are not Nikita's local notes.
 - The approved plan saved to `.claude/plans/<branch>.md`, which git ignores, so that a new
   session continues from it and the branch, without this one's history. For a ticket the
   file holds only the ticket's path, and the ticket gets `branch:`: a correction goes into
   the ticket, the one copy.
 - The scope holds in this phase and the next: when a ticket turns out to need a second pull
-  request or a contract it does not name, stop, propose the split for `/to-tickets`, and go
-  back to Nikita instead of widening it.
+  request or a contract it does not name, stop and ask whether to split it, so that "yes"
+  runs `to-tickets` with the ticket, instead of widening it.
 - For every case in the plan, a test first, at its seam, shaped like the neighbouring tests.
   The expected value comes from the ticket or the approved plan, the ADR or the provider's
   documentation, never from running the code under test. Run them and show the output: each fails for the right
@@ -109,6 +113,6 @@ The report, which becomes the pull request description:
   of its own, written as `to-tickets` writes one, with `status: waiting` and its `signal:`,
   and the report names it.
 
-Push and open the pull request when Nikita says so (`CLAUDE.md`), described with
-the `pr` skill. A red check on it is fixed on the branch. The ticket gets `pr:` when the pull
+End by asking whether to push and open the pull request, so that "yes" is Nikita's word
+(`CLAUDE.md`); it is described with the `pr` skill. A red check on it is fixed on the branch. The ticket gets `pr:` when the pull
 request opens; phase 1 of a later session marks it `done` once it is merged.

@@ -1,8 +1,7 @@
 ---
 name: to-spec
-description: Write the spec of a settled design in symfony-todo-app - the decisions, the flow across modules, the seams to test at - for work that shows one of its signs, so that it outlives the grill session. Use when Nikita types /to-spec after grill-with-docs.
+description: Write the spec of a settled design in symfony-todo-app - the decisions, the flow across modules, the seams to test at - for work that shows one of its signs, so that it outlives the grill session. Use when Nikita types /to-spec, or says yes when another skill offers it; never on its own initiative.
 argument-hint: "[what to spec, if not the design just settled]"
-disable-model-invocation: true
 ---
 
 # Write the spec
@@ -24,8 +23,8 @@ Go through the signs:
 4. a rollout in steps: existing data migrated, a flag, a shadow mode;
 5. three ADRs or more from this discussion.
 
-One sign is enough. With none, say so in one line and hand over to `/to-tickets`: the
-ticket carries the design of a small change by itself.
+One sign is enough. With none, say so in one line and ask whether to cut the tickets, so
+that "yes" runs `to-tickets`: the ticket carries the design of a small change by itself.
 
 ## 2. Read what it rests on
 
@@ -34,14 +33,14 @@ the code of the modules involved. A decision the design left open is not settled
 goes back to `grill-with-docs`, or into the spec as an open question with the signal that
 would settle it.
 
-## 3. Agree the seams
+## 3. Choose the seams
 
 A seam is where a behaviour is tested: through HTTP in an application test, at a use case,
 at a domain rule, at an adapter against its fake (`FakeStripeHttp`). The existing ones
 first, and the highest that can observe the behaviour; the fewer seams, the better: one
 through HTTP at best, plus a unit test for each domain rule, as `project-review` asks. Name
-the neighbouring tests each seam follows. Propose them, each case with its seam
-and what it catches and misses, and wait for Nikita's answer before writing.
+the neighbouring tests each seam follows. They go into the spec's Seams, each case with its
+seam and what it catches and misses, and Nikita approves them with the spec.
 
 ## 4. Write it
 
@@ -51,5 +50,6 @@ and what it catches and misses, and wait for Nikita's answer before writing.
 - In the domain's words. Modules, contracts, events and tables by name; no file paths and no
   code, which go stale before the last ticket is built. A snippet only when it states a
   decision more precisely than a sentence can, such as the shape of a payload.
-- Show it. Nikita's approval of the spec is the approval of its design; the next step is
-  `/to-tickets` with its path.
+- Show it, the seams first, and in the same message ask whether to cut the tickets:
+  "yes" approves the spec and its seams and runs `to-tickets` with its path; "stop"
+  approves only. A correction goes into the file, and the offer is made again.
