@@ -67,7 +67,7 @@ how many and for how long, and keeps track of the meetings that ran.
 - Two repositories and two deploys. A change to the contract between them — the token, the
   internal API — is two pull requests, released monolith first.
 - Meet depends on the monolith at runtime: without it nobody signs in, and Meet cannot ask
-  for permissions, so it refuses to start or join a meeting rather than guess.
+  for permissions, so it refuses to start, read or join a meeting rather than guess.
 - nginx routes by prefix; a path under `/api/v1/meetings` never reaches PHP.
 - LiveKit is a new container, with ports for media and, outside a local network, a TURN
   server.

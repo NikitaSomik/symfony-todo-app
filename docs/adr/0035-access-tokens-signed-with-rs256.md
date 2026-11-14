@@ -23,6 +23,7 @@ id — [0027](0027-the-access-token-names-the-user-by-id.md)).
   in Meet until it expires, at most 15 minutes ([0005](0005-revocable-sessions.md)); every
   start and every join still asks the monolith whether the user is a member
   ([0036](0036-meet-asks-the-monolith-for-permissions-and-limits.md)).
+  *Extended on 2026-11-14, in #137: every read of a meeting asks too.*
 - **Logging out, or leaving the workspace, does not end a meeting already joined.** It only
   refuses the next join.
 - **Refresh tokens do not change.** They are opaque database records and never leave the
