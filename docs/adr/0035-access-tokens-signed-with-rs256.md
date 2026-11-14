@@ -1,6 +1,6 @@
 # 0035. Access tokens are signed with RS256, so that Meet can verify them without minting them
 
-- Status: proposed
+- Status: accepted — supersedes [0003](0003-jwt-signed-with-hs256.md)
 - Date: YYYY-MM-DD — when the decision reached `main`, taken from git history
 - Implemented in: #PR
 
@@ -27,8 +27,11 @@ id — [0027](0027-the-access-token-names-the-user-by-id.md)).
   refuses the next join.
 - **Refresh tokens do not change.** They are opaque database records and never leave the
   monolith.
-
-When this record is implemented, [0003](0003-jwt-signed-with-hs256.md) is superseded by it.
+- **Each key is a path or the key itself**, in `JWT_SECRET_KEY` and `JWT_PUBLIC_KEY`; the
+  files are not tracked. The private key has no passphrase: it would sit in the same
+  environment as the key.
+- **In `prod`, warming the cache fails without an RSA pair**, or with two keys that do not
+  belong together, so a deploy without them stops at the deploy and not at the first login.
 
 ## Alternatives considered
 
@@ -48,6 +51,10 @@ When this record is implemented, [0003](0003-jwt-signed-with-hs256.md) is supers
 
 - A key pair to generate, store and rotate instead of one secret. Rotation with an overlap
   needs the old public key kept beside the new one for 15 minutes.
+- The check of the keys runs when the cache is warmed (`cache:warmup`, `cache:clear`), not
+  when a kernel boots on an empty cache: CI lints the `prod` container without keys. So a
+  deploy has to warm the cache, and any build step that clears it under `APP_ENV=prod` —
+  `composer install` does — needs the keys.
 - Switching the algorithm invalidates every live access token once. It costs one silent
   refresh per user, as rotating the secret did.
 - A removed member stays in a meeting already joined, and a logged-out token opens Meet's

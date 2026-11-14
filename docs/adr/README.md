@@ -36,7 +36,7 @@ Statuses:
 |---|---|---|---|
 | [0001](0001-feature-based-modular-monolith.md) | Organise the code as a feature-based modular monolith | accepted | 2026-02-27 |
 | [0002](0002-authentication-inside-the-application.md) | Build authentication inside the application instead of using an identity provider | accepted | 2026-03-03 |
-| [0003](0003-jwt-signed-with-hs256.md) | Sign access tokens with HS256 and a shared secret | accepted | 2026-03-03 |
+| [0003](0003-jwt-signed-with-hs256.md) | Sign access tokens with HS256 and a shared secret | superseded by [0035](0035-access-tokens-signed-with-rs256.md) | 2026-03-03 |
 | [0004](0004-access-token-in-httponly-cookie.md) | Carry the access token in an HttpOnly cookie, not the `Authorization` header | accepted | 2026-03-03 |
 | [0005](0005-revocable-sessions.md) | Make sessions revocable: short access tokens, rotating refresh tokens, a logout blocklist | accepted | 2026-03-24 |
 | [0006](0006-errors-rendered-by-exception-subscriber.md) | Render API errors in a `kernel.exception` subscriber | superseded by [0007](0007-exception-mapping-and-error-normalizer.md) | 2026-03-26 |
@@ -68,5 +68,5 @@ Statuses:
 | [0032](0032-a-workspace-buys-a-plan-through-stripe-checkout.md) | A workspace buys a plan through Stripe Checkout, as its own Stripe customer, and Stripe is asked before a page opens | accepted | 2026-11-09 |
 | [0033](0033-a-workspace-has-one-open-checkout-page.md) | A workspace has one open Checkout page: a new one closes the others, and a paid one answers 409 | accepted | 2026-11-11 |
 | [0034](0034-meetings-run-in-a-separate-go-service.md) | Meetings run in a separate Go service, Meet, behind the same origin | proposed | — |
-| [0035](0035-access-tokens-signed-with-rs256.md) | Access tokens are signed with RS256, so that Meet can verify them without minting them | proposed | — |
+| [0035](0035-access-tokens-signed-with-rs256.md) | Access tokens are signed with RS256, so that Meet can verify them without minting them | accepted | — |
 | [0036](0036-meet-asks-the-monolith-for-permissions-and-limits.md) | Meet asks the monolith, on an internal endpoint, what a user may do and what the plan allows | proposed | — |
