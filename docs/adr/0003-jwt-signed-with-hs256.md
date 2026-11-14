@@ -1,6 +1,6 @@
 # 0003. Sign access tokens with HS256 and a shared secret
 
-- Status: accepted
+- Status: superseded by [0035](0035-access-tokens-signed-with-rs256.md)
 - Date: 2026-03-03
 - Implemented in: #5
 

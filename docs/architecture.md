@@ -225,7 +225,8 @@ sequenceDiagram
 
 Both tokens live in HttpOnly cookies ([0004](adr/0004-access-token-in-httponly-cookie.md));
 the refresh cookie is sent only to `/api/v1/auth`.
-The access token is short-lived and stateless; the refresh token is stored only as a
+The access token is short-lived, stateless and signed with RS256: the API's private key signs
+it, and the public key is enough to verify it ([0035](adr/0035-access-tokens-signed-with-rs256.md)). The refresh token is stored only as a
 SHA-256 hash and rotated on every use, which is what makes a session revocable
 ([0005](adr/0005-revocable-sessions.md)). The tokens rotated from one sign-in form a family;
 a spent one presented again revokes it ([0025](adr/0025-refresh-token-families-and-reuse-detection.md)). The auth endpoints sit behind their own firewall,
