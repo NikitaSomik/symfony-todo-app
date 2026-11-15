@@ -46,6 +46,73 @@ services:
     networks:
       - todo-app-network
 
+  meet:
+    build: ../go-meet-service
+    profiles: ["meet"]
+    restart: unless-stopped
+    env_file:
+      - path: .env.meet.local
+        required: false
+    environment:
+      LISTEN_ADDR: ":8080"
+      DATABASE_URL: postgres://meet:secret@db:5432/meet?sslmode=disable
+      MONOLITH_URL: http://nginx:8080
+      LIVEKIT_URL: http://livekit:7880
+      LIVEKIT_PUBLIC_URL: ws://127.0.0.1:7880
+      LIVEKIT_API_KEY: devkey
+      LIVEKIT_API_SECRET: secret
+    depends_on:
+      meet-migrate:
+        condition: service_completed_successfully
+    networks:
+      - todo-app-network
+
+  meet-migrate:
+    build: ../go-meet-service
+    profiles: ["meet"]
+    command: ["migrate"]
+    environment:
+      DATABASE_URL: postgres://meet:secret@db:5432/meet?sslmode=disable
+    depends_on:
+      meet-database:
+        condition: service_completed_successfully
+    networks:
+      - todo-app-network
+
+  meet-database:
+    image: postgres:18-alpine
+    profiles: ["meet"]
+    command: ["psql", "--host=db", "--username=${POSTGRES_USER}", "--dbname=${POSTGRES_DB}", "--set=ON_ERROR_STOP=1", "--file=/create-meet-database.sql"]
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./docker/postgres/create-meet-database.sql:/create-meet-database.sql:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - todo-app-network
+
+  livekit:
+    image: livekit/livekit-server:v1.13.11
+    profiles: ["meet"]
+    restart: unless-stopped
+    command: --dev --bind 0.0.0.0 --node-ip 127.0.0.1
+    environment:
+      LIVEKIT_CONFIG: |
+        room:
+          auto_create: false
+        webhook:
+          api_key: devkey
+          urls:
+            - http://meet:8080/internal/v1/livekit/webhook
+    ports:
+      - "127.0.0.1:7880:7880"
+      - "127.0.0.1:7881:7881"
+      - "127.0.0.1:7882:7882/udp"
+    networks:
+      - todo-app-network
+
   redis:
     image: redis:7-alpine
     restart: unless-stopped
