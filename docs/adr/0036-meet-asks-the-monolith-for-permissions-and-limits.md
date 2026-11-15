@@ -1,6 +1,6 @@
 # 0036. Meet asks the monolith, on an internal endpoint, what a user may do and what the plan allows
 
-- Status: proposed
+- Status: accepted
 - Date: YYYY-MM-DD — when the decision reached `main`, taken from git history
 - Implemented in: #PR
 

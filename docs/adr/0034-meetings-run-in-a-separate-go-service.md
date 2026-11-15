@@ -1,6 +1,6 @@
 # 0034. Meetings run in a separate Go service, Meet, behind the same origin
 
-- Status: proposed
+- Status: accepted
 - Date: YYYY-MM-DD — when the decision reached `main`, taken from git history
 - Implemented in: #PR
 
