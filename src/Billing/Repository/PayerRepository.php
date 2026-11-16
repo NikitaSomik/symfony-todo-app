@@ -26,6 +26,13 @@ class PayerRepository extends ServiceEntityRepository
         return null === $payer ? null : $payer->getStripeCustomerId();
     }
 
+    public function findWorkspaceIdOfCustomer(string $customerId): ?Uuid
+    {
+        $payer = $this->findOneBy(['stripeCustomerId' => $customerId]);
+
+        return null === $payer ? null : $payer->getWorkspaceId();
+    }
+
     public function saveOrGetExisting(Uuid $workspaceId, string $customerId): string
     {
         $connection = $this->getEntityManager()->getConnection();

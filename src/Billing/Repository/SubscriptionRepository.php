@@ -6,9 +6,12 @@ namespace App\Billing\Repository;
 
 use App\Billing\Entity\Subscription;
 use App\Billing\Enum\Plan;
+use App\Billing\Enum\SubscriptionStatus;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\ORM\AbstractQuery;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Uid\Uuid;
 
 /**
@@ -23,15 +26,31 @@ class SubscriptionRepository extends ServiceEntityRepository
 
     public function planOf(Uuid $workspaceId): Plan
     {
-        $subscription = $this->find($workspaceId);
+        $subscription = $this->findNotCanceledOf($workspaceId);
 
-        return null === $subscription ? Plan::FREE : $subscription->getPlan();
+        if (null === $subscription) {
+            return Plan::FREE;
+        }
+
+        return $subscription->grantedPlan();
+    }
+
+    /** A workspace has at most one: the partial unique index on workspace_id holds it. */
+    public function findNotCanceledOf(Uuid $workspaceId): ?Subscription
+    {
+        return $this->createQueryBuilder('s')
+            ->where('s.workspaceId = :workspaceId')
+            ->andWhere('s.status != :canceled')
+            ->setParameter('workspaceId', $workspaceId, UuidType::NAME)
+            ->setParameter('canceled', SubscriptionStatus::CANCELED)
+            ->getQuery()
+            ->getOneOrNullResult(AbstractQuery::HYDRATE_OBJECT);
     }
 
     /**
      * @param list<Uuid> $workspaceIds
      */
-    public function countOnFree(array $workspaceIds): int
+    public function countWorkspacesOnFree(array $workspaceIds): int
     {
         if ([] === $workspaceIds) {
             return 0;
@@ -39,10 +58,12 @@ class SubscriptionRepository extends ServiceEntityRepository
 
         /** @var int<0, max> $paid */
         $paid = $this->createQueryBuilder('s')
-            ->select('COUNT(s.workspaceId)')
+            ->select('COUNT(DISTINCT s.workspaceId)')
             ->where('s.workspaceId IN (:ids)')
+            ->andWhere('s.status IN (:grantingPlan)')
             ->andWhere('s.plan != :free')
             ->setParameter('ids', array_map(static fn (Uuid $id): string => $id->toRfc4122(), $workspaceIds), ArrayParameterType::STRING)
+            ->setParameter('grantingPlan', array_map(static fn (SubscriptionStatus $status): string => $status->value, SubscriptionStatus::grantingPlan()), ArrayParameterType::STRING)
             ->setParameter('free', Plan::FREE)
             ->getQuery()
             ->getSingleScalarResult();

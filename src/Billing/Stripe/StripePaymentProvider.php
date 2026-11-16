@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Billing\Stripe;
 
 use App\Billing\Enum\Plan;
+use App\Billing\Enum\SubscriptionStatus;
 use App\Billing\Exception\PaymentProviderUnavailableException;
 use App\Billing\Payment\CheckoutPage;
 use App\Billing\Payment\PaymentProvider;
+use App\Billing\Payment\ProviderSubscription;
 use Monolog\Attribute\WithMonologChannel;
 use Psr\Clock\ClockInterface;
 use Psr\Log\LoggerInterface;
@@ -18,6 +20,7 @@ use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\RateLimitException;
 use Stripe\StripeClient;
 use Stripe\StripeObject;
+use Stripe\Subscription;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Uid\Uuid;
 use Symfony\Contracts\Cache\CacheInterface;
@@ -66,7 +69,7 @@ final readonly class StripePaymentProvider implements PaymentProvider
         $this->logger->info('Stripe customer created', [
             'workspace_id' => $workspaceId->toRfc4122(),
             'customer_id' => $customer->id,
-            'stripe_request_id' => self::requestIdOf($customer),
+            'stripe_request_id' => $this->requestIdOf($customer),
         ]);
 
         return $customer->id;
@@ -134,12 +137,45 @@ final readonly class StripePaymentProvider implements PaymentProvider
             'customer_id' => $customerId,
             'session_id' => $session->id,
             'plan' => $plan->value,
-            'stripe_request_id' => self::requestIdOf($session),
+            'stripe_request_id' => $this->requestIdOf($session),
         ]);
 
         return new CheckoutPage(
             id: $session->id,
             url: $session->url ?? throw new \LogicException(sprintf('Stripe opened the checkout page %s without an address.', $session->id)),
+        );
+    }
+
+    public function fetchSubscription(string $subscriptionId): ProviderSubscription
+    {
+        try {
+            $subscription = $this->stripe->subscriptions->retrieve($subscriptionId);
+        } catch (ApiErrorException $exception) {
+            $this->logFailure($exception);
+
+            if ($this->isUnavailable($exception)) {
+                throw PaymentProviderUnavailableException::because($exception);
+            }
+
+            throw $exception;
+        }
+
+        $customerId = $this->customerIdOf($subscription);
+        $plan = $this->planOf($subscription);
+
+        $this->logger->info('Stripe subscription fetched', [
+            'subscription_id' => $subscription->id,
+            'customer_id' => $customerId,
+            'plan' => $plan->value,
+            'stripe_status' => $subscription->status,
+            'stripe_request_id' => $this->requestIdOf($subscription),
+        ]);
+
+        return new ProviderSubscription(
+            id: $subscription->id,
+            customerId: $customerId,
+            plan: $plan,
+            status: $this->statusOf($subscription),
         );
     }
 
@@ -182,7 +218,7 @@ final readonly class StripePaymentProvider implements PaymentProvider
                         'session_id' => $sessionId,
                         'status' => $session->status,
                         'refused_request_id' => $exception->getRequestId(),
-                        'stripe_request_id' => self::requestIdOf($session),
+                        'stripe_request_id' => $this->requestIdOf($session),
                     ]);
 
                     return;
@@ -201,7 +237,7 @@ final readonly class StripePaymentProvider implements PaymentProvider
         $this->logger->info('Stripe checkout page closed', [
             'customer_id' => $customerId,
             'session_id' => $sessionId,
-            'stripe_request_id' => self::requestIdOf($session),
+            'stripe_request_id' => $this->requestIdOf($session),
         ]);
     }
 
@@ -253,6 +289,38 @@ final readonly class StripePaymentProvider implements PaymentProvider
         return $prices->data[0]->id;
     }
 
+    private function customerIdOf(Subscription $subscription): string
+    {
+        $customer = $subscription->customer;
+
+        return is_string($customer) ? $customer : $customer->id;
+    }
+
+    private function planOf(Subscription $subscription): Plan
+    {
+        $item = $subscription->items->data[0] ?? throw new \LogicException(sprintf('The Stripe subscription %s has no item.', $subscription->id));
+        $price = $item->price;
+        $plan = Plan::tryFrom((string) $price->lookup_key);
+
+        if (null === $plan || !in_array($plan, Plan::paid(), true)) {
+            throw new \UnexpectedValueException(sprintf('The price %s of the Stripe subscription %s has no lookup key of a paid plan.', $price->id, $subscription->id));
+        }
+
+        return $plan;
+    }
+
+    private function statusOf(Subscription $subscription): SubscriptionStatus
+    {
+        return match ($subscription->status) {
+            Subscription::STATUS_ACTIVE => SubscriptionStatus::ACTIVE,
+            Subscription::STATUS_PAST_DUE => SubscriptionStatus::GRACE,
+            Subscription::STATUS_UNPAID, Subscription::STATUS_PAUSED => SubscriptionStatus::SUSPENDED,
+            Subscription::STATUS_CANCELED, Subscription::STATUS_INCOMPLETE_EXPIRED => SubscriptionStatus::CANCELED,
+            Subscription::STATUS_INCOMPLETE => SubscriptionStatus::PENDING,
+            default => throw new \UnexpectedValueException(sprintf('The Stripe subscription %s has the status "%s", which we do not sell.', $subscription->id, $subscription->status)),
+        };
+    }
+
     /** Stripe's RateLimitException is an InvalidRequestException too, and it passes. */
     private function isInvalidRequest(ApiErrorException $exception): bool
     {
@@ -281,7 +349,7 @@ final readonly class StripePaymentProvider implements PaymentProvider
         }
     }
 
-    private static function requestIdOf(StripeObject $object): ?string
+    private function requestIdOf(StripeObject $object): ?string
     {
         $response = $object->getLastResponse();
 

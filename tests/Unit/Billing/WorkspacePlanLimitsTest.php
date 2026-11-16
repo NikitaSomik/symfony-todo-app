@@ -20,7 +20,7 @@ final class WorkspacePlanLimitsTest extends TestCase
     {
         $subscriptions = $this->createStub(SubscriptionRepository::class);
         $subscriptions->method('planOf')->willReturn(Plan::FREE);
-        $subscriptions->method('countOnFree')->willReturn(1);
+        $subscriptions->method('countWorkspacesOnFree')->willReturn(1);
 
         return new WorkspacePlanLimits($subscriptions);
     }

@@ -69,6 +69,8 @@ There is no frontend yet; one comes later. The API is its only client until then
   workspace read-only until the debt is paid; canceled falls back to Free, read-only while
   it has more members than Free allows. Signing in, the profile and the billing endpoints
   answer in every status, so someone who owes can always pay.
+  *Extended on 2026-11-16, in #139: `pending` grants Free, so a plan is had only once it is
+  paid — see [0037](0037-a-stripe-webhook-is-a-signal-to-fetch-the-subscription-again.md).*
 - **Not paying never touches roles.** Taking `work_on_tasks` away would unassign every open
   task ([0021](0021-a-task-has-an-assignee-who-can-work.md)) and lose the assignments for
   good; suspension is a check on top of permissions instead.
@@ -101,6 +103,9 @@ There is no frontend yet; one comes later. The API is its only client until then
   by its id and answers; a worker processes it, locking the workspace's subscription
   before fetching from Stripe, so two events for one subscription cannot overwrite each
   other with older data.
+  *Superseded on 2026-11-16, in #139: no inbox and no lock; the endpoint queues the
+  subscription's id on a transport with one consumer, which fetches the subscription from
+  Stripe and is the only one to write it — see [0037](0037-a-stripe-webhook-is-a-signal-to-fetch-the-subscription-again.md).*
 - **No call to Stripe inside a database transaction.** What must reach Stripe is written
   as a message in the same transaction as the change — an outbox on Messenger's Doctrine
   transport, or the outbox Symfony 8.2 brings if it is adopted by then

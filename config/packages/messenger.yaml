@@ -14,16 +14,33 @@ framework:
                 middleware:
                     # The worker keeps its connection for hours; a database or proxy may have closed it.
                     - doctrine_ping_connection
+            billing.bus:
+                middleware:
+                    - doctrine_ping_connection
 
         transports:
             async: '%env(MESSENGER_TRANSPORT_DSN)%'
+            # Exactly one consumer: two refreshes of one subscription never run at once (ADR 0037).
+            stripe_events:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                options:
+                    exchange:
+                        name: stripe_events
+                    queues:
+                        stripe_events: ~
+                retry_strategy:
+                    max_retries: 3
+                    delay: 30000
+                    multiplier: 4
             failed: 'doctrine://default?queue_name=failed&auto_setup=0'
 
         routing:
             App\Task\Contract\TaskAssigned: async
+            App\Billing\Message\RefreshSubscription: stripe_events
 
 when@test:
     framework:
         messenger:
             transports:
                 async: 'in-memory://'
+                stripe_events: 'in-memory://'

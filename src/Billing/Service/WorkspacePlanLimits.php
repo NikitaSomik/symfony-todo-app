@@ -29,7 +29,7 @@ final readonly class WorkspacePlanLimits implements PlanLimits
 
     public function ensureCanCreateTeamWorkspace(array $ownedTeamWorkspaceIds): void
     {
-        $onFree = $this->subscriptions->countOnFree($ownedTeamWorkspaceIds);
+        $onFree = $this->subscriptions->countWorkspacesOnFree($ownedTeamWorkspaceIds);
 
         if ($onFree >= Plan::TEAM_WORKSPACES_ON_FREE) {
             throw PlanLimitExceededException::forTeamWorkspaces($onFree);

@@ -59,6 +59,10 @@ The rules it enforces now:
   [0031](docs/adr/0031-billing-on-stripe-by-plan-tiers.md)). A new page closes the
   workspace's other open ones, so a page left open in another tab can no longer be paid
   ([0033](docs/adr/0033-a-workspace-has-one-open-checkout-page.md)).
+- **The plan follows Stripe, not the event.** Every webhook makes the application ask
+  Stripe for the subscription again, one event at a time, so a late or repeated event
+  cannot roll the plan back; a plan counts once it is paid, and every member sees it at
+  `GET /workspaces/{id}/billing` ([0037](docs/adr/0037-a-stripe-webhook-is-a-signal-to-fetch-the-subscription-again.md)).
 
 What comes next ([roadmap](docs/roadmap.md)): review by someone other than the assignee
 and a limit on work in progress; then deadlines with consequences.

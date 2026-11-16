@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Billing\Stripe;
 
 use App\Billing\Enum\Plan;
+use App\Billing\Enum\SubscriptionStatus;
 use App\Billing\Exception\PaymentProviderUnavailableException;
 use App\Billing\Stripe\StripePaymentProvider;
 use App\Tests\Support\FakeStripeHttp;
@@ -463,6 +464,142 @@ final class StripePaymentProviderTest extends TestCase
         self::assertSame(
             ['customer_id' => 'cus_workspace', 'session_id' => 'cs_open', 'stripe_request_id' => 'req_expire'],
             $this->onlyRecord(Level::Info, 'Stripe checkout page closed')->context,
+        );
+    }
+
+    /** @param string|array<string, string> $customer an id, or the customer expanded */
+    private function stripeHasSubscription(string $status = 'active', ?string $lookupKey = 'team', string|array $customer = 'cus_workspace'): void
+    {
+        $this->stripe->subscriptionsById['sub_paid'] = [
+            'id' => 'sub_paid',
+            'object' => 'subscription',
+            'customer' => $customer,
+            'status' => $status,
+            'metadata' => ['workspace_id' => self::WORKSPACE_ID],
+            'items' => [
+                'object' => 'list',
+                'data' => [['id' => 'si_paid', 'object' => 'subscription_item', 'price' => ['id' => 'price_paid', 'object' => 'price', 'lookup_key' => $lookupKey]]],
+                'has_more' => false,
+                'url' => '/v1/subscription_items',
+            ],
+        ];
+    }
+
+    #[Test]
+    public function aSubscriptionShouldBeFetchedByItsIdWithItsCustomerPlanAndStatus(): void
+    {
+        $this->stripeHasSubscription();
+
+        $subscription = $this->provider()->fetchSubscription('sub_paid');
+
+        self::assertSame(1, $this->stripe->countSentTo('/v1/subscriptions/sub_paid'));
+        self::assertSame('sub_paid', $subscription->id);
+        self::assertSame('cus_workspace', $subscription->customerId);
+        self::assertSame(Plan::TEAM, $subscription->plan);
+        self::assertSame(SubscriptionStatus::ACTIVE, $subscription->status);
+    }
+
+    #[Test]
+    #[TestWith(['active', SubscriptionStatus::ACTIVE])]
+    #[TestWith(['past_due', SubscriptionStatus::GRACE])]
+    #[TestWith(['unpaid', SubscriptionStatus::SUSPENDED])]
+    #[TestWith(['paused', SubscriptionStatus::SUSPENDED])]
+    #[TestWith(['canceled', SubscriptionStatus::CANCELED])]
+    #[TestWith(['incomplete_expired', SubscriptionStatus::CANCELED])]
+    #[TestWith(['incomplete', SubscriptionStatus::PENDING])]
+    public function stripesStatusShouldBecomeOurs(string $stripeStatus, SubscriptionStatus $expected): void
+    {
+        $this->stripeHasSubscription(status: $stripeStatus);
+
+        self::assertSame($expected, $this->provider()->fetchSubscription('sub_paid')->status);
+    }
+
+    #[Test]
+    public function aStatusWeDoNotSellShouldBeOurError(): void
+    {
+        $this->stripeHasSubscription(status: 'trialing');
+
+        $this->expectException(\UnexpectedValueException::class);
+        $this->expectExceptionMessage('The Stripe subscription sub_paid has the status "trialing", which we do not sell.');
+
+        $this->provider()->fetchSubscription('sub_paid');
+    }
+
+    #[Test]
+    #[TestWith(['team', Plan::TEAM])]
+    #[TestWith(['business', Plan::BUSINESS])]
+    public function thePricesLookupKeyShouldBeThePlan(string $lookupKey, Plan $expected): void
+    {
+        $this->stripeHasSubscription(lookupKey: $lookupKey);
+
+        self::assertSame($expected, $this->provider()->fetchSubscription('sub_paid')->plan);
+    }
+
+    #[Test]
+    #[TestWith(['free'])]
+    #[TestWith(['enterprise'])]
+    #[TestWith([null])]
+    public function aLookupKeyThatIsNoPaidPlanShouldBeOurError(?string $lookupKey): void
+    {
+        $this->stripeHasSubscription(lookupKey: $lookupKey);
+
+        $this->expectException(\UnexpectedValueException::class);
+        $this->expectExceptionMessage('The price price_paid of the Stripe subscription sub_paid has no lookup key of a paid plan.');
+
+        $this->provider()->fetchSubscription('sub_paid');
+    }
+
+    #[Test]
+    public function anExpandedCustomerShouldGiveItsId(): void
+    {
+        $this->stripeHasSubscription(customer: ['id' => 'cus_workspace', 'object' => 'customer']);
+
+        self::assertSame('cus_workspace', $this->provider()->fetchSubscription('sub_paid')->customerId);
+    }
+
+    #[Test]
+    public function aStripeThatCannotBeReachedForASubscriptionShouldBeReportedAsUnavailable(): void
+    {
+        $this->stripe->failure = new ApiConnectionException('Could not connect to Stripe.');
+
+        $this->expectException(PaymentProviderUnavailableException::class);
+
+        $this->provider()->fetchSubscription('sub_paid');
+    }
+
+    #[Test]
+    #[TestWith([429])]
+    #[TestWith([503])]
+    public function aStripeThatIsBusyOrFailingForASubscriptionShouldBeReportedAsUnavailable(int $status): void
+    {
+        $this->stripe->status = $status;
+
+        $this->expectException(PaymentProviderUnavailableException::class);
+
+        $this->provider()->fetchSubscription('sub_paid');
+    }
+
+    #[Test]
+    public function aSubscriptionStripeDoesNotKnowShouldStayOurError(): void
+    {
+        $this->stripe->status = 404;
+
+        $this->expectException(InvalidRequestException::class);
+
+        $this->provider()->fetchSubscription('sub_unknown');
+    }
+
+    #[Test]
+    public function aFetchedSubscriptionShouldBeLoggedWithStripesRequestId(): void
+    {
+        $this->stripeHasSubscription(status: 'past_due');
+        $this->stripe->requestId = 'req_subscription';
+
+        $this->provider()->fetchSubscription('sub_paid');
+
+        self::assertSame(
+            ['subscription_id' => 'sub_paid', 'customer_id' => 'cus_workspace', 'plan' => 'team', 'stripe_status' => 'past_due', 'stripe_request_id' => 'req_subscription'],
+            $this->onlyRecord(Level::Info, 'Stripe subscription fetched')->context,
         );
     }
 

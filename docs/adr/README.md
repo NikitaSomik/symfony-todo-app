@@ -70,3 +70,4 @@ Statuses:
 | [0034](0034-meetings-run-in-a-separate-go-service.md) | Meetings run in a separate Go service, Meet, behind the same origin | accepted | 2026-11-16 |
 | [0035](0035-access-tokens-signed-with-rs256.md) | Access tokens are signed with RS256, so that Meet can verify them without minting them | accepted | 2026-11-14 |
 | [0036](0036-meet-asks-the-monolith-for-permissions-and-limits.md) | Meet asks the monolith, on an internal endpoint, what a user may do and what the plan allows | accepted | 2026-11-16 |
+| [0037](0037-a-stripe-webhook-is-a-signal-to-fetch-the-subscription-again.md) | A Stripe webhook is a signal: one consumer fetches the subscription again and is the only one to write it | proposed | 2026-11-16 |

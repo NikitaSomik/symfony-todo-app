@@ -23,6 +23,11 @@ class Payer
     ) {
     }
 
+    public function getWorkspaceId(): Uuid
+    {
+        return $this->workspaceId;
+    }
+
     public function getStripeCustomerId(): string
     {
         return $this->stripeCustomerId;
