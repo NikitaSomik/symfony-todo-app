@@ -6,7 +6,6 @@ namespace App\Workspace\Repository;
 
 use App\Workspace\Contract\WorkspaceAccess;
 use App\Workspace\Contract\WorkspacePermission;
-use App\Workspace\Contract\Workspaces;
 use App\Workspace\Entity\Membership;
 use App\Workspace\Entity\Workspace;
 use App\Workspace\Enum\WorkspaceRole;
@@ -19,16 +18,11 @@ use Symfony\Component\Uid\Uuid;
 /**
  * @extends ServiceEntityRepository<Workspace>
  */
-final class WorkspaceRepository extends ServiceEntityRepository implements WorkspaceAccess, Workspaces
+final class WorkspaceRepository extends ServiceEntityRepository implements WorkspaceAccess
 {
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Workspace::class);
-    }
-
-    public function exists(Uuid $workspaceId): bool
-    {
-        return $this->count(['id' => $workspaceId]) > 0;
     }
 
     public function countMembers(Uuid $workspaceId): int

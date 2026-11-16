@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Workspace;
 
 use App\Workspace\Contract\WorkspaceAccess;
-use App\Workspace\Contract\Workspaces;
 use App\Workspace\Repository\WorkspaceRepository;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
@@ -24,5 +23,4 @@ return static function (ContainerConfigurator $di): void {
             ]);
 
     $di->services()->alias(WorkspaceAccess::class, WorkspaceRepository::class);
-    $di->services()->alias(Workspaces::class, WorkspaceRepository::class);
 };

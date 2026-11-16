@@ -8,8 +8,8 @@ use App\Billing\Entity\Subscription;
 use App\Billing\Message\RefreshSubscription;
 use App\Billing\Payment\PaymentProvider;
 use App\Billing\Payment\ProviderSubscription;
+use App\Billing\Repository\PayerRepository;
 use App\Billing\Repository\SubscriptionRepository;
-use App\Workspace\Contract\Workspaces;
 use Doctrine\ORM\EntityManagerInterface;
 use Monolog\Attribute\WithMonologChannel;
 use Psr\Log\LoggerInterface;
@@ -22,7 +22,7 @@ final readonly class RefreshSubscriptionHandler
     public function __construct(
         private PaymentProvider $payments,
         private SubscriptionRepository $subscriptions,
-        private Workspaces $workspaces,
+        private PayerRepository $payers,
         private EntityManagerInterface $em,
         private LoggerInterface $logger,
     ) {
@@ -48,20 +48,22 @@ final readonly class RefreshSubscriptionHandler
 
     private function saveNewOrLogRefusal(ProviderSubscription $answer): void
     {
-        if (null === $answer->workspaceId || !$this->workspaces->exists($answer->workspaceId)) {
-            $this->logger->error('Stripe subscription names no workspace of ours', [
+        $workspaceId = $this->payers->findWorkspaceIdOfCustomer($answer->customerId);
+
+        if (null === $workspaceId) {
+            $this->logger->error('Stripe subscription of an unknown customer not written', [
                 'subscription_id' => $answer->id,
-                'workspace_id' => $answer->workspaceId?->toRfc4122(),
+                'customer_id' => $answer->customerId,
             ]);
 
             return;
         }
 
-        $current = $this->subscriptions->findNotCanceledOf($answer->workspaceId);
+        $current = $this->subscriptions->findNotCanceledOf($workspaceId);
 
         if (null !== $current) {
             $this->logger->error('Second Stripe subscription for a workspace not written', [
-                'workspace_id' => $answer->workspaceId->toRfc4122(),
+                'workspace_id' => $workspaceId->toRfc4122(),
                 'subscription_id' => $answer->id,
                 'current_subscription_id' => $current->getStripeSubscriptionId(),
             ]);
@@ -71,7 +73,7 @@ final readonly class RefreshSubscriptionHandler
 
         $this->em->persist(new Subscription(
             stripeSubscriptionId: $answer->id,
-            workspaceId: $answer->workspaceId,
+            workspaceId: $workspaceId,
             plan: $answer->plan,
             status: $answer->status,
         ));

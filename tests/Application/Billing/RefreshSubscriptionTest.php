@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Billing;
 
+use App\Billing\Entity\Payer;
 use App\Billing\Entity\Subscription;
 use App\Billing\Enum\Plan;
 use App\Billing\Enum\SubscriptionStatus;
@@ -24,7 +25,6 @@ use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\ReceivedStamp;
-use Symfony\Component\Uid\Uuid;
 
 final class RefreshSubscriptionTest extends ApiTestCase
 {
@@ -34,6 +34,10 @@ final class RefreshSubscriptionTest extends ApiTestCase
     {
         parent::setUp();
         $this->workspace = WorkspaceFactory::createOne();
+
+        $em = static::getContainer()->get('doctrine.orm.entity_manager');
+        $em->persist(new Payer(workspaceId: $this->workspace->getId(), stripeCustomerId: 'cus_workspace'));
+        $em->flush();
     }
 
     private function stripe(): PaymentProviderStub
@@ -46,19 +50,14 @@ final class RefreshSubscriptionTest extends ApiTestCase
         return static::getContainer()->get(SubscriptionRepository::class);
     }
 
-    private function stripeAnswers(string $subscriptionId, SubscriptionStatus $status, Plan $plan = Plan::TEAM, ?Uuid $workspaceId = null): void
+    private function stripeAnswers(string $subscriptionId, SubscriptionStatus $status, Plan $plan = Plan::TEAM, string $customerId = 'cus_workspace'): void
     {
         $this->stripe()->subscriptions[$subscriptionId] = new ProviderSubscription(
             id: $subscriptionId,
-            workspaceId: $workspaceId ?? $this->workspace->getId(),
+            customerId: $customerId,
             plan: $plan,
             status: $status,
         );
-    }
-
-    private function stripeAnswersWithoutWorkspace(string $subscriptionId): void
-    {
-        $this->stripe()->subscriptions[$subscriptionId] = new ProviderSubscription(id: $subscriptionId, workspaceId: null, plan: Plan::TEAM, status: SubscriptionStatus::ACTIVE);
     }
 
     /** As the worker does: the received stamp makes the bus handle the message instead of queueing it again. */
@@ -231,31 +230,17 @@ final class RefreshSubscriptionTest extends ApiTestCase
     }
 
     #[Test]
-    public function aSubscriptionWithoutAWorkspaceShouldBeLoggedAndDropped(): void
+    public function aSubscriptionOfACustomerWeDoNotKnowShouldBeLoggedAndNotWritten(): void
     {
-        $this->stripeAnswersWithoutWorkspace('sub_by_hand');
-
-        $this->deliver('sub_by_hand');
-
-        self::assertSame(0, $this->subscriptions()->count([]));
-        $errors = $this->billingErrors();
-        self::assertCount(1, $errors);
-        self::assertSame('Stripe subscription names no workspace of ours', $errors[0]->message);
-        self::assertSame(['subscription_id' => 'sub_by_hand', 'workspace_id' => null], $errors[0]->context);
-    }
-
-    #[Test]
-    public function aSubscriptionOfAWorkspaceThatDoesNotExistShouldBeLoggedAndDropped(): void
-    {
-        $missing = Uuid::v7();
-        $this->stripeAnswers('sub_elsewhere', SubscriptionStatus::ACTIVE, workspaceId: $missing);
+        $this->stripeAnswers('sub_elsewhere', SubscriptionStatus::ACTIVE, customerId: 'cus_elsewhere');
 
         $this->deliver('sub_elsewhere');
 
         self::assertSame(0, $this->subscriptions()->count([]));
         $errors = $this->billingErrors();
         self::assertCount(1, $errors);
-        self::assertSame(['subscription_id' => 'sub_elsewhere', 'workspace_id' => $missing->toRfc4122()], $errors[0]->context);
+        self::assertSame('Stripe subscription of an unknown customer not written', $errors[0]->message);
+        self::assertSame(['subscription_id' => 'sub_elsewhere', 'customer_id' => 'cus_elsewhere'], $errors[0]->context);
     }
 
     #[Test]

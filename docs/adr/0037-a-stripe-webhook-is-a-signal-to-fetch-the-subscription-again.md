@@ -64,8 +64,10 @@ Our handler writes one thing, the copy of the subscription, and sends nothing.
 
 - **`RefreshSubscriptionHandler` fetches the subscription from Stripe by its id** and
   writes what Stripe answers: the plan from its price's lookup key and the status mapped as
-  0031 says. The body of the event plays no part, so an event late, twice or out of order
-  leads to the same write.
+  0031 says. The workspace is the one whose payer is the subscription's customer, found in
+  `payers` by `stripe_customer_id`, as Laravel Cashier finds the billable by its Stripe id.
+  The body of the event plays no part, so an event late, twice or out of order leads to the
+  same write.
 - **One row per Stripe subscription.** `stripe_subscription_id` is its key and
   `workspace_id` an index; a partial unique index allows one subscription that is not
   `canceled` per workspace. A cancelled subscription keeps its row with the status
@@ -81,11 +83,11 @@ Our handler writes one thing, the copy of the subscription, and sends nothing.
   8 minutes**, then the message goes to `failed`. A listener of Messenger's
   `WorkerMessageFailedEvent` writes a `RefreshSubscription` that will not be retried to the
   `billing` log as an `error`, with the subscription's id.
-- **A subscription that names no workspace of ours** is logged as an error and dropped,
-  without retries. Our Checkout always sets `workspace_id`; the account still delivers
-  subscriptions it did not create, such as fixtures of `stripe trigger` in test mode, or one
-  of another environment that shares the test account and whose workspace is not in this
-  database.
+- **A subscription whose customer is not in `payers`** is logged as an error and not
+  written, without retries. Our Checkout opens every page for the payer's customer, so in
+  production it does not happen; the test account still delivers subscriptions we did not
+  create, such as fixtures of `stripe trigger` or those of another environment that shares
+  the account.
 - **A second subscription for a workspace whose subscription is not `canceled`** is not
   written; the `billing` log gets an error with both ids
   ([0033](0033-a-workspace-has-one-open-checkout-page.md)), and the partial unique index
@@ -132,6 +134,10 @@ Our handler writes one thing, the copy of the subscription, and sends nothing.
 - **A row lock with the transaction kept open across the call to Stripe.** It keeps a
   database connection for as long as Stripe takes, up to the 30-second timeout and its
   retry, against the rule of 0031.
+- **The workspace from the subscription's metadata.** Our Checkout sets `workspace_id`
+  there too, but metadata is a free field anyone with the account can edit, and the id
+  still has to be checked against Workspace through a contract of its own. `payers`
+  already pairs each customer with its workspace in our database.
 - **One row per workspace, overwritten by its next subscription.** Simpler to read, but the
   cancelled subscription and its Stripe id are lost.
 - **A plan during `pending`.** The customer gets the plan the moment the page closes, and

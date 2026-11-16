@@ -467,16 +467,15 @@ final class StripePaymentProviderTest extends TestCase
         );
     }
 
-    /**
-     * @param array<string, string> $metadata
-     */
-    private function stripeHasSubscription(string $status = 'active', ?string $lookupKey = 'team', array $metadata = ['workspace_id' => self::WORKSPACE_ID]): void
+    /** @param string|array<string, string> $customer an id, or the customer expanded */
+    private function stripeHasSubscription(string $status = 'active', ?string $lookupKey = 'team', string|array $customer = 'cus_workspace'): void
     {
         $this->stripe->subscriptionsById['sub_paid'] = [
             'id' => 'sub_paid',
             'object' => 'subscription',
+            'customer' => $customer,
             'status' => $status,
-            'metadata' => $metadata,
+            'metadata' => ['workspace_id' => self::WORKSPACE_ID],
             'items' => [
                 'object' => 'list',
                 'data' => [['id' => 'si_paid', 'object' => 'subscription_item', 'price' => ['id' => 'price_paid', 'object' => 'price', 'lookup_key' => $lookupKey]]],
@@ -487,7 +486,7 @@ final class StripePaymentProviderTest extends TestCase
     }
 
     #[Test]
-    public function aSubscriptionShouldBeFetchedByItsIdWithItsWorkspacePlanAndStatus(): void
+    public function aSubscriptionShouldBeFetchedByItsIdWithItsCustomerPlanAndStatus(): void
     {
         $this->stripeHasSubscription();
 
@@ -495,7 +494,7 @@ final class StripePaymentProviderTest extends TestCase
 
         self::assertSame(1, $this->stripe->countSentTo('/v1/subscriptions/sub_paid'));
         self::assertSame('sub_paid', $subscription->id);
-        self::assertEquals(Uuid::fromString(self::WORKSPACE_ID), $subscription->workspaceId);
+        self::assertSame('cus_workspace', $subscription->customerId);
         self::assertSame(Plan::TEAM, $subscription->plan);
         self::assertSame(SubscriptionStatus::ACTIVE, $subscription->status);
     }
@@ -551,13 +550,11 @@ final class StripePaymentProviderTest extends TestCase
     }
 
     #[Test]
-    #[TestWith([[]])]
-    #[TestWith([['workspace_id' => 'not-a-uuid']])]
-    public function aSubscriptionThatNamesNoWorkspaceShouldComeWithoutOne(array $metadata): void
+    public function anExpandedCustomerShouldGiveItsId(): void
     {
-        $this->stripeHasSubscription(metadata: $metadata);
+        $this->stripeHasSubscription(customer: ['id' => 'cus_workspace', 'object' => 'customer']);
 
-        self::assertNull($this->provider()->fetchSubscription('sub_paid')->workspaceId);
+        self::assertSame('cus_workspace', $this->provider()->fetchSubscription('sub_paid')->customerId);
     }
 
     #[Test]
@@ -601,7 +598,7 @@ final class StripePaymentProviderTest extends TestCase
         $this->provider()->fetchSubscription('sub_paid');
 
         self::assertSame(
-            ['subscription_id' => 'sub_paid', 'workspace_id' => self::WORKSPACE_ID, 'plan' => 'team', 'stripe_status' => 'past_due', 'stripe_request_id' => 'req_subscription'],
+            ['subscription_id' => 'sub_paid', 'customer_id' => 'cus_workspace', 'plan' => 'team', 'stripe_status' => 'past_due', 'stripe_request_id' => 'req_subscription'],
             $this->onlyRecord(Level::Info, 'Stripe subscription fetched')->context,
         );
     }

@@ -160,12 +160,12 @@ final readonly class StripePaymentProvider implements PaymentProvider
             throw $exception;
         }
 
-        $workspaceId = self::workspaceIdOf($subscription);
+        $customerId = self::customerIdOf($subscription);
         $plan = self::planOf($subscription);
 
         $this->logger->info('Stripe subscription fetched', [
             'subscription_id' => $subscription->id,
-            'workspace_id' => $workspaceId?->toRfc4122(),
+            'customer_id' => $customerId,
             'plan' => $plan->value,
             'stripe_status' => $subscription->status,
             'stripe_request_id' => self::requestIdOf($subscription),
@@ -173,7 +173,7 @@ final readonly class StripePaymentProvider implements PaymentProvider
 
         return new ProviderSubscription(
             id: $subscription->id,
-            workspaceId: $workspaceId,
+            customerId: $customerId,
             plan: $plan,
             status: self::statusOf($subscription),
         );
@@ -289,15 +289,11 @@ final readonly class StripePaymentProvider implements PaymentProvider
         return $prices->data[0]->id;
     }
 
-    private static function workspaceIdOf(Subscription $subscription): ?Uuid
+    private static function customerIdOf(Subscription $subscription): string
     {
-        $workspaceId = $subscription->metadata['workspace_id'] ?? null;
+        $customer = $subscription->customer;
 
-        if (!is_string($workspaceId) || !Uuid::isValid($workspaceId)) {
-            return null;
-        }
-
-        return Uuid::fromString($workspaceId);
+        return is_string($customer) ? $customer : $customer->id;
     }
 
     private static function planOf(Subscription $subscription): Plan
