@@ -69,7 +69,7 @@ final readonly class StripePaymentProvider implements PaymentProvider
         $this->logger->info('Stripe customer created', [
             'workspace_id' => $workspaceId->toRfc4122(),
             'customer_id' => $customer->id,
-            'stripe_request_id' => self::requestIdOf($customer),
+            'stripe_request_id' => $this->requestIdOf($customer),
         ]);
 
         return $customer->id;
@@ -137,7 +137,7 @@ final readonly class StripePaymentProvider implements PaymentProvider
             'customer_id' => $customerId,
             'session_id' => $session->id,
             'plan' => $plan->value,
-            'stripe_request_id' => self::requestIdOf($session),
+            'stripe_request_id' => $this->requestIdOf($session),
         ]);
 
         return new CheckoutPage(
@@ -160,22 +160,22 @@ final readonly class StripePaymentProvider implements PaymentProvider
             throw $exception;
         }
 
-        $customerId = self::customerIdOf($subscription);
-        $plan = self::planOf($subscription);
+        $customerId = $this->customerIdOf($subscription);
+        $plan = $this->planOf($subscription);
 
         $this->logger->info('Stripe subscription fetched', [
             'subscription_id' => $subscription->id,
             'customer_id' => $customerId,
             'plan' => $plan->value,
             'stripe_status' => $subscription->status,
-            'stripe_request_id' => self::requestIdOf($subscription),
+            'stripe_request_id' => $this->requestIdOf($subscription),
         ]);
 
         return new ProviderSubscription(
             id: $subscription->id,
             customerId: $customerId,
             plan: $plan,
-            status: self::statusOf($subscription),
+            status: $this->statusOf($subscription),
         );
     }
 
@@ -218,7 +218,7 @@ final readonly class StripePaymentProvider implements PaymentProvider
                         'session_id' => $sessionId,
                         'status' => $session->status,
                         'refused_request_id' => $exception->getRequestId(),
-                        'stripe_request_id' => self::requestIdOf($session),
+                        'stripe_request_id' => $this->requestIdOf($session),
                     ]);
 
                     return;
@@ -237,7 +237,7 @@ final readonly class StripePaymentProvider implements PaymentProvider
         $this->logger->info('Stripe checkout page closed', [
             'customer_id' => $customerId,
             'session_id' => $sessionId,
-            'stripe_request_id' => self::requestIdOf($session),
+            'stripe_request_id' => $this->requestIdOf($session),
         ]);
     }
 
@@ -289,14 +289,14 @@ final readonly class StripePaymentProvider implements PaymentProvider
         return $prices->data[0]->id;
     }
 
-    private static function customerIdOf(Subscription $subscription): string
+    private function customerIdOf(Subscription $subscription): string
     {
         $customer = $subscription->customer;
 
         return is_string($customer) ? $customer : $customer->id;
     }
 
-    private static function planOf(Subscription $subscription): Plan
+    private function planOf(Subscription $subscription): Plan
     {
         $item = $subscription->items->data[0] ?? throw new \LogicException(sprintf('The Stripe subscription %s has no item.', $subscription->id));
         $price = $item->price;
@@ -309,7 +309,7 @@ final readonly class StripePaymentProvider implements PaymentProvider
         return $plan;
     }
 
-    private static function statusOf(Subscription $subscription): SubscriptionStatus
+    private function statusOf(Subscription $subscription): SubscriptionStatus
     {
         return match ($subscription->status) {
             Subscription::STATUS_ACTIVE => SubscriptionStatus::ACTIVE,
@@ -349,7 +349,7 @@ final readonly class StripePaymentProvider implements PaymentProvider
         }
     }
 
-    private static function requestIdOf(StripeObject $object): ?string
+    private function requestIdOf(StripeObject $object): ?string
     {
         $response = $object->getLastResponse();
 
