@@ -81,8 +81,11 @@ Our handler writes one thing, the copy of the subscription, and sends nothing.
   8 minutes**, then the message goes to `failed`. A listener of Messenger's
   `WorkerMessageFailedEvent` writes a `RefreshSubscription` that will not be retried to the
   `billing` log as an `error`, with the subscription's id.
-- **A subscription that names no workspace of ours** (created by hand in the Dashboard, its
-  metadata missing) is logged as an error and dropped, without retries.
+- **A subscription that names no workspace of ours** is logged as an error and dropped,
+  without retries. Our Checkout always sets `workspace_id`; the account still delivers
+  subscriptions it did not create, such as fixtures of `stripe trigger` in test mode, or one
+  of another environment that shares the test account and whose workspace is not in this
+  database.
 - **A second subscription for a workspace whose subscription is not `canceled`** is not
   written; the `billing` log gets an error with both ids
   ([0033](0033-a-workspace-has-one-open-checkout-page.md)), and the partial unique index

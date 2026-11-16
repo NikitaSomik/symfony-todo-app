@@ -12,7 +12,7 @@ final readonly class ProviderSubscription
 {
     public function __construct(
         public string $id,
-        /** Null when the subscription names no workspace, such as one created by hand in the provider's dashboard. */
+        /** Null when the subscription was not created by our Checkout, such as one from `stripe trigger` in test mode. */
         public ?Uuid $workspaceId,
         public Plan $plan,
         public SubscriptionStatus $status,
