@@ -70,6 +70,7 @@ and a limit on work in progress; then deadlines with consequences.
 | How is the code organised? | Modules that own their slice end to end and register themselves | [0001](docs/adr/0001-feature-based-modular-monolith.md) |
 | How does a browser stay logged in? | Short access token and rotating refresh token, both in HttpOnly cookies; logout revokes the session | [0004](docs/adr/0004-access-token-in-httponly-cookie.md), [0005](docs/adr/0005-revocable-sessions.md) |
 | Who can check an access token? | Anyone with the public key can verify its signature, not whether it was logged out; only the monolith holds the private key that signs it (RS256) | [0035](docs/adr/0035-access-tokens-signed-with-rs256.md) |
+| Where do video meetings run? | In Meet, a Go service of its own behind the same nginx: `/api/v1/meetings` goes to it with the browser's cookie; it verifies the token itself and asks the monolith, on an endpoint nginx keeps inside, what the member may do and what the plan allows | [0034](docs/adr/0034-meetings-run-in-a-separate-go-service.md), [0036](docs/adr/0036-meet-asks-the-monolith-for-permissions-and-limits.md) |
 | How does a failure reach the client? | Exceptions mapped to statuses in configuration, rendered by a serializer normalizer — after a first design that did not hold | [0006](docs/adr/0006-errors-rendered-by-exception-subscriber.md) → [0007](docs/adr/0007-exception-mapping-and-error-normalizer.md) |
 | How far does the API follow JSON:API? | Responses and query parameters do, request bodies stay plain JSON — full compliance was built on a branch and measured | [0008](docs/adr/0008-json-api-responses-plain-json-requests.md) |
 | What is logged? | Per request: buffered quietly, written on failure, tagged with request and user ids | [0009](docs/adr/0009-production-logging.md) |
@@ -174,6 +175,25 @@ which git ignores ([0035](docs/adr/0035-access-tokens-signed-with-rs256.md)).
 
 The OpenAPI description is in [docs/openapi.json](docs/openapi.json); `make generate-openapi`
 regenerates it.
+
+### With meetings
+
+Video meetings run in [go-meet-service](https://github.com/NikitaSomik/go-meet-service),
+which describes how Meet, its database and LiveKit run. The two stacks meet on this one's
+network, `todo-app-network`: nginx sends `/api/v1/meetings` to the `meet` container there
+and everything else to PHP ([0034](docs/adr/0034-meetings-run-in-a-separate-go-service.md)).
+`/internal` answers `404` on the published port; Meet reaches it on port 8080 of nginx,
+which only the containers see ([0036](docs/adr/0036-meet-asks-the-monolith-for-permissions-and-limits.md)).
+
+Start this stack first, then Meet's from its repository, checked out beside this one, as
+its README says. The service token goes to `.env.local` here, and the same value to Meet's:
+
+```sh
+echo "MEET_SERVICE_TOKEN=$(openssl rand -hex 32)" >> .env.local
+```
+
+Without Meet, `/api/v1/meetings` answers `502`. Stop Meet first: this stack's network cannot
+be removed while `meet` is on it.
 
 Mail sent in development goes to Mailpit and never leaves the machine: read it at
 <http://127.0.0.1:8025>.

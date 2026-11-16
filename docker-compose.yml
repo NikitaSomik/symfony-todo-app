@@ -108,4 +108,5 @@ volumes:
 
 networks:
   todo-app-network:
+    name: todo-app-network
     driver: bridge

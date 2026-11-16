@@ -1,8 +1,8 @@
 # 0034. Meetings run in a separate Go service, Meet, behind the same origin
 
-- Status: proposed
-- Date: YYYY-MM-DD — when the decision reached `main`, taken from git history
-- Implemented in: #PR
+- Status: accepted
+- Date: 2026-11-16
+- Implemented in: #138
 
 ## Context
 
@@ -35,6 +35,9 @@ how many and for how long, and keeps track of the meetings that ran.
 - **Meet keeps its data in its own database**, `meet`, on the same PostgreSQL server, under
   its own user with no grant on the monolith's tables. It refers to users and workspaces
   by id, without a foreign key, as modules do ([0018](0018-modules-meet-through-contracts.md)).
+  *Extended on 2026-11-16, in #138: in the docker compose stack, Meet's database runs in
+  Meet's own PostgreSQL container, started from `go-meet-service`; the two stacks share
+  only a network.*
 - **Meet verifies the user's access token itself** ([0035](0035-access-tokens-signed-with-rs256.md))
   **and asks the monolith what the user may do** ([0036](0036-meet-asks-the-monolith-for-permissions-and-limits.md)).
 - **A decision that changes the monolith is recorded here; one inside Meet is recorded in

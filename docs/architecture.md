@@ -48,11 +48,23 @@ flowchart LR
         mq[[RabbitMQ 4]]
     end
 
+    subgraph meetsystem [Meet, go-meet-service]
+        meet[Meet<br/>Go]
+        meetdb[(PostgreSQL 18<br/>database meet)]
+        livekit[LiveKit<br/>media server]
+    end
+
     mail[Mail server]
     stripe[Stripe API]
 
     client -->|HTTP, cookies| nginx
     nginx -->|FastCGI| app
+    nginx -->|/api/v1/meetings| meet
+    meet -->|/internal, port 8080 of nginx,<br/>with its service token: what a member<br/>may do, what the plan allows| nginx
+    meet -->|meetings| meetdb
+    meet -->|opens and closes rooms| livekit
+    livekit -->|signed webhook:<br/>a room has finished| meet
+    client -->|WebRTC, with the LiveKit<br/>token Meet issued| livekit
     app -->|tasks, users, refresh tokens,<br/>audit log, full-text search,<br/>workspaces' Stripe customers| db
     app -->|JWT blocklist, rate-limit counters,<br/>Stripe price ids, query results<br/>in production| redis
     app -->|events, after the commit| mq
@@ -67,6 +79,18 @@ the request does not wait for. A module announces a fact only after its transact
 ([0023](adr/0023-facts-announced-after-the-commit.md)); the facts with a reaction in the
 worker go to RabbitMQ, today only `TaskAssigned`. A message that still fails after its
 retries is kept in PostgreSQL.
+
+Video meetings run in a second service, Meet, behind the same nginx and origin, so the
+browser's `access_token` cookie reaches it without a second login
+([0034](adr/0034-meetings-run-in-a-separate-go-service.md)). nginx sends every path under
+`/api/v1/meetings` to Meet and never to PHP. Meet verifies the token with the public key
+([0035](adr/0035-access-tokens-signed-with-rs256.md)) and asks the monolith what the member
+may do and what the plan allows, on `/internal`
+([0036](adr/0036-meet-asks-the-monolith-for-permissions-and-limits.md)). nginx answers
+`/internal` only on port 8080, which docker compose does not publish; on the public port it
+is a `404`. Audio and video go between the browsers and LiveKit and never pass through
+nginx, Meet or PHP. Meet, its PostgreSQL and LiveKit are started from Meet's repository;
+only `meet` joins this stack's network, so that nginx finds it.
 
 One database. PostgreSQL also serves the search
 ([0013](adr/0013-task-search-postgresql-full-text.md)). Redis holds short-lived data: the
