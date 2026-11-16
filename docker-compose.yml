@@ -35,7 +35,7 @@ services:
   worker-stripe-events:
     extends:
       service: app
-    command: ["php", "bin/console", "messenger:consume", "stripe_events", "--time-limit=3600", "--memory-limit=128M"]
+    command: ["php", "bin/console", "messenger:consume", "stripe_events", "--bus=billing.bus", "--time-limit=3600", "--memory-limit=128M"]
     environment:
       XDEBUG_MODE: "off"
 

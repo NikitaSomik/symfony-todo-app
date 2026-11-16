@@ -38,11 +38,6 @@ class Subscription
         return $this->stripeSubscriptionId;
     }
 
-    public function getWorkspaceId(): Uuid
-    {
-        return $this->workspaceId;
-    }
-
     public function getPlan(): Plan
     {
         return $this->plan;
