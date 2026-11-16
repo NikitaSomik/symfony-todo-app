@@ -14,7 +14,6 @@ framework:
                 middleware:
                     # The worker keeps its connection for hours; a database or proxy may have closed it.
                     - doctrine_ping_connection
-            # Billing's own messages, handled by a worker that runs for hours as well.
             billing.bus:
                 middleware:
                     - doctrine_ping_connection

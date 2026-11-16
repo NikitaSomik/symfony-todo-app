@@ -8,7 +8,6 @@ use App\Billing\Enum\Plan;
 use App\Billing\Enum\SubscriptionStatus;
 use Symfony\Component\Uid\Uuid;
 
-/** A subscription as the payment provider answers it now. */
 final readonly class ProviderSubscription
 {
     public function __construct(

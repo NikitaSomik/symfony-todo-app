@@ -12,7 +12,6 @@ enum SubscriptionStatus: string
     case SUSPENDED = 'suspended';
     case CANCELED = 'canceled';
 
-    /** A plan is had once it is paid, and kept while Stripe retries a failed charge. */
     public function grantsPlan(): bool
     {
         return match ($this) {

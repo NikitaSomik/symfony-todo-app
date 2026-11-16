@@ -289,7 +289,6 @@ final readonly class StripePaymentProvider implements PaymentProvider
         return $prices->data[0]->id;
     }
 
-    /** Set on the subscription when its page is opened; a subscription created by hand in the Dashboard has none. */
     private static function workspaceIdOf(Subscription $subscription): ?Uuid
     {
         $workspaceId = $subscription->metadata['workspace_id'] ?? null;
@@ -301,7 +300,6 @@ final readonly class StripePaymentProvider implements PaymentProvider
         return Uuid::fromString($workspaceId);
     }
 
-    /** A plan is sold as one price, found by the lookup key it shares with the plan; the price of a subscription is read back the same way. */
     private static function planOf(Subscription $subscription): Plan
     {
         $item = $subscription->items->data[0] ?? throw new \LogicException(sprintf('The Stripe subscription %s has no item.', $subscription->id));

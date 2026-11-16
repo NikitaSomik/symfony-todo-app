@@ -14,9 +14,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Monolog\Attribute\WithMonologChannel;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
-use Symfony\Component\Uid\Uuid;
 
-/** The only writer of the copy of a subscription: it writes what Stripe answers now, never what an event said (ADR 0037). */
 #[AsMessageHandler(bus: 'billing.bus')]
 #[WithMonologChannel('billing')]
 final readonly class RefreshSubscriptionHandler
@@ -32,7 +30,7 @@ final readonly class RefreshSubscriptionHandler
 
     public function __invoke(RefreshSubscription $message): void
     {
-        // Outside the transaction: Stripe may take up to its timeout to answer.
+        // Not in the transaction: it would hold a connection for as long as Stripe takes to answer.
         $answer = $this->payments->fetchSubscription($message->stripeSubscriptionId);
 
         $this->em->wrapInTransaction(function () use ($answer): void {
@@ -44,11 +42,11 @@ final readonly class RefreshSubscriptionHandler
                 return;
             }
 
-            $this->saveNewOrRefuse($answer);
+            $this->saveNewOrLogRefusal($answer);
         });
     }
 
-    private function saveNewOrRefuse(ProviderSubscription $answer): void
+    private function saveNewOrLogRefusal(ProviderSubscription $answer): void
     {
         if (null === $answer->workspaceId || !$this->workspaces->exists($answer->workspaceId)) {
             $this->logger->error('Stripe subscription names no workspace of ours', [
@@ -59,7 +57,15 @@ final readonly class RefreshSubscriptionHandler
             return;
         }
 
-        if ($this->refusedAsSecond($answer->id, $answer->workspaceId)) {
+        $current = $this->subscriptions->findNotCanceledOf($answer->workspaceId);
+
+        if (null !== $current) {
+            $this->logger->error('Second Stripe subscription for a workspace not written', [
+                'workspace_id' => $answer->workspaceId->toRfc4122(),
+                'subscription_id' => $answer->id,
+                'current_subscription_id' => $current->getStripeSubscriptionId(),
+            ]);
+
             return;
         }
 
@@ -69,23 +75,5 @@ final readonly class RefreshSubscriptionHandler
             plan: $answer->plan,
             status: $answer->status,
         ));
-    }
-
-    /** One open checkout page per workspace keeps this rare; the second payment is refunded by hand (ADR 0033). */
-    private function refusedAsSecond(string $subscriptionId, Uuid $workspaceId): bool
-    {
-        $current = $this->subscriptions->findNotCanceledOf($workspaceId);
-
-        if (null === $current) {
-            return false;
-        }
-
-        $this->logger->error('Second Stripe subscription for a workspace not written', [
-            'workspace_id' => $workspaceId->toRfc4122(),
-            'subscription_id' => $subscriptionId,
-            'current_subscription_id' => $current->getStripeSubscriptionId(),
-        ]);
-
-        return true;
     }
 }

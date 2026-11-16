@@ -10,7 +10,6 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Messenger\Event\WorkerMessageFailedEvent;
 
-/** Until the nightly reconciliation exists, this error is the only trace of a customer who paid and did not get the plan. */
 #[AsEventListener]
 #[WithMonologChannel('billing')]
 final readonly class RefreshFailureListener
