@@ -1,8 +1,8 @@
 # 0037. A Stripe webhook is a signal: one consumer fetches the subscription again and is the only one to write it
 
 - Status: proposed
-- Date: YYYY-MM-DD
-- Implemented in: #PR
+- Date: 2026-11-16
+- Implemented in: #139
 
 ## Context
 
