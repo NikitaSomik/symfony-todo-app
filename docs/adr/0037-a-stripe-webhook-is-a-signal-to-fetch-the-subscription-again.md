@@ -51,6 +51,9 @@ Our handler writes one thing, the copy of the subscription, and sends nothing.
   headers: when our secret is wrong the body is a real customer's data, and otherwise it is
   whatever a stranger chose to send. Stripe's Workbench shows the body and our answer of
   every delivery.
+- **An empty `STRIPE_WEBHOOK_SECRET` answers `500`** without details and writes a
+  `critical` to `billing`. The fault is our configuration, not the sender's, so it does not
+  hide among refused signatures, and Stripe keeps delivering until the secret is set.
 - **The endpoint takes only the subscription's id from the event** —
   `data.object.subscription` of `checkout.session.completed`, `data.object.id` of
   `customer.subscription.created`, `…updated` and `…deleted` — dispatches
@@ -132,6 +135,9 @@ Our handler writes one thing, the copy of the subscription, and sends nothing.
   placed before the API's, and a mistake in that order answers Stripe `401`. Under
   `/api/v1` it would also land in the clients' OpenAPI, follow JSON:API (0008) and carry
   our API's version, while its format is set by Stripe's API version.
+- **Refusing to start without `STRIPE_WEBHOOK_SECRET`.** The mistake shows before the
+  first event, but every environment then needs the secret, a developer's who never
+  receives webhooks included; `STRIPE_SECRET_KEY` is not required at start either.
 - **A row lock with the transaction kept open across the call to Stripe.** It keeps a
   database connection for as long as Stripe takes, up to the 30-second timeout and its
   retry, against the rule of 0031.
