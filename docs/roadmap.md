@@ -223,7 +223,7 @@ Each decision, with the alternatives that lost and what it costs, is an
 - [x] `host_meetings` for owners and members; 40 / 120 / 240 minutes a meeting on Free / Team / Business
 - [x] An internal endpoint that answers Meet what a member may do and what the plan allows ([ADR 0036](adr/0036-meet-asks-the-monolith-for-permissions-and-limits.md))
 - [x] Meet: a member starts a meeting, reads it, joins it with a LiveKit token and ends it; it also ends at its limit of minutes and when its room finishes
-- [x] nginx routes `/api/v1/meetings` to Meet and keeps `/internal` inside; one docker compose stack runs both
+- [x] nginx routes `/api/v1/meetings` to Meet and keeps `/internal` inside; Meet's compose joins this one's network
 - [ ] Guests by link, meetings on a schedule, recording, a meeting linked to a task
 - [ ] A member who leaves the workspace or logs out is removed from a meeting in progress
 - [ ] Where LiveKit and TURN run beyond docker compose

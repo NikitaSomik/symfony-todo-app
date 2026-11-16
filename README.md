@@ -159,7 +159,7 @@ Every pull request that changes code runs, against a real PostgreSQL:
 
 ## Stack
 
-PHP 8.5 · Symfony 8.1 · Doctrine ORM · PostgreSQL 18 · Redis · RabbitMQ · Mailpit · Docker Compose · beside it, Meet (Go) and LiveKit
+PHP 8.5 · Symfony 8.1 · Doctrine ORM · PostgreSQL 18 · Redis · RabbitMQ · Mailpit · Docker Compose
 
 ## Quick start
 
@@ -179,28 +179,21 @@ regenerates it.
 ### With meetings
 
 Video meetings run in [go-meet-service](https://github.com/NikitaSomik/go-meet-service),
-checked out beside this repository. Meet, its database on the same PostgreSQL server and
-LiveKit are the `meet` profile of the same stack
-([0034](docs/adr/0034-meetings-run-in-a-separate-go-service.md)):
+which describes how Meet, its database and LiveKit run. The two stacks meet on this one's
+network, `todo-app-network`: nginx sends `/api/v1/meetings` to the `meet` container there
+and everything else to PHP ([0034](docs/adr/0034-meetings-run-in-a-separate-go-service.md)).
+`/internal` answers `404` on the published port; Meet reaches it on port 8080 of nginx,
+which only the containers see ([0036](docs/adr/0036-meet-asks-the-monolith-for-permissions-and-limits.md)).
+
+Start this stack first, then Meet's from its repository, checked out beside this one, as
+its README says. The service token goes to `.env.local` here, and the same value to Meet's:
 
 ```sh
-token=$(openssl rand -hex 32)
-echo "MEET_SERVICE_TOKEN=$token" >> .env.local
-{
-  echo "ACCESS_TOKEN_PUBLIC_KEY=\"$(cat config/jwt/public.pem)\""
-  echo "MONOLITH_SERVICE_TOKEN=$token"
-} > .env.meet.local
-docker compose --profile meet up -d --build
+echo "MEET_SERVICE_TOKEN=$(openssl rand -hex 32)" >> .env.local
 ```
 
-The monolith reads the service token from `.env.local` and Meet reads the same value, with
-the public key of access tokens, from `.env.meet.local`; git ignores both
-([0036](docs/adr/0036-meet-asks-the-monolith-for-permissions-and-limits.md)). nginx sends
-`/api/v1/meetings` to Meet and everything else to PHP. `/internal` answers `404` on the
-published port; Meet reaches it on port 8080 of nginx, which only the containers see. A
-browser reaches LiveKit at `ws://127.0.0.1:7880`. Without the profile, `make up` runs the
-monolith alone and `/api/v1/meetings` answers `502`. `make down` leaves the profile's
-containers running: `docker compose --profile meet down` stops them all.
+Without Meet, `/api/v1/meetings` answers `502`. Stop Meet first: this stack's network cannot
+be removed while `meet` is on it.
 
 Mail sent in development goes to Mailpit and never leaves the machine: read it at
 <http://127.0.0.1:8025>.

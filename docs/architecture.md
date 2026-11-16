@@ -46,7 +46,11 @@ flowchart LR
         db[(PostgreSQL 18)]
         redis[(Redis 7)]
         mq[[RabbitMQ 4]]
-        meet[Meet<br/>Go, go-meet-service]
+    end
+
+    subgraph meetsystem [Meet, go-meet-service]
+        meet[Meet<br/>Go]
+        meetdb[(PostgreSQL 18<br/>database meet)]
         livekit[LiveKit<br/>media server]
     end
 
@@ -57,7 +61,7 @@ flowchart LR
     nginx -->|FastCGI| app
     nginx -->|/api/v1/meetings| meet
     meet -->|/internal, port 8080 of nginx,<br/>with its service token: what a member<br/>may do, what the plan allows| nginx
-    meet -->|meetings, in a database<br/>and under a user of its own| db
+    meet -->|meetings| meetdb
     meet -->|opens and closes rooms| livekit
     livekit -->|signed webhook:<br/>a room has finished| meet
     client -->|WebRTC, with the LiveKit<br/>token Meet issued| livekit
@@ -85,10 +89,10 @@ may do and what the plan allows, on `/internal`
 ([0036](adr/0036-meet-asks-the-monolith-for-permissions-and-limits.md)). nginx answers
 `/internal` only on port 8080, which docker compose does not publish; on the public port it
 is a `404`. Audio and video go between the browsers and LiveKit and never pass through
-nginx, Meet or PHP.
+nginx, Meet or PHP. Meet, its PostgreSQL and LiveKit are started from Meet's repository;
+only `meet` joins this stack's network, so that nginx finds it.
 
-One database server. Meet's database, `meet`, is on it under a user with no grant on the
-monolith's tables. PostgreSQL also serves the search
+One database. PostgreSQL also serves the search
 ([0013](adr/0013-task-search-postgresql-full-text.md)). Redis holds short-lived data: the
 blocklist of logged-out access tokens, read on every authenticated request, the rate-limit
 counters, the id of each plan's Stripe price for an hour, and in production Doctrine's
