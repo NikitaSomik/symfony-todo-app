@@ -94,6 +94,14 @@ _Avoid_: quota, cap, seat limit
 A workspace's paid plan, as Stripe holds it and we keep a copy.
 _Avoid_: membership, contract
 
+**Subscription status**:
+Ours, mapped from Stripe's: pending (payment awaited), active, grace (a charge failed, Stripe retries), suspended, canceled.
+_Avoid_: state, payment status
+
+**Refresh (a subscription)**:
+Fetch the subscription from Stripe by its id and write our copy from Stripe's answer, never from the webhook's body.
+_Avoid_: sync, update (for this)
+
 **Payer**:
 The one who pays for a workspace: its customer in Stripe.
 _Avoid_: buyer (for the record), billing account
