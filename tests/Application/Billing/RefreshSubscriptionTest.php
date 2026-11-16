@@ -21,6 +21,7 @@ use Monolog\Level;
 use Monolog\LogRecord;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
+use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -28,6 +29,8 @@ use Symfony\Component\Messenger\Stamp\ReceivedStamp;
 
 final class RefreshSubscriptionTest extends ApiTestCase
 {
+    use ClockSensitiveTrait;
+
     private Workspace $workspace;
 
     protected function setUp(): void
@@ -122,6 +125,22 @@ final class RefreshSubscriptionTest extends ApiTestCase
         $row = $this->onlyRow();
         self::assertSame(Plan::TEAM, $row->getPlan());
         self::assertSame(SubscriptionStatus::ACTIVE, $row->getStatus());
+    }
+
+    #[Test]
+    public function eachRefreshShouldStampTheRowWithItsTime(): void
+    {
+        $this->stripeAnswers('sub_paid', SubscriptionStatus::PENDING);
+        static::mockTime('2026-11-16 10:00:00+00:00');
+        $this->deliver('sub_paid');
+
+        self::assertEquals(new \DateTimeImmutable('2026-11-16 10:00:00+00:00'), $this->onlyRow()->getUpdatedAt());
+
+        $this->stripeAnswers('sub_paid', SubscriptionStatus::ACTIVE);
+        static::mockTime('2026-11-16 10:05:00+00:00');
+        $this->deliver('sub_paid');
+
+        self::assertEquals(new \DateTimeImmutable('2026-11-16 10:05:00+00:00'), $this->onlyRow()->getUpdatedAt());
     }
 
     #[Test]

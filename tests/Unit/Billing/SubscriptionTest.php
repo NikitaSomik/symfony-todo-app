@@ -16,7 +16,7 @@ final class SubscriptionTest extends TestCase
 {
     private function subscription(Plan $plan, SubscriptionStatus $status): Subscription
     {
-        return new Subscription(stripeSubscriptionId: 'sub_test', workspaceId: Uuid::v7(), plan: $plan, status: $status);
+        return new Subscription(stripeSubscriptionId: 'sub_test', workspaceId: Uuid::v7(), plan: $plan, status: $status, updatedAt: new \DateTimeImmutable('2026-11-16 10:00:00+00:00'));
     }
 
     #[Test]
@@ -41,10 +41,11 @@ final class SubscriptionTest extends TestCase
     {
         $subscription = $this->subscription(Plan::TEAM, SubscriptionStatus::PENDING);
 
-        $subscription->refresh(Plan::BUSINESS, SubscriptionStatus::ACTIVE);
+        $subscription->refresh(Plan::BUSINESS, SubscriptionStatus::ACTIVE, at: new \DateTimeImmutable('2026-11-16 12:00:00+00:00'));
 
         self::assertSame(Plan::BUSINESS, $subscription->getPlan());
         self::assertSame(SubscriptionStatus::ACTIVE, $subscription->getStatus());
         self::assertSame(Plan::BUSINESS, $subscription->grantedPlan());
+        self::assertEquals(new \DateTimeImmutable('2026-11-16 12:00:00+00:00'), $subscription->getUpdatedAt());
     }
 }

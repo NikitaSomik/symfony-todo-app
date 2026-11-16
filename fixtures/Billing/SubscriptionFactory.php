@@ -27,6 +27,7 @@ final class SubscriptionFactory extends PersistentObjectFactory
             'workspaceId' => Uuid::v7(),
             'plan' => Plan::TEAM,
             'status' => SubscriptionStatus::ACTIVE,
+            'updatedAt' => new \DateTimeImmutable(),
         ];
     }
 }

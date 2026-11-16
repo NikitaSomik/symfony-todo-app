@@ -7,13 +7,13 @@ namespace App\Billing\Entity;
 use App\Billing\Enum\Plan;
 use App\Billing\Enum\SubscriptionStatus;
 use App\Billing\Repository\SubscriptionRepository;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: SubscriptionRepository::class)]
 #[ORM\Table(name: 'subscriptions')]
-#[ORM\Index(name: 'idx_subscriptions_workspace_id', columns: ['workspace_id'])]
 #[ORM\UniqueConstraint(name: 'uniq_subscriptions_workspace_id_not_canceled', columns: ['workspace_id'], options: ['where' => "((status)::text <> 'canceled'::text)"])]
 class Subscription
 {
@@ -30,6 +30,9 @@ class Subscription
 
         #[ORM\Column(length: 20, enumType: SubscriptionStatus::class)]
         private SubscriptionStatus $status,
+
+        #[ORM\Column(type: Types::DATETIMETZ_IMMUTABLE)]
+        private \DateTimeImmutable $updatedAt,
     ) {
     }
 
@@ -48,6 +51,11 @@ class Subscription
         return $this->status;
     }
 
+    public function getUpdatedAt(): \DateTimeImmutable
+    {
+        return $this->updatedAt;
+    }
+
     public function grantedPlan(): Plan
     {
         if ($this->status->grantsPlan()) {
@@ -57,9 +65,10 @@ class Subscription
         return Plan::FREE;
     }
 
-    public function refresh(Plan $plan, SubscriptionStatus $status): void
+    public function refresh(Plan $plan, SubscriptionStatus $status, \DateTimeImmutable $at): void
     {
         $this->plan = $plan;
         $this->status = $status;
+        $this->updatedAt = $at;
     }
 }

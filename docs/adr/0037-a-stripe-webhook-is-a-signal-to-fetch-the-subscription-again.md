@@ -68,10 +68,11 @@ Our handler writes one thing, the copy of the subscription, and sends nothing.
   `payers` by `stripe_customer_id`, as Laravel Cashier finds the billable by its Stripe id.
   The body of the event plays no part, so an event late, twice or out of order leads to the
   same write.
-- **One row per Stripe subscription.** `stripe_subscription_id` is its key and
-  `workspace_id` an index; a partial unique index allows one subscription that is not
-  `canceled` per workspace. A cancelled subscription keeps its row with the status
-  `canceled`, and a new one after it gets a row of its own.
+- **One row per Stripe subscription.** `stripe_subscription_id` is its key; a partial
+  unique index on `workspace_id` allows one subscription that is not `canceled` per
+  workspace, and serves every read of a workspace's plan. A cancelled subscription keeps
+  its row with the status `canceled`, and a new one after it gets a row of its own.
+  `updated_at` is the time of the last refresh.
 - **It is the only writer of the copy.** A page a customer returns to after paying reads
   the status; it does not write it.
 - **`RefreshSubscription` travels on a transport of its own, `stripe_events`, with exactly

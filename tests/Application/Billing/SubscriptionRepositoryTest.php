@@ -26,7 +26,7 @@ final class SubscriptionRepositoryTest extends KernelTestCase
     {
         /** @var EntityManagerInterface $em */
         $em = static::getContainer()->get(EntityManagerInterface::class);
-        $em->persist(new Subscription(stripeSubscriptionId: 'sub_'.Uuid::v7()->toBase58(), workspaceId: $workspaceId, plan: $plan, status: $status));
+        $em->persist(new Subscription(stripeSubscriptionId: 'sub_'.Uuid::v7()->toBase58(), workspaceId: $workspaceId, plan: $plan, status: $status, updatedAt: new \DateTimeImmutable()));
         $em->flush();
     }
 

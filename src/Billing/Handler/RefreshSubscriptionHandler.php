@@ -12,6 +12,7 @@ use App\Billing\Repository\PayerRepository;
 use App\Billing\Repository\SubscriptionRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Monolog\Attribute\WithMonologChannel;
+use Psr\Clock\ClockInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
@@ -24,6 +25,7 @@ final readonly class RefreshSubscriptionHandler
         private SubscriptionRepository $subscriptions,
         private PayerRepository $payers,
         private EntityManagerInterface $em,
+        private ClockInterface $clock,
         private LoggerInterface $logger,
     ) {
     }
@@ -37,7 +39,7 @@ final readonly class RefreshSubscriptionHandler
             $subscription = $this->subscriptions->find($answer->id);
 
             if (null !== $subscription) {
-                $subscription->refresh($answer->plan, $answer->status);
+                $subscription->refresh($answer->plan, $answer->status, $this->clock->now());
 
                 return;
             }
@@ -76,6 +78,7 @@ final readonly class RefreshSubscriptionHandler
             workspaceId: $workspaceId,
             plan: $answer->plan,
             status: $answer->status,
+            updatedAt: $this->clock->now(),
         ));
     }
 }
