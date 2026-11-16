@@ -7,6 +7,7 @@ namespace App\Tests\Support;
 use App\Billing\Enum\Plan;
 use App\Billing\Payment\CheckoutPage;
 use App\Billing\Payment\PaymentProvider;
+use App\Billing\Payment\ProviderSubscription;
 use Symfony\Component\Uid\Uuid;
 
 /** Stands in for Stripe: customers and pages that exist nowhere, and a record of what was asked. */
@@ -32,6 +33,12 @@ final class PaymentProviderStub implements PaymentProvider
 
     /** @var list<string> the provider's methods in the order they were called */
     public array $calls = [];
+
+    /** @var array<string, ProviderSubscription> what Stripe answers for a subscription, by its id */
+    public array $subscriptions = [];
+
+    /** @var list<string> */
+    public array $fetchedSubscriptions = [];
 
     public ?\Throwable $failure = null;
 
@@ -78,6 +85,15 @@ final class PaymentProviderStub implements PaymentProvider
         if (in_array($customerId, $this->paidWhileClosing, true)) {
             $this->subscribedCustomers[] = $customerId;
         }
+    }
+
+    public function fetchSubscription(string $subscriptionId): ProviderSubscription
+    {
+        $this->failIfAsked();
+        $this->calls[] = 'fetchSubscription';
+        $this->fetchedSubscriptions[] = $subscriptionId;
+
+        return $this->subscriptions[$subscriptionId] ?? throw new \LogicException(sprintf('The stub has no subscription %s.', $subscriptionId));
     }
 
     private function failIfAsked(): void

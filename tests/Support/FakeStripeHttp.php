@@ -20,6 +20,9 @@ final class FakeStripeHttp implements ClientInterface
     /** @var list<array{id: string, object: string, status: string}> */
     public array $subscriptions = [];
 
+    /** @var array<string, array<string, mixed>> subscriptions Stripe answers by their id, as it retrieves one */
+    public array $subscriptionsById = [];
+
     public ?string $checkoutUrl = 'https://checkout.stripe.com/c/pay/cs_test_page';
 
     /** @var array<string, string> the customer's Checkout sessions, by id, with their status */
@@ -124,6 +127,10 @@ final class FakeStripeHttp implements ClientInterface
 
         if (1 === preg_match('{^/v1/checkout/sessions/([^/]+)$}', $path, $matches)) {
             return $this->checkoutSession($matches[1]);
+        }
+
+        if ('get' === strtolower($method) && 1 === preg_match('{^/v1/subscriptions/([^/]+)$}', $path, $matches)) {
+            return $this->subscriptionsById[$matches[1]] ?? throw new \LogicException(sprintf('No subscription %s.', $matches[1]));
         }
 
         return match ([strtolower($method), $path]) {

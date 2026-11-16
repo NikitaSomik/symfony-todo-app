@@ -6,6 +6,7 @@ namespace App\Fixtures\Billing;
 
 use App\Billing\Entity\Subscription;
 use App\Billing\Enum\Plan;
+use App\Billing\Enum\SubscriptionStatus;
 use Symfony\Component\Uid\Uuid;
 use Zenstruck\Foundry\Persistence\PersistentObjectFactory;
 
@@ -21,6 +22,11 @@ final class SubscriptionFactory extends PersistentObjectFactory
 
     protected function defaults(): array|callable
     {
-        return ['workspaceId' => Uuid::v7(), 'plan' => Plan::TEAM];
+        return [
+            'stripeSubscriptionId' => 'sub_'.Uuid::v7()->toBase58(),
+            'workspaceId' => Uuid::v7(),
+            'plan' => Plan::TEAM,
+            'status' => SubscriptionStatus::ACTIVE,
+        ];
     }
 }

@@ -32,6 +32,13 @@ services:
     environment:
       XDEBUG_MODE: "off"
 
+  worker-stripe-events:
+    extends:
+      service: app
+    command: ["php", "bin/console", "messenger:consume", "stripe_events", "--time-limit=3600", "--memory-limit=128M"]
+    environment:
+      XDEBUG_MODE: "off"
+
   nginx:
     image: nginx:alpine
     working_dir: /var/www/app

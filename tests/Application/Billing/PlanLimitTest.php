@@ -6,6 +6,7 @@ namespace App\Tests\Application\Billing;
 
 use App\Auth\Entity\User;
 use App\Billing\Enum\Plan;
+use App\Billing\Enum\SubscriptionStatus;
 use App\Fixtures\Auth\UserFactory;
 use App\Fixtures\Billing\SubscriptionFactory;
 use App\Fixtures\Workspace\WorkspaceFactory;
@@ -28,7 +29,7 @@ final class PlanLimitTest extends ApiTestCase
     }
 
     /** Everyone but the owner is a viewer: viewers count toward the limit like anyone else. */
-    private function workspaceWithMembers(int $members, ?Plan $plan = null): Workspace
+    private function workspaceWithMembers(int $members, ?Plan $plan = null, SubscriptionStatus $status = SubscriptionStatus::ACTIVE): Workspace
     {
         $others = array_map(
             static fn (User $user): array => [$user, WorkspaceRole::VIEWER],
@@ -37,7 +38,7 @@ final class PlanLimitTest extends ApiTestCase
         $workspace = WorkspaceFactory::new()->withMembers($others)->create(['owner' => $this->owner]);
 
         if (null !== $plan) {
-            SubscriptionFactory::createOne(['workspaceId' => $workspace->getId(), 'plan' => $plan]);
+            SubscriptionFactory::createOne(['workspaceId' => $workspace->getId(), 'plan' => $plan, 'status' => $status]);
         }
 
         return $workspace;
@@ -156,5 +157,27 @@ final class PlanLimitTest extends ApiTestCase
         $this->post($this->route('api_workspace_create'), ['name' => 'Mobile team']);
 
         self::assertResponseStatusCodeSame(201);
+    }
+
+    #[Test]
+    public function aWorkspaceWhosePaymentIsAwaitedShouldKeepFreesMemberLimit(): void
+    {
+        $this->assertRefusedByThePlan($this->addSomeone($this->workspaceWithMembers(3, Plan::TEAM, SubscriptionStatus::PENDING)));
+    }
+
+    #[Test]
+    public function aWorkspaceInGraceShouldKeepItsPlansMemberLimit(): void
+    {
+        $this->addSomeone($this->workspaceWithMembers(3, Plan::TEAM, SubscriptionStatus::GRACE));
+
+        self::assertResponseStatusCodeSame(201);
+    }
+
+    #[Test]
+    public function aWorkspaceWhoseSubscriptionWasCancelledShouldCountOnFreeAgain(): void
+    {
+        $this->workspaceWithMembers(1, Plan::TEAM, SubscriptionStatus::CANCELED);
+
+        $this->assertRefusedByThePlan($this->post($this->route('api_workspace_create'), ['name' => 'Mobile team']));
     }
 }

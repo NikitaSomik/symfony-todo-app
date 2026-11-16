@@ -6,6 +6,7 @@ namespace App\Tests\Application\Workspace;
 
 use App\Auth\Entity\User;
 use App\Billing\Enum\Plan;
+use App\Billing\Enum\SubscriptionStatus;
 use App\Fixtures\Auth\UserFactory;
 use App\Fixtures\Billing\SubscriptionFactory;
 use App\Fixtures\Workspace\WorkspaceFactory;
@@ -105,6 +106,18 @@ final class MeetingAccessTest extends ApiTestCase
     public function limitsShouldFollowThePlanOfTheWorkspace(Plan $plan, int $participants, int $minutes): void
     {
         SubscriptionFactory::createOne(['workspaceId' => $this->workspace->getId(), 'plan' => $plan]);
+
+        $response = $this->asMeet()->meetingAccessOf($this->member);
+
+        self::assertSame(['participants' => $participants, 'minutes' => $minutes], $this->json($response)['limits']);
+    }
+
+    #[Test]
+    #[TestWith([SubscriptionStatus::GRACE, 50, 240])]
+    #[TestWith([SubscriptionStatus::PENDING, 3, 40])]
+    public function limitsShouldFollowWhatTheStatusOfTheSubscriptionGrants(SubscriptionStatus $status, int $participants, int $minutes): void
+    {
+        SubscriptionFactory::createOne(['workspaceId' => $this->workspace->getId(), 'plan' => Plan::BUSINESS, 'status' => $status]);
 
         $response = $this->asMeet()->meetingAccessOf($this->member);
 

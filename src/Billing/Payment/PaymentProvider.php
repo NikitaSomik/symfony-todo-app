@@ -20,4 +20,6 @@ interface PaymentProvider
     public function hasSubscription(string $customerId): bool;
 
     public function openCheckout(string $customerId, Uuid $workspaceId, Plan $plan): CheckoutPage;
+
+    public function fetchSubscription(string $subscriptionId): ProviderSubscription;
 }
