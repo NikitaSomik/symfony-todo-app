@@ -2,7 +2,7 @@
 
 - Status: proposed
 - Date: 2026-11-16
-- Implemented in: #139
+- Implemented in: #139, #140
 
 ## Context
 
