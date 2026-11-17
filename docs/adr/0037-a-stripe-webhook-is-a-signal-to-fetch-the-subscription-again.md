@@ -46,10 +46,9 @@ Our handler writes one thing, the copy of the subscription, and sends nothing.
   checked with `Stripe\Webhook::constructEvent` on the raw body and
   `STRIPE_WEBHOOK_SECRET`, with Stripe's tolerance of 300 seconds.
 - **A refused signature answers `400` without details.** The `billing` log gets a warning
-  with the reason (no header, outside the tolerance, no match), the timestamp of the
-  signature, the IP, the user agent and the size of the body, never the body or the
-  headers: when our secret is wrong the body is a real customer's data, and otherwise it is
-  whatever a stranger chose to send. Stripe's Workbench shows the body and our answer of
+  with the reason (no header, outside the tolerance, no match), the IP, the user agent and
+  the size of the body, never the body or the headers: when our secret is wrong the body is
+  a real customer's data, and otherwise it is whatever a stranger chose to send. Stripe's Workbench shows the body and our answer of
   every delivery.
 - **An empty `STRIPE_WEBHOOK_SECRET` answers `500`** without details and writes a
   `critical` to `billing`. The fault is our configuration, not the sender's, so it does not

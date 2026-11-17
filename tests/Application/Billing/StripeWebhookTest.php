@@ -177,7 +177,6 @@ final class StripeWebhookTest extends ApiTestCase
         self::assertSame('Stripe webhook refused: its signature does not verify', $warnings[0]->message);
         self::assertSame([
             'reason' => 'no_header',
-            'signed_at' => null,
             'ip' => self::STRIPE_IP,
             'user_agent' => self::STRIPE_USER_AGENT,
             'body_bytes' => strlen($body),
@@ -188,9 +187,8 @@ final class StripeWebhookTest extends ApiTestCase
     public function anEventSignedWithAnotherSecretShouldBeRefusedWithoutDetailsAndLogged(): void
     {
         $body = $this->subscriptionEvent('customer.subscription.updated', 'sub_paid');
-        $signedAt = time();
 
-        $response = $this->deliver($body, $this->signature($body, secret: 'whsec_of_someone_else', signedAt: $signedAt));
+        $response = $this->deliver($body, $this->signature($body, secret: 'whsec_of_someone_else'));
 
         self::assertSame(400, $response->getStatusCode());
         self::assertSame('', $response->getContent());
@@ -198,7 +196,6 @@ final class StripeWebhookTest extends ApiTestCase
         $warnings = $this->billingWarnings();
         self::assertCount(1, $warnings);
         self::assertSame('no_match', $warnings[0]->context['reason']);
-        self::assertSame($signedAt, $warnings[0]->context['signed_at']);
         self::assertSame(self::STRIPE_IP, $warnings[0]->context['ip']);
         self::assertSame(self::STRIPE_USER_AGENT, $warnings[0]->context['user_agent']);
         self::assertSame(strlen($body), $warnings[0]->context['body_bytes']);
@@ -221,9 +218,8 @@ final class StripeWebhookTest extends ApiTestCase
     public function anEventSignedLongerAgoThanTheToleranceShouldBeRefusedAndLogged(): void
     {
         $body = $this->subscriptionEvent('customer.subscription.updated', 'sub_paid');
-        $signedAt = time() - 301;
 
-        $response = $this->deliver($body, $this->signature($body, signedAt: $signedAt));
+        $response = $this->deliver($body, $this->signature($body, signedAt: time() - 301));
 
         self::assertSame(400, $response->getStatusCode());
         self::assertSame('', $response->getContent());
@@ -231,7 +227,6 @@ final class StripeWebhookTest extends ApiTestCase
         $warnings = $this->billingWarnings();
         self::assertCount(1, $warnings);
         self::assertSame('outside_tolerance', $warnings[0]->context['reason']);
-        self::assertSame($signedAt, $warnings[0]->context['signed_at']);
     }
 
     #[Test]
