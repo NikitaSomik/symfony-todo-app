@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Billing\Controller;
 
-use App\Billing\Message\RefreshSubscription;
+use App\Billing\Command\SyncSubscription;
 use Monolog\Attribute\WithMonologChannel;
 use Psr\Log\LoggerInterface;
 use Stripe\Event;
@@ -55,15 +55,15 @@ final readonly class StripeWebhookController
             return new Response(status: Response::HTTP_BAD_REQUEST);
         }
 
-        $subscriptionId = $this->findSubscriptionIdToRefresh($event);
+        $subscriptionId = $this->findSubscriptionIdToSync($event);
         if (null !== $subscriptionId) {
-            $this->billingBus->dispatch(new RefreshSubscription($subscriptionId));
+            $this->billingBus->dispatch(new SyncSubscription($subscriptionId));
         }
 
         return new Response(status: Response::HTTP_OK);
     }
 
-    private function findSubscriptionIdToRefresh(Event $event): ?string
+    private function findSubscriptionIdToSync(Event $event): ?string
     {
         $object = $event->data->object;
 

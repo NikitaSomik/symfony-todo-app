@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Billing;
 
+use App\Billing\Command\SyncSubscription;
 use App\Billing\Controller\StripeWebhookController;
-use App\Billing\Message\RefreshSubscription;
 use App\Tests\ApiTestCase;
 use Monolog\Formatter\JsonFormatter;
 use Monolog\Handler\TestHandler;
@@ -64,15 +64,15 @@ final class StripeWebhookTest extends ApiTestCase
         return $this->sendRaw('POST', '/webhooks/stripe', 'application/json; charset=utf-8', $body);
     }
 
-    /** @return list<string> the subscription ids queued for a refresh */
-    private function queuedRefreshes(): array
+    /** @return list<string> the subscription ids queued for a sync */
+    private function queuedSyncs(): array
     {
         /** @var InMemoryTransport $queue */
         $queue = static::getContainer()->get('messenger.transport.stripe_events');
 
         return array_map(static function (Envelope $envelope): string {
             $message = $envelope->getMessage();
-            self::assertInstanceOf(RefreshSubscription::class, $message);
+            self::assertInstanceOf(SyncSubscription::class, $message);
 
             return $message->stripeSubscriptionId;
         }, $queue->getSent());
@@ -106,25 +106,25 @@ final class StripeWebhookTest extends ApiTestCase
     #[TestWith(['customer.subscription.created'])]
     #[TestWith(['customer.subscription.updated'])]
     #[TestWith(['customer.subscription.deleted'])]
-    public function aSignedSubscriptionEventShouldQueueARefreshOfItsSubscription(string $type): void
+    public function aSignedSubscriptionEventShouldQueueASyncOfItsSubscription(string $type): void
     {
         $body = $this->subscriptionEvent($type, 'sub_paid');
 
         $response = $this->deliver($body, $this->signature($body));
 
         self::assertSame(200, $response->getStatusCode());
-        self::assertSame(['sub_paid'], $this->queuedRefreshes());
+        self::assertSame(['sub_paid'], $this->queuedSyncs());
     }
 
     #[Test]
-    public function aSignedCompletedCheckoutShouldQueueARefreshOfTheSubscriptionItOpened(): void
+    public function aSignedCompletedCheckoutShouldQueueASyncOfTheSubscriptionItOpened(): void
     {
         $body = $this->event('checkout.session.completed', ['id' => 'cs_test_paid', 'object' => 'checkout.session', 'mode' => 'subscription', 'subscription' => 'sub_paid']);
 
         $response = $this->deliver($body, $this->signature($body));
 
         self::assertSame(200, $response->getStatusCode());
-        self::assertSame(['sub_paid'], $this->queuedRefreshes());
+        self::assertSame(['sub_paid'], $this->queuedSyncs());
     }
 
     #[Test]
@@ -135,7 +135,7 @@ final class StripeWebhookTest extends ApiTestCase
         $response = $this->deliver($body, $this->signature($body));
 
         self::assertSame(200, $response->getStatusCode());
-        self::assertSame([], $this->queuedRefreshes());
+        self::assertSame([], $this->queuedSyncs());
     }
 
     #[Test]
@@ -148,7 +148,7 @@ final class StripeWebhookTest extends ApiTestCase
         $response = $this->deliver($body, $this->signature($body));
 
         self::assertSame(200, $response->getStatusCode());
-        self::assertSame([], $this->queuedRefreshes());
+        self::assertSame([], $this->queuedSyncs());
     }
 
     #[Test]
@@ -159,7 +159,7 @@ final class StripeWebhookTest extends ApiTestCase
         $response = $this->deliver($body, $this->signature($body, signedAt: time() - 240));
 
         self::assertSame(200, $response->getStatusCode());
-        self::assertSame(['sub_paid'], $this->queuedRefreshes());
+        self::assertSame(['sub_paid'], $this->queuedSyncs());
     }
 
     #[Test]
@@ -171,7 +171,7 @@ final class StripeWebhookTest extends ApiTestCase
 
         self::assertSame(400, $response->getStatusCode());
         self::assertSame('', $response->getContent());
-        self::assertSame([], $this->queuedRefreshes());
+        self::assertSame([], $this->queuedSyncs());
         $warnings = $this->billingWarnings();
         self::assertCount(1, $warnings);
         self::assertSame('Stripe webhook refused: its signature does not verify', $warnings[0]->message);
@@ -192,7 +192,7 @@ final class StripeWebhookTest extends ApiTestCase
 
         self::assertSame(400, $response->getStatusCode());
         self::assertSame('', $response->getContent());
-        self::assertSame([], $this->queuedRefreshes());
+        self::assertSame([], $this->queuedSyncs());
         $warnings = $this->billingWarnings();
         self::assertCount(1, $warnings);
         self::assertSame('no_match', $warnings[0]->context['reason']);
@@ -210,7 +210,7 @@ final class StripeWebhookTest extends ApiTestCase
         $response = $this->deliver($changed, $this->signature($signed));
 
         self::assertSame(400, $response->getStatusCode());
-        self::assertSame([], $this->queuedRefreshes());
+        self::assertSame([], $this->queuedSyncs());
         self::assertSame('no_match', $this->billingWarnings()[0]->context['reason']);
     }
 
@@ -223,7 +223,7 @@ final class StripeWebhookTest extends ApiTestCase
 
         self::assertSame(400, $response->getStatusCode());
         self::assertSame('', $response->getContent());
-        self::assertSame([], $this->queuedRefreshes());
+        self::assertSame([], $this->queuedSyncs());
         $warnings = $this->billingWarnings();
         self::assertCount(1, $warnings);
         self::assertSame('outside_tolerance', $warnings[0]->context['reason']);
@@ -276,7 +276,7 @@ final class StripeWebhookTest extends ApiTestCase
         $response = $this->deliver($body, $this->signature($body));
 
         self::assertSame(200, $response->getStatusCode());
-        self::assertSame(['sub_paid'], $this->queuedRefreshes());
+        self::assertSame(['sub_paid'], $this->queuedSyncs());
     }
 
     #[Test]
@@ -295,7 +295,7 @@ final class StripeWebhookTest extends ApiTestCase
 
         self::assertSame(500, $response->getStatusCode());
         self::assertSame('', $response->getContent());
-        self::assertSame([], $this->queuedRefreshes());
+        self::assertSame([], $this->queuedSyncs());
         $critical = array_values(array_filter($this->logRecords(), static fn (LogRecord $record): bool => 'billing' === $record->channel && Level::Critical === $record->level));
         self::assertCount(1, $critical);
         self::assertSame('Stripe webhook not checked: STRIPE_WEBHOOK_SECRET is not set', $critical[0]->message);

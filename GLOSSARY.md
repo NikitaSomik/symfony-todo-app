@@ -98,12 +98,12 @@ _Avoid_: membership, contract
 Ours, mapped from Stripe's: pending (payment awaited), active, grace (a charge failed, Stripe retries), suspended, canceled.
 _Avoid_: state, payment status
 
-**Refresh (a subscription)**:
-Fetch the subscription from Stripe by its id and write our copy from Stripe's answer, never from the webhook's body.
-_Avoid_: sync, update (for this)
+**Sync (a subscription)**:
+Fetch the subscription from Stripe by its id and bring our copy in line with Stripe's answer, never with the webhook's body.
+_Avoid_: refresh (reads as renew), update (for this)
 
 **Payer**:
-The one who pays for a workspace: its customer in Stripe.
+The one who pays for a workspace: its customer in Stripe, and the holder of the workspace's subscriptions, at most one of them not canceled.
 _Avoid_: buyer (for the record), billing account
 
 ## Working on the project

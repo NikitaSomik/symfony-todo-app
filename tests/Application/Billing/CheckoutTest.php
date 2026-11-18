@@ -7,8 +7,8 @@ namespace App\Tests\Application\Billing;
 use App\Auth\Entity\User;
 use App\Billing\Enum\Plan;
 use App\Billing\Exception\PaymentProviderUnavailableException;
+use App\Billing\Query\WorkspacePlans;
 use App\Billing\Repository\PayerRepository;
-use App\Billing\Repository\SubscriptionRepository;
 use App\Fixtures\Auth\UserFactory;
 use App\Fixtures\Billing\SubscriptionFactory;
 use App\Fixtures\Workspace\WorkspaceFactory;
@@ -275,6 +275,6 @@ final class CheckoutTest extends ApiTestCase
 
         $this->checkout($workspace);
 
-        self::assertSame(Plan::FREE, static::getContainer()->get(SubscriptionRepository::class)->planOf($workspace->getId()));
+        self::assertSame(Plan::FREE, static::getContainer()->get(WorkspacePlans::class)->planOf($workspace->getId()));
     }
 }

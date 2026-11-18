@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Billing;
 
+use App\Billing\Command\SyncSubscription;
 use App\Billing\Entity\Payer;
 use App\Billing\Entity\Subscription;
 use App\Billing\Enum\Plan;
 use App\Billing\Enum\SubscriptionStatus;
 use App\Billing\Exception\PaymentProviderUnavailableException;
-use App\Billing\Message\RefreshSubscription;
 use App\Billing\Payment\ProviderSubscription;
-use App\Billing\Repository\SubscriptionRepository;
+use App\Billing\Query\WorkspacePlans;
+use App\Billing\Repository\PayerRepository;
 use App\Fixtures\Workspace\WorkspaceFactory;
 use App\Tests\ApiTestCase;
 use App\Tests\Support\PaymentProviderStub;
@@ -27,7 +28,7 @@ use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\ReceivedStamp;
 
-final class RefreshSubscriptionTest extends ApiTestCase
+final class SyncSubscriptionTest extends ApiTestCase
 {
     use ClockSensitiveTrait;
 
@@ -48,9 +49,14 @@ final class RefreshSubscriptionTest extends ApiTestCase
         return static::getContainer()->get(PaymentProviderStub::class);
     }
 
-    private function subscriptions(): SubscriptionRepository
+    private function plans(): WorkspacePlans
     {
-        return static::getContainer()->get(SubscriptionRepository::class);
+        return static::getContainer()->get(WorkspacePlans::class);
+    }
+
+    private function countAllRows(): int
+    {
+        return static::getContainer()->get('doctrine.orm.entity_manager')->getRepository(Subscription::class)->count([]);
     }
 
     private function stripeAnswers(string $subscriptionId, SubscriptionStatus $status, Plan $plan = Plan::TEAM, string $customerId = 'cus_workspace'): void
@@ -68,13 +74,20 @@ final class RefreshSubscriptionTest extends ApiTestCase
     {
         /** @var MessageBusInterface $bus */
         $bus = static::getContainer()->get('billing.bus');
-        $bus->dispatch(new Envelope(new RefreshSubscription($subscriptionId), [new ReceivedStamp('stripe_events')]));
+        $bus->dispatch(new Envelope(new SyncSubscription($subscriptionId), [new ReceivedStamp('stripe_events')]));
     }
 
     /** @return list<Subscription> */
     private function rowsOf(Workspace $workspace): array
     {
-        return array_values($this->subscriptions()->findBy(['workspaceId' => $workspace->getId()], ['stripeSubscriptionId' => 'ASC']));
+        $em = static::getContainer()->get('doctrine.orm.entity_manager');
+        $em->clear();
+        $payer = static::getContainer()->get(PayerRepository::class)->find($workspace->getId());
+        self::assertNotNull($payer);
+        $rows = $payer->getSubscriptions();
+        usort($rows, static fn (Subscription $a, Subscription $b): int => strcmp($a->getStripeSubscriptionId(), $b->getStripeSubscriptionId()));
+
+        return $rows;
     }
 
     private function onlyRow(): Subscription
@@ -87,7 +100,7 @@ final class RefreshSubscriptionTest extends ApiTestCase
 
     private function planOfTheWorkspace(): Plan
     {
-        return $this->subscriptions()->planOf($this->workspace->getId());
+        return $this->plans()->planOf($this->workspace->getId());
     }
 
     /** @return list<LogRecord> */
@@ -128,7 +141,7 @@ final class RefreshSubscriptionTest extends ApiTestCase
     }
 
     #[Test]
-    public function eachRefreshShouldStampTheRowWithItsTime(): void
+    public function eachSyncShouldStampTheRowWithItsTime(): void
     {
         $this->stripeAnswers('sub_paid', SubscriptionStatus::PENDING);
         static::mockTime('2026-11-16 10:00:00+00:00');
@@ -255,7 +268,7 @@ final class RefreshSubscriptionTest extends ApiTestCase
 
         $this->deliver('sub_elsewhere');
 
-        self::assertSame(0, $this->subscriptions()->count([]));
+        self::assertSame(0, $this->countAllRows());
         $errors = $this->billingErrors();
         self::assertCount(1, $errors);
         self::assertSame('Stripe subscription of an unknown customer not written', $errors[0]->message);
@@ -269,12 +282,12 @@ final class RefreshSubscriptionTest extends ApiTestCase
 
         try {
             $this->deliver('sub_paid');
-            self::fail('A refresh Stripe did not answer was handled as if it had.');
+            self::fail('A sync Stripe did not answer was handled as if it had.');
         } catch (HandlerFailedException $exception) {
             self::assertInstanceOf(PaymentProviderUnavailableException::class, $exception->getPrevious());
         }
 
-        self::assertSame(0, $this->subscriptions()->count([]));
+        self::assertSame(0, $this->countAllRows());
         self::assertSame([], $this->billingErrors());
     }
 

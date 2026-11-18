@@ -3,6 +3,7 @@
 - Status: proposed
 - Date: 2026-11-16
 - Implemented in: #139, #140
+- Superseded in part by [0038](0038-a-payer-keeps-its-subscriptions-and-the-rule-of-one.md): who keeps the rule of one subscription, the handler's shape, the listener of failed messages and the word "refresh"
 
 ## Context
 

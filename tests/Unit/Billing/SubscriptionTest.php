@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Billing;
 
+use App\Billing\Entity\Payer;
 use App\Billing\Entity\Subscription;
 use App\Billing\Enum\Plan;
 use App\Billing\Enum\SubscriptionStatus;
@@ -16,7 +17,7 @@ final class SubscriptionTest extends TestCase
 {
     private function subscription(Plan $plan, SubscriptionStatus $status): Subscription
     {
-        return new Subscription(stripeSubscriptionId: 'sub_test', workspaceId: Uuid::v7(), plan: $plan, status: $status, updatedAt: new \DateTimeImmutable('2026-11-16 10:00:00+00:00'));
+        return new Subscription(stripeSubscriptionId: 'sub_test', payer: new Payer(workspaceId: Uuid::v7(), stripeCustomerId: 'cus_test'), plan: $plan, status: $status, updatedAt: new \DateTimeImmutable('2026-11-16 10:00:00+00:00'));
     }
 
     #[Test]
@@ -37,11 +38,11 @@ final class SubscriptionTest extends TestCase
     }
 
     #[Test]
-    public function aRefreshShouldTakeThePlanAndTheStatusStripeAnswered(): void
+    public function aSyncShouldTakeThePlanAndTheStatusStripeAnswered(): void
     {
         $subscription = $this->subscription(Plan::TEAM, SubscriptionStatus::PENDING);
 
-        $subscription->refresh(Plan::BUSINESS, SubscriptionStatus::ACTIVE, at: new \DateTimeImmutable('2026-11-16 12:00:00+00:00'));
+        $subscription->sync(Plan::BUSINESS, SubscriptionStatus::ACTIVE, at: new \DateTimeImmutable('2026-11-16 12:00:00+00:00'));
 
         self::assertSame(Plan::BUSINESS, $subscription->getPlan());
         self::assertSame(SubscriptionStatus::ACTIVE, $subscription->getStatus());

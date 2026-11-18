@@ -6,7 +6,7 @@ namespace App\Billing\Service;
 
 use App\Billing\Enum\Plan;
 use App\Billing\Exception\PlanLimitExceededException;
-use App\Billing\Repository\SubscriptionRepository;
+use App\Billing\Query\WorkspacePlans;
 use App\Workspace\Contract\MeetingLimits;
 use App\Workspace\Contract\PlanLimits;
 use Symfony\Component\Uid\Uuid;
@@ -14,13 +14,13 @@ use Symfony\Component\Uid\Uuid;
 final readonly class WorkspacePlanLimits implements PlanLimits
 {
     public function __construct(
-        private SubscriptionRepository $subscriptions,
+        private WorkspacePlans $plans,
     ) {
     }
 
     public function ensureCanAddMember(Uuid $workspaceId, int $currentMembers): void
     {
-        $plan = $this->subscriptions->planOf($workspaceId);
+        $plan = $this->plans->planOf($workspaceId);
 
         if ($currentMembers >= $plan->memberLimit()) {
             throw PlanLimitExceededException::forMembers($plan, $currentMembers);
@@ -29,7 +29,7 @@ final readonly class WorkspacePlanLimits implements PlanLimits
 
     public function ensureCanCreateTeamWorkspace(array $ownedTeamWorkspaceIds): void
     {
-        $onFree = $this->subscriptions->countWorkspacesOnFree($ownedTeamWorkspaceIds);
+        $onFree = $this->plans->countOnFree($ownedTeamWorkspaceIds);
 
         if ($onFree >= Plan::TEAM_WORKSPACES_ON_FREE) {
             throw PlanLimitExceededException::forTeamWorkspaces($onFree);
@@ -38,7 +38,7 @@ final readonly class WorkspacePlanLimits implements PlanLimits
 
     public function findMeetingLimits(Uuid $workspaceId): MeetingLimits
     {
-        $plan = $this->subscriptions->planOf($workspaceId);
+        $plan = $this->plans->planOf($workspaceId);
 
         return new MeetingLimits(participants: $plan->memberLimit(), minutes: $plan->meetingMinutes());
     }

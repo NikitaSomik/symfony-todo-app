@@ -78,9 +78,11 @@ wraps it (`make help`). `make up` first.
   `direction` ([0008](docs/adr/0008-json-api-responses-plain-json-requests.md)).
 - A task changes status only through its transitions in the entity ([0015](docs/adr/0015-task-lifecycle-as-explicit-transitions.md)).
 - Code asks for a permission, never for a role ([0022](docs/adr/0022-code-asks-for-a-permission.md)).
-- A Stripe webhook's body is a signal: only `RefreshSubscriptionHandler` writes the
+- A Stripe webhook's body is a signal: only `SyncSubscriptionHandler` writes the
   subscription, from Stripe's answer, and `stripe_events` has one consumer
   ([0037](docs/adr/0037-a-stripe-webhook-is-a-signal-to-fetch-the-subscription-again.md)).
+  A subscription changes only through its `Payer`, which keeps one not `canceled` per
+  workspace ([0038](docs/adr/0038-a-payer-keeps-its-subscriptions-and-the-rule-of-one.md)).
 
 ## Code
 

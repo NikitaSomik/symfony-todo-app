@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Billing\Message;
+namespace App\Billing\Command;
 
-final readonly class RefreshSubscription
+final readonly class SyncSubscription
 {
     public function __construct(
         public string $stripeSubscriptionId,
