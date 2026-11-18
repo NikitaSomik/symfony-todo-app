@@ -73,6 +73,8 @@ flowchart LR
     worker -->|reads the task and the email;<br/>keeps messages that still fail| db
     worker -->|SMTP| mail
     mq -->|stripe_events queue| stripeworker
+    stripe -->|signed webhook, /webhooks/stripe:<br/>a subscription changed| nginx
+    app -->|the subscription's id,<br/>after the signature| mq
     stripeworker -->|fetches the subscription| stripe
     stripeworker -->|writes its copy of the subscription| db
     app -->|HTTPS: 3 s to connect,<br/>30 s an attempt, one retry| stripe
@@ -82,7 +84,9 @@ One codebase runs as two processes: php-fpm answers requests, and the worker han
 the request does not wait for. A module announces a fact only after its transaction commits
 ([0023](adr/0023-facts-announced-after-the-commit.md)); the facts with a reaction in the
 worker go to RabbitMQ, today only `TaskAssigned`. A message that still fails after its
-retries is kept in PostgreSQL. A second worker consumes only `stripe_events` and must run
+retries is kept in PostgreSQL. Stripe's webhook reaches php-fpm outside `/api`, guarded
+only by its signature; the request reads only the event's type and the subscription's
+id, and queues the id on `stripe_events`. A second worker consumes only `stripe_events` and must run
 as exactly one process: it fetches a subscription from Stripe and is the only writer of its
 copy, so two refreshes of one subscription never run at once
 ([0037](adr/0037-a-stripe-webhook-is-a-signal-to-fetch-the-subscription-again.md)).
