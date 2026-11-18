@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Billing\Controller;
 
-use App\Billing\Command\SyncSubscription;
+use App\Billing\Message\SyncSubscription;
 use Monolog\Attribute\WithMonologChannel;
 use Psr\Log\LoggerInterface;
 use Stripe\Event;

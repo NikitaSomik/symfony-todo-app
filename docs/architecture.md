@@ -221,6 +221,11 @@ events in a folder named after its purpose (`Listener/AuditLog/`). A verb names 
 so a second reaction to the same event gets a name of its own; a class named after the event
 (`TaskAssignedHandler`) would not leave room for it.
 
+Work a module queues for itself is not a reaction to an event: its message, named as a verb,
+lives in `Message/`, and its one handler in `Handler/`, named after the message with
+`Handler`, since the verb is already the message's name
+(`Billing/Message/SyncSubscription`, `Billing/Handler/SyncSubscriptionHandler`).
+
 ## Authentication
 
 ```mermaid

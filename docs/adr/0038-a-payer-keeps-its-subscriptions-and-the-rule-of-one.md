@@ -43,12 +43,15 @@ kept apart from `Notify`, which only handles the provider's message.
   The rule of one is the payer's invariant over the set of its subscriptions; the partial
   unique index of 0037 stays as the database's guard. `Subscription::sync($plan, $status,
   $at)` is called only by the payer: plan and status are all that Stripe can change of what
-  we keep.
+  we keep. PHP has no visibility per package, so the constructor and `sync()` are marked
+  `@internal` and the rule is kept by review; the payer asks a subscription
+  `isCanceled()`.
 - **`subscriptions.workspace_id` gets a foreign key to `payers.workspace_id`.** Both tables
   are Billing's, so [0018](0018-modules-meet-through-contracts.md) allows it, and a
   subscription means nothing without its payer.
-- **The use case is a command: `Billing\Command\SyncSubscription`, handled by
-  `SyncSubscriptionHandler`.** The handler fetches the subscription from Stripe outside the
+- **The use case is a message, `Billing\Message\SyncSubscription`, handled by
+  `Billing\Handler\SyncSubscriptionHandler`**, where Symfony and the project put a message
+  and its handler. The handler fetches the subscription from Stripe outside the
   transaction, finds the payer by the subscription's customer
   (`PayerRepository::findOfCustomer()`), and calls `syncSubscription()`. An unknown customer
   and `SecondSubscriptionException` are logged as errors to `billing` and not retried, as
@@ -62,7 +65,7 @@ kept apart from `Notify`, which only handles the provider's message.
   `planOf()` and `countOnFree()` with a query on `subscriptions`, without loading a payer.
   `SubscriptionRepository` goes away: a subscription is loaded through its payer. Reads stay
   direct calls; there is no query bus.
-- **"Sync" is the word for the flow**, in the glossary, the command, the handler and the
+- **"Sync" is the word for the flow**, in the glossary, the message, the handler and the
   methods, in place of "refresh", which reads as renewing the subscription.
 - **Billing announces no fact about a subscription yet** (0023). Nothing would listen.
 
@@ -80,6 +83,14 @@ kept apart from `Notify`, which only handles the provider's message.
   handler, but the rule still sits outside the aggregate it protects.
 - **Reads left in `SubscriptionRepository`.** Nothing to move, but it would be the repository
   of an entity that is no longer a root, used by everything that reads a plan.
+- **The message as a CQRS command, in `Billing\Command\`**, as #141 first built it. It
+  names the write side, but the project has no separate read model (`WorkspacePlans` reads
+  the same tables), queued work is already a message in `Message/` with its handler in
+  `Handler/` (#139, `Notification/Handler/`), and `Command/` means a console command, in
+  Symfony and in `Auth`. One use case named apart from all the others would be a second
+  shape for one thing. Signal: the first model kept only for reading, or middleware that
+  every use case goes through on a command bus; then CQRS is decided for every module at
+  once.
 - **A query bus.** Reads in the project are direct calls; with one caller per read a bus adds
   a layer and nothing else.
 - **A fact such as `SubscriptionChanged` in `Billing\Contract` now.** A class and a publish

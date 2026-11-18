@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Billing;
 
-use App\Billing\Command\SyncSubscription;
 use App\Billing\Exception\PaymentProviderUnavailableException;
+use App\Billing\Message\SyncSubscription;
 use Monolog\Handler\TestHandler;
 use Monolog\Level;
 use Monolog\LogRecord;

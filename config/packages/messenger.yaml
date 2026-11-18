@@ -36,7 +36,7 @@ framework:
 
         routing:
             App\Task\Contract\TaskAssigned: async
-            App\Billing\Command\SyncSubscription: stripe_events
+            App\Billing\Message\SyncSubscription: stripe_events
 
 when@test:
     framework:

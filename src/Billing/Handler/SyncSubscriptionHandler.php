@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Billing\Command;
+namespace App\Billing\Handler;
 
 use App\Billing\Exception\SecondSubscriptionException;
+use App\Billing\Message\SyncSubscription;
 use App\Billing\Payment\PaymentProvider;
 use App\Billing\Repository\PayerRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -26,10 +27,10 @@ final readonly class SyncSubscriptionHandler
     ) {
     }
 
-    public function __invoke(SyncSubscription $command): void
+    public function __invoke(SyncSubscription $message): void
     {
         // Not in the transaction: it would hold a connection for as long as Stripe takes to answer.
-        $answer = $this->payments->fetchSubscription($command->stripeSubscriptionId);
+        $answer = $this->payments->fetchSubscription($message->stripeSubscriptionId);
 
         $this->em->wrapInTransaction(function () use ($answer): void {
             $payer = $this->payers->findOfCustomer($answer->customerId);
@@ -48,7 +49,7 @@ final readonly class SyncSubscriptionHandler
                 $this->logger->error('Second Stripe subscription for a workspace not written', [
                     'workspace_id' => $refusal->workspaceId->toRfc4122(),
                     'subscription_id' => $refusal->subscriptionId,
-                    'current_subscription_id' => $refusal->currentSubscriptionId,
+                    'not_canceled_subscription_id' => $refusal->notCanceledSubscriptionId,
                 ]);
             }
         });

@@ -54,16 +54,16 @@ class Payer
      */
     public function syncSubscription(string $stripeSubscriptionId, Plan $plan, SubscriptionStatus $status, \DateTimeImmutable $at): void
     {
-        $known = $this->subscriptions->get($stripeSubscriptionId);
-        if (null !== $known) {
-            $known->sync($plan, $status, $at);
+        $subscription = $this->subscriptions->get($stripeSubscriptionId);
+        if (null !== $subscription) {
+            $subscription->sync($plan, $status, $at);
 
             return;
         }
 
-        $current = $this->findNotCanceledSubscription();
-        if (null !== $current) {
-            throw new SecondSubscriptionException(workspaceId: $this->workspaceId, subscriptionId: $stripeSubscriptionId, currentSubscriptionId: $current->getStripeSubscriptionId());
+        $notCanceled = $this->findNotCanceledSubscription();
+        if (null !== $notCanceled) {
+            throw new SecondSubscriptionException(workspaceId: $this->workspaceId, subscriptionId: $stripeSubscriptionId, notCanceledSubscriptionId: $notCanceled->getStripeSubscriptionId());
         }
 
         $this->subscriptions->set($stripeSubscriptionId, new Subscription(
@@ -78,7 +78,7 @@ class Payer
     private function findNotCanceledSubscription(): ?Subscription
     {
         foreach ($this->subscriptions as $subscription) {
-            if (SubscriptionStatus::CANCELED !== $subscription->getStatus()) {
+            if (!$subscription->isCanceled()) {
                 return $subscription;
             }
         }

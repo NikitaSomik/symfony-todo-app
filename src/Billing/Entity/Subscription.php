@@ -14,6 +14,9 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\UniqueConstraint(name: 'uniq_subscriptions_workspace_id_not_canceled', columns: ['workspace_id'], options: ['where' => "((status)::text <> 'canceled'::text)"])]
 class Subscription
 {
+    /**
+     * @internal created only by its payer, which keeps the rule of one (0038)
+     */
     public function __construct(
         #[ORM\Id]
         #[ORM\Column(length: 255)]
@@ -54,6 +57,11 @@ class Subscription
         return $this->updatedAt;
     }
 
+    public function isCanceled(): bool
+    {
+        return SubscriptionStatus::CANCELED === $this->status;
+    }
+
     public function grantedPlan(): Plan
     {
         if ($this->status->grantsPlan()) {
@@ -63,6 +71,9 @@ class Subscription
         return Plan::FREE;
     }
 
+    /**
+     * @internal synced only through its payer (0038)
+     */
     public function sync(Plan $plan, SubscriptionStatus $status, \DateTimeImmutable $at): void
     {
         $this->plan = $plan;

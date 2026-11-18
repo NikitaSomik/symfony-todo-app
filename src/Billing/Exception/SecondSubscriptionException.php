@@ -11,12 +11,12 @@ final class SecondSubscriptionException extends \DomainException
     public function __construct(
         public readonly Uuid $workspaceId,
         public readonly string $subscriptionId,
-        public readonly string $currentSubscriptionId,
+        public readonly string $notCanceledSubscriptionId,
     ) {
         parent::__construct(sprintf(
             'The workspace %s already has the subscription %s, which is not canceled; %s is not added.',
             $workspaceId->toRfc4122(),
-            $currentSubscriptionId,
+            $notCanceledSubscriptionId,
             $subscriptionId,
         ));
     }

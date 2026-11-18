@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Billing;
 
-use App\Billing\Command\SyncSubscription;
 use App\Billing\Entity\Payer;
 use App\Billing\Entity\Subscription;
 use App\Billing\Enum\Plan;
 use App\Billing\Enum\SubscriptionStatus;
 use App\Billing\Exception\PaymentProviderUnavailableException;
+use App\Billing\Message\SyncSubscription;
 use App\Billing\Payment\ProviderSubscription;
 use App\Billing\Query\WorkspacePlans;
 use App\Billing\Repository\PayerRepository;
@@ -256,7 +256,7 @@ final class SyncSubscriptionTest extends ApiTestCase
         self::assertCount(1, $errors);
         self::assertSame('Second Stripe subscription for a workspace not written', $errors[0]->message);
         self::assertSame(
-            ['workspace_id' => $this->workspace->getId()->toRfc4122(), 'subscription_id' => 'sub_second', 'current_subscription_id' => 'sub_first'],
+            ['workspace_id' => $this->workspace->getId()->toRfc4122(), 'subscription_id' => 'sub_second', 'not_canceled_subscription_id' => 'sub_first'],
             $errors[0]->context,
         );
     }

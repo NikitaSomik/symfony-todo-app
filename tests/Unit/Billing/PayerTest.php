@@ -86,7 +86,7 @@ final class PayerTest extends TestCase
         } catch (SecondSubscriptionException $refusal) {
             self::assertSame('019a8f3e-0000-7000-8000-000000000001', $refusal->workspaceId->toRfc4122());
             self::assertSame('sub_second', $refusal->subscriptionId);
-            self::assertSame('sub_first', $refusal->currentSubscriptionId);
+            self::assertSame('sub_first', $refusal->notCanceledSubscriptionId);
         }
 
         self::assertSame(['sub_first' => [Plan::TEAM, $first]], $this->subscriptions());

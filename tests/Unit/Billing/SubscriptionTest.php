@@ -38,6 +38,22 @@ final class SubscriptionTest extends TestCase
     }
 
     #[Test]
+    public function aCanceledSubscriptionShouldSayItIsCanceled(): void
+    {
+        self::assertTrue($this->subscription(Plan::BUSINESS, SubscriptionStatus::CANCELED)->isCanceled());
+    }
+
+    #[Test]
+    #[TestWith([SubscriptionStatus::PENDING])]
+    #[TestWith([SubscriptionStatus::ACTIVE])]
+    #[TestWith([SubscriptionStatus::GRACE])]
+    #[TestWith([SubscriptionStatus::SUSPENDED])]
+    public function aSubscriptionThatIsNotCanceledShouldSaySo(SubscriptionStatus $status): void
+    {
+        self::assertFalse($this->subscription(Plan::BUSINESS, $status)->isCanceled());
+    }
+
+    #[Test]
     public function aSyncShouldTakeThePlanAndTheStatusStripeAnswered(): void
     {
         $subscription = $this->subscription(Plan::TEAM, SubscriptionStatus::PENDING);

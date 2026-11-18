@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Billing\Command;
+namespace App\Billing\Message;
 
 final readonly class SyncSubscription
 {
