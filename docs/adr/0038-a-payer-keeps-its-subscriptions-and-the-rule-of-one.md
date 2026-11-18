@@ -2,7 +2,7 @@
 
 - Status: accepted
 - Date: 2026-11-18
-- Implemented in: #PR
+- Implemented in: #141
 
 ## Context
 
