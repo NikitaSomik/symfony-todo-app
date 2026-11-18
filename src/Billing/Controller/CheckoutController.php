@@ -46,7 +46,7 @@ final class CheckoutController extends AbstractController
     #[OA\Response(response: 409, description: 'The workspace already has a subscription, paid or being paid, including through another of its pages paid while this one was being opened; the code is `already_subscribed`')]
     #[OA\Response(ref: '#/components/responses/ValidationError', response: 422)]
     #[OA\Response(response: 503, description: 'Stripe did not answer; the code is `payment_provider_unavailable`, and the request can be repeated after `Retry-After` seconds', headers: [new OA\Header(header: 'Retry-After', description: 'Seconds to wait before asking again', schema: new OA\Schema(type: 'integer'))])]
-    public function checkout(
+    public function __invoke(
         #[MapRequestPayload(acceptFormat: 'json')]
         CheckoutDTO $dto,
         #[ValueResolver(WorkspaceContextValueResolver::class)]

@@ -25,7 +25,7 @@ final readonly class MeetingAccessController
         methods: ['GET'],
         format: 'json',
     )]
-    public function get(Uuid $id, int $userId): JsonResponse
+    public function __invoke(Uuid $id, int $userId): JsonResponse
     {
         $access = $this->getMeetingAccess->handle($id, $userId);
 
