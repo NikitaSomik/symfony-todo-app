@@ -32,17 +32,17 @@ final readonly class SyncSubscriptionHandler
         // Not in the transaction: it would hold a connection for as long as Stripe takes to answer.
         $answer = $this->payments->fetchSubscription($message->stripeSubscriptionId);
 
-        $this->em->wrapInTransaction(function () use ($answer): void {
-            $payer = $this->payers->findOfCustomer($answer->customerId);
-            if (null === $payer) {
-                $this->logger->error('Stripe subscription of an unknown customer not written', [
-                    'subscription_id' => $answer->id,
-                    'customer_id' => $answer->customerId,
-                ]);
+        $payer = $this->payers->findOfCustomer($answer->customerId);
+        if (null === $payer) {
+            $this->logger->error('Stripe subscription of an unknown customer not written', [
+                'subscription_id' => $answer->id,
+                'customer_id' => $answer->customerId,
+            ]);
 
-                return;
-            }
+            return;
+        }
 
+        $this->em->wrapInTransaction(function () use ($payer, $answer): void {
             try {
                 $payer->syncSubscription($answer->id, $answer->plan, $answer->status, $this->clock->now());
             } catch (SecondSubscriptionException $refusal) {
