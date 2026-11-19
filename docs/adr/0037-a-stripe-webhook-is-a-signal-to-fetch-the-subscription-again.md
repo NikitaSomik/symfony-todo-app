@@ -2,7 +2,7 @@
 
 - Status: accepted
 - Date: 2026-11-16
-- Implemented in: #139, #140
+- Implemented in: #139, #140, #145
 - Superseded in part by [0038](0038-a-payer-keeps-its-subscriptions-and-the-rule-of-one.md): who keeps the rule of one subscription, the handler's shape, the listener of failed messages and the word "refresh"
 
 ## Context
@@ -107,7 +107,7 @@ Our handler writes one thing, the copy of the subscription, and sends nothing.
   as a JSON:API resource `billing`, to every member with `view`; a workspace outside the
   user's reach answers `404`. An owner returning from Checkout polls it until the payment
   shows; members see the status that 0031's banner for `grace` shows them anyway.
-  *Extended on 2026-11-19: the status is that of the subscription that is not `canceled`;
+  *Extended on 2026-11-19, in #145: the status is that of the subscription that is not `canceled`;
   with none, `canceled` when the workspace had one, and `null` when it never had one.*
 
 ## Alternatives considered
