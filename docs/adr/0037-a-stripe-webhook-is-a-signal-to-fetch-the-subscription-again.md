@@ -181,7 +181,9 @@ Our handler writes one thing, the copy of the subscription, and sends nothing.
   or four events, so more than about 35 purchases a minute make the queue grow: access
   opens late, nothing is lost. A slow Stripe holds the queue for up to a minute per event.
 - `stripe_events` must run with exactly one consumer. A second one, added for speed,
-  brings back the race this record avoids.
+  brings back the race this record avoids. A second worker needs a change of approach
+  first, from the alternatives above: the lock per workspace for speed, or RabbitMQ's single
+  active consumer for a standby; this record is then revisited.
 - The nightly reconciliation of 0031 is not built yet. Until it is, a message in `failed`
   is the only trace of a customer who paid and did not get the plan; someone has to read the
   `billing` errors.

@@ -89,7 +89,9 @@ only by its signature; the request reads only the event's type and the subscript
 id, and queues the id on `stripe_events`. A second worker consumes only `stripe_events` and must run
 as exactly one process: it fetches a subscription from Stripe and is the only writer of its
 copy, so two syncs of one subscription never run at once
-([0037](adr/0037-a-stripe-webhook-is-a-signal-to-fetch-the-subscription-again.md)).
+([0037](adr/0037-a-stripe-webhook-is-a-signal-to-fetch-the-subscription-again.md)). A second
+process needs a change of approach first: a lock per workspace, or RabbitMQ's single active
+consumer (0037's alternatives).
 
 Video meetings run in a second service, Meet, behind the same nginx and origin, so the
 browser's `access_token` cookie reaches it without a second login
