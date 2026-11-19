@@ -70,7 +70,9 @@ final class TaskWriteQueriesTest extends ApiTestCase
         ]);
 
         self::assertResponseIsSuccessful();
-        self::assertSame(['UPDATE tasks SET title = ?, updated_at = ? WHERE id = ?'], $this->sqlOnTasks());
+        self::assertCount(1, $this->sqlOnTasks());
+        // updated_at is stored to the second: Doctrine skips it when the task was written within the same second.
+        self::assertMatchesRegularExpression('/^UPDATE tasks SET title = \?(, updated_at = \?)? WHERE id = \?$/', $this->sqlOnTasks()[0]);
         $this->assertNoPendingTaskUpdates();
     }
 
@@ -82,7 +84,9 @@ final class TaskWriteQueriesTest extends ApiTestCase
         $this->withProfiler()->post($this->route('api_task_start', ['id' => $task->getId()->toRfc4122()]));
 
         self::assertResponseIsSuccessful();
-        self::assertSame(['UPDATE tasks SET status = ?, updated_at = ? WHERE id = ?'], $this->sqlOnTasks());
+        self::assertCount(1, $this->sqlOnTasks());
+        // updated_at is stored to the second: Doctrine skips it when the task was written within the same second.
+        self::assertMatchesRegularExpression('/^UPDATE tasks SET status = \?(, updated_at = \?)? WHERE id = \?$/', $this->sqlOnTasks()[0]);
         // The task adds the new row to its history without loading the rows that are already there.
         self::assertSame(
             ['INSERT INTO task_status_changes'],
