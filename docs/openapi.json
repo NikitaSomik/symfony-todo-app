@@ -186,6 +186,46 @@
                 }
             }
         },
+        "/api/v1/workspaces/{id}/billing": {
+            "get": {
+                "tags": [
+                    "Billing"
+                ],
+                "summary": "Read a workspace's plan and the status of its subscription",
+                "description": "Every member. After Checkout, an owner asks again until the status shows the payment.",
+                "operationId": "get_api_billing_show",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The plan and the status, from our copy of the subscription",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BillingResponseSchema"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    },
+                    "404": {
+                        "description": "Workspace not found, or the user is not a member of it"
+                    }
+                }
+            }
+        },
         "/api/v1/workspaces/{id}/billing/checkout": {
             "post": {
                 "tags": [
@@ -1979,6 +2019,61 @@
                     },
                     "data": {
                         "$ref": "#/components/schemas/UserResource"
+                    }
+                },
+                "type": "object"
+            },
+            "BillingResponseSchema": {
+                "required": [
+                    "jsonapi",
+                    "data"
+                ],
+                "properties": {
+                    "jsonapi": {
+                        "$ref": "#/components/schemas/JsonApiObjectSchema"
+                    },
+                    "data": {
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "example": "billing"
+                            },
+                            "id": {
+                                "description": "The workspace's id",
+                                "type": "string",
+                                "format": "uuid",
+                                "example": "01933b8e-6a4f-7c2d-9e1f-3a5b7c9d1e2f"
+                            },
+                            "attributes": {
+                                "properties": {
+                                    "plan": {
+                                        "description": "The plan the workspace has now: a paid plan only while its subscription is `active` or in `grace`",
+                                        "type": "string",
+                                        "example": "team",
+                                        "enum": [
+                                            "free",
+                                            "team",
+                                            "business"
+                                        ]
+                                    },
+                                    "status": {
+                                        "description": "The status of the workspace's subscription, `canceled` when it has none left but had one; `null` when it never had one",
+                                        "type": "string",
+                                        "example": "active",
+                                        "nullable": true,
+                                        "enum": [
+                                            "pending",
+                                            "active",
+                                            "grace",
+                                            "suspended",
+                                            "canceled"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        },
+                        "type": "object"
                     }
                 },
                 "type": "object"
