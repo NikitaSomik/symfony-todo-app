@@ -115,6 +115,9 @@ wraps it (`make help`). `make up` first.
   `WorkspaceContextValueResolver`); a listener of a framework or library event ends in
   `Listener` (`RequestIdListener`), not `Subscriber`. `find…` may return null, `get…` throws.
   A test is named for the behaviour it pins (`registerShouldStoreEmailLowercased`).
+- A controller with one action has it in `__invoke` (`CheckoutController`,
+  `StripeWebhookController`); a controller with several actions of a resource names each
+  method after its action (`TaskController::update`). A use case keeps `handle()`.
 - When a name is in doubt, look up how others name it to choose between options, not to
   keep the current one.
 - Non-ASCII test data is Latin with diacritics (`MÜLLER@example.com`).

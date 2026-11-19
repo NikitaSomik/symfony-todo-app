@@ -30,7 +30,7 @@ final readonly class StripeWebhookController
     }
 
     #[Route('/webhooks/stripe', name: 'webhook_stripe', methods: ['POST'])]
-    public function receive(Request $request): Response
+    public function __invoke(Request $request): Response
     {
         if ('' === $this->webhookSecret) {
             $this->logger->critical('Stripe webhook not checked: STRIPE_WEBHOOK_SECRET is not set');
