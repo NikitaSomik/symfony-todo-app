@@ -32,6 +32,29 @@ readonly class WorkspacePlans
         return $subscription->grantedPlan();
     }
 
+    /** One query, so that a sync committed meanwhile cannot pair a plan with another subscription's status. */
+    public function billingOf(Uuid $workspaceId): WorkspaceBilling
+    {
+        /** @var Subscription|null $subscription */
+        $subscription = $this->em->createQueryBuilder()
+            ->select('s')
+            ->addSelect('CASE WHEN s.status = :canceled THEN 1 ELSE 0 END AS HIDDEN canceledLast')
+            ->from(Subscription::class, 's')
+            ->where('IDENTITY(s.payer) = :workspaceId')
+            ->orderBy('canceledLast')
+            ->setParameter('workspaceId', $workspaceId, UuidType::NAME)
+            ->setParameter('canceled', SubscriptionStatus::CANCELED)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult(AbstractQuery::HYDRATE_OBJECT);
+
+        if (null === $subscription) {
+            return new WorkspaceBilling(plan: Plan::FREE, status: null);
+        }
+
+        return new WorkspaceBilling(plan: $subscription->grantedPlan(), status: $subscription->getStatus());
+    }
+
     /** A workspace has at most one: the partial unique index on workspace_id holds it. */
     private function findNotCanceledOf(Uuid $workspaceId): ?Subscription
     {
