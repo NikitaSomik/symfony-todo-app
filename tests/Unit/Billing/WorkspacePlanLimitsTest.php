@@ -6,7 +6,7 @@ namespace App\Tests\Unit\Billing;
 
 use App\Billing\Enum\Plan;
 use App\Billing\Exception\PlanLimitExceededException;
-use App\Billing\Repository\SubscriptionRepository;
+use App\Billing\Query\WorkspacePlans;
 use App\Billing\Service\WorkspacePlanLimits;
 use App\Workspace\Contract\MeetingLimits;
 use PHPUnit\Framework\Attributes\Test;
@@ -18,11 +18,11 @@ final class WorkspacePlanLimitsTest extends TestCase
 {
     private function limits(): WorkspacePlanLimits
     {
-        $subscriptions = $this->createStub(SubscriptionRepository::class);
-        $subscriptions->method('planOf')->willReturn(Plan::FREE);
-        $subscriptions->method('countWorkspacesOnFree')->willReturn(1);
+        $plans = $this->createStub(WorkspacePlans::class);
+        $plans->method('planOf')->willReturn(Plan::FREE);
+        $plans->method('countOnFree')->willReturn(1);
 
-        return new WorkspacePlanLimits($subscriptions);
+        return new WorkspacePlanLimits($plans);
     }
 
     #[Test]
@@ -55,10 +55,10 @@ final class WorkspacePlanLimitsTest extends TestCase
     #[TestWith([Plan::BUSINESS, 50, 240])]
     public function aMeetingShouldHoldThePlansMembersAndLastItsMinutes(Plan $plan, int $participants, int $minutes): void
     {
-        $subscriptions = $this->createStub(SubscriptionRepository::class);
-        $subscriptions->method('planOf')->willReturn($plan);
+        $plans = $this->createStub(WorkspacePlans::class);
+        $plans->method('planOf')->willReturn($plan);
 
-        $limits = (new WorkspacePlanLimits($subscriptions))->findMeetingLimits(Uuid::v7());
+        $limits = (new WorkspacePlanLimits($plans))->findMeetingLimits(Uuid::v7());
 
         self::assertEquals(new MeetingLimits(participants: $participants, minutes: $minutes), $limits);
     }

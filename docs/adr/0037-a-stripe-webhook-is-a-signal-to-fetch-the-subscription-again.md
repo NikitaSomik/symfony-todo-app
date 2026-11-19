@@ -3,6 +3,7 @@
 - Status: proposed
 - Date: 2026-11-16
 - Implemented in: #139, #140
+- Superseded in part by [0038](0038-a-payer-keeps-its-subscriptions-and-the-rule-of-one.md): who keeps the rule of one subscription, the handler's shape, the listener of failed messages and the word "refresh"
 
 ## Context
 
@@ -124,6 +125,18 @@ Our handler writes one thing, the copy of the subscription, and sends nothing.
   manage while Stripe is called. One consumer gives the same order for free while the load
   allows it. Signal: a message waits on `stripe_events` longer than 30 seconds, or a
   second consumer is needed.
+- **RabbitMQ's single active consumer** (`x-single-active-consumer` on the queue). A second
+  worker waits as a standby and takes over when the first stops, so a deploy that overlaps
+  two workers, or a worker that crashed, no longer breaks the rule of one consumer. It adds
+  no speed, and a queue's arguments change only by declaring it again, empty. Signal: the
+  first deploy that runs two workers at once, or a stopped worker that is noticed late.
+- **`stripe_events` split by subscription id** (RabbitMQ's consistent-hash exchange, one
+  consumer per queue). Each subscription keeps its order while others run in parallel, for
+  an exchange plugin and a routing key on every message. Signal: the lock per workspace no
+  longer keeps up.
+- **A version on the row, written only when newer.** The usual answer to concurrent writes,
+  but Stripe gives a subscription no version or sequence, and our clock orders our calls,
+  not Stripe's states.
 - **Symfony's Webhook component.** The framework's tool for receiving webhooks, but it has
   no parser for Stripe, answers `406` to an event its parser returns nothing for, which
   Stripe would retry for three days, routes every webhook through one message class, and

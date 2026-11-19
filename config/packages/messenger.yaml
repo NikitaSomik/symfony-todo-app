@@ -20,7 +20,7 @@ framework:
 
         transports:
             async: '%env(MESSENGER_TRANSPORT_DSN)%'
-            # Exactly one consumer: two refreshes of one subscription never run at once (ADR 0037).
+            # Exactly one consumer: two syncs of one subscription never run at once (ADR 0037).
             stripe_events:
                 dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
                 options:
@@ -36,7 +36,7 @@ framework:
 
         routing:
             App\Task\Contract\TaskAssigned: async
-            App\Billing\Message\RefreshSubscription: stripe_events
+            App\Billing\Message\SyncSubscription: stripe_events
 
 when@test:
     framework:

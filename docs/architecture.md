@@ -88,7 +88,7 @@ retries is kept in PostgreSQL. Stripe's webhook reaches php-fpm outside `/api`, 
 only by its signature; the request reads only the event's type and the subscription's
 id, and queues the id on `stripe_events`. A second worker consumes only `stripe_events` and must run
 as exactly one process: it fetches a subscription from Stripe and is the only writer of its
-copy, so two refreshes of one subscription never run at once
+copy, so two syncs of one subscription never run at once
 ([0037](adr/0037-a-stripe-webhook-is-a-signal-to-fetch-the-subscription-again.md)).
 
 Video meetings run in a second service, Meet, behind the same nginx and origin, so the
@@ -220,6 +220,11 @@ after that module (`Listener/Workspace/`, `Handler/Task/`), and a reaction to th
 events in a folder named after its purpose (`Listener/AuditLog/`). A verb names what happens,
 so a second reaction to the same event gets a name of its own; a class named after the event
 (`TaskAssignedHandler`) would not leave room for it.
+
+Work a module queues for itself is not a reaction to an event: its message, named as a verb,
+lives in `Message/`, and its one handler in `Handler/`, named after the message with
+`Handler`, since the verb is already the message's name
+(`Billing/Message/SyncSubscription`, `Billing/Handler/SyncSubscriptionHandler`).
 
 ## Authentication
 

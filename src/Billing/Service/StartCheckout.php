@@ -8,14 +8,14 @@ use App\Billing\Enum\Plan;
 use App\Billing\Exception\AlreadySubscribedException;
 use App\Billing\Payment\CheckoutPage;
 use App\Billing\Payment\PaymentProvider;
+use App\Billing\Query\WorkspacePlans;
 use App\Billing\Repository\PayerRepository;
-use App\Billing\Repository\SubscriptionRepository;
 use Symfony\Component\Uid\Uuid;
 
 final readonly class StartCheckout
 {
     public function __construct(
-        private SubscriptionRepository $subscriptions,
+        private WorkspacePlans $plans,
         private PayerRepository $payers,
         private PaymentProvider $payments,
     ) {
@@ -23,7 +23,7 @@ final readonly class StartCheckout
 
     public function handle(Uuid $workspaceId, Plan $plan, string $buyerEmail): CheckoutPage
     {
-        if (Plan::FREE !== $this->subscriptions->planOf($workspaceId)) {
+        if (Plan::FREE !== $this->plans->planOf($workspaceId)) {
             throw new AlreadySubscribedException();
         }
 

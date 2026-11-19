@@ -6,24 +6,25 @@ namespace App\Billing\Entity;
 
 use App\Billing\Enum\Plan;
 use App\Billing\Enum\SubscriptionStatus;
-use App\Billing\Repository\SubscriptionRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Bridge\Doctrine\Types\UuidType;
-use Symfony\Component\Uid\Uuid;
 
-#[ORM\Entity(repositoryClass: SubscriptionRepository::class)]
+#[ORM\Entity]
 #[ORM\Table(name: 'subscriptions')]
 #[ORM\UniqueConstraint(name: 'uniq_subscriptions_workspace_id_not_canceled', columns: ['workspace_id'], options: ['where' => "((status)::text <> 'canceled'::text)"])]
 class Subscription
 {
+    /**
+     * @internal created only by its payer, which keeps the rule of one (0038)
+     */
     public function __construct(
         #[ORM\Id]
         #[ORM\Column(length: 255)]
         private string $stripeSubscriptionId,
 
-        #[ORM\Column(type: UuidType::NAME)]
-        private Uuid $workspaceId,
+        #[ORM\ManyToOne(inversedBy: 'subscriptions')]
+        #[ORM\JoinColumn(name: 'workspace_id', referencedColumnName: 'workspace_id', nullable: false)]
+        private Payer $payer,
 
         #[ORM\Column(length: 20, enumType: Plan::class)]
         private Plan $plan,
@@ -56,6 +57,11 @@ class Subscription
         return $this->updatedAt;
     }
 
+    public function isCanceled(): bool
+    {
+        return SubscriptionStatus::CANCELED === $this->status;
+    }
+
     public function grantedPlan(): Plan
     {
         if ($this->status->grantsPlan()) {
@@ -65,7 +71,10 @@ class Subscription
         return Plan::FREE;
     }
 
-    public function refresh(Plan $plan, SubscriptionStatus $status, \DateTimeImmutable $at): void
+    /**
+     * @internal synced only through its payer (0038)
+     */
+    public function sync(Plan $plan, SubscriptionStatus $status, \DateTimeImmutable $at): void
     {
         $this->plan = $plan;
         $this->status = $status;

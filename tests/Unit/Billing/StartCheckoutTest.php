@@ -6,8 +6,8 @@ namespace App\Tests\Unit\Billing;
 
 use App\Billing\Enum\Plan;
 use App\Billing\Exception\AlreadySubscribedException;
+use App\Billing\Query\WorkspacePlans;
 use App\Billing\Repository\PayerRepository;
-use App\Billing\Repository\SubscriptionRepository;
 use App\Billing\Service\StartCheckout;
 use App\Tests\Support\PaymentProviderStub;
 use PHPUnit\Framework\Attributes\Test;
@@ -25,14 +25,14 @@ final class StartCheckoutTest extends TestCase
 
     private function startCheckout(string $savedCustomerId): StartCheckout
     {
-        $subscriptions = $this->createStub(SubscriptionRepository::class);
-        $subscriptions->method('planOf')->willReturn(Plan::FREE);
+        $plans = $this->createStub(WorkspacePlans::class);
+        $plans->method('planOf')->willReturn(Plan::FREE);
 
         $payers = $this->createStub(PayerRepository::class);
         $payers->method('findCustomerId')->willReturn(null);
         $payers->method('saveOrGetExisting')->willReturn($savedCustomerId);
 
-        return new StartCheckout($subscriptions, $payers, $this->stripe);
+        return new StartCheckout($plans, $payers, $this->stripe);
     }
 
     #[Test]
