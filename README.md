@@ -161,6 +161,10 @@ Every pull request that changes code runs, against a real PostgreSQL:
 - migrations, then `doctrine:schema:validate`
 - PHPUnit — application tests through HTTP, unit tests for the domain rules
 
+CodeRabbit then reviews it against `CLAUDE.md`, the ADRs and the glossary, without the
+session that wrote it, and each finding is fixed, declined with a reason or left for the
+maintainer ([0039](docs/adr/0039-a-review-bot-reviews-against-the-rules-and-claude-triages-its-findings.md)).
+
 ## Stack
 
 PHP 8.5 · Symfony 8.1 · Doctrine ORM · PostgreSQL 18 · Redis · RabbitMQ · Mailpit · Docker Compose

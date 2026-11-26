@@ -72,3 +72,4 @@ Statuses:
 | [0036](0036-meet-asks-the-monolith-for-permissions-and-limits.md) | Meet asks the monolith, on an internal endpoint, what a user may do and what the plan allows | accepted | 2026-11-16 |
 | [0037](0037-a-stripe-webhook-is-a-signal-to-fetch-the-subscription-again.md) | A Stripe webhook is a signal: one consumer fetches the subscription again and is the only one to write it | accepted, superseded in part by [0038](0038-a-payer-keeps-its-subscriptions-and-the-rule-of-one.md) | 2026-11-16 |
 | [0038](0038-a-payer-keeps-its-subscriptions-and-the-rule-of-one.md) | A payer is the aggregate of its subscriptions: it syncs them from Stripe and keeps the rule of one | accepted | 2026-11-18 |
+| [0039](0039-a-review-bot-reviews-against-the-rules-and-claude-triages-its-findings.md) | A review bot reviews against the project's rules, without the session, and Claude triages its findings | accepted | YYYY-MM-DD |
