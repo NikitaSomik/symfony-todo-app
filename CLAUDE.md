@@ -27,6 +27,9 @@ links every rule to its ADR.
   never commit to `main`, never rewrite a pushed branch.
 - Commit locally as the work goes; push or open a pull request only when Nikita says so;
   Nikita merges. A commit not yet pushed may be amended.
+- Review comments on a pull request, CodeRabbit's or a person's, are answered with the
+  `answer-review` skill: each one fixed, declined with a reason, or left for Nikita
+  ([0039](docs/adr/0039-a-review-bot-reviews-against-the-rules-and-claude-triages-its-findings.md)).
 - Commits: one line, `type(module): lowercase imperative summary`, no period, no body, no
   trailers; author `Mykyta <nikitasomusev@gmail.com>` (Nikita), unsigned
   (`git -c commit.gpgsign=false commit`).

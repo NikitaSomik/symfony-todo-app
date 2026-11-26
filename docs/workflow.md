@@ -24,7 +24,7 @@ flowchart TD
 | `/to-spec` | Only when the work shows a sign: more than one ticket, two modules or a contract, an asynchronous flow, a rollout in steps, three ADRs. Writes the decisions, the flow across modules, the cases and the seams where each is tested, without a new interview | The spec with its seams |
 | `/to-tickets` | Cuts the work into vertical slices, one pull request each, with `blocked-by`, the seam of each case, the modules by name and no file paths | The numbered cut; the tickets are then written `open` |
 | `/implement` | Takes an `open` ticket whose blockers are done; tests first at the ticket's seams, then code, `make verify`, a local commit, `project-review` and `security-review`, a report that ends by offering push and the pull request | Push and the pull request, after the report |
-| pull request | Described with the `pr` skill; Claude fixes red CI and answers review comments | The merge |
+| pull request | Described with the `pr` skill; Claude fixes red CI and answers review comments with `answer-review` | The merge, and the review threads left for him |
 
 `/retro` runs when Nikita asks for it, after a change that went harder than it should have.
 The `dead-end` skill stops the work when the same fix keeps failing.

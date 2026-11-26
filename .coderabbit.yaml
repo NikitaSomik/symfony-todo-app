@@ -1,0 +1,52 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: en-US
+tone_instructions: "Short and concrete. Name the input that fails and what happens then. No praise, no restating what the code does."
+
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: false
+  poem: false
+  sequence_diagrams: false
+  collapse_walkthrough: true
+  auto_review:
+    enabled: true
+    drafts: false
+    ignore_usernames:
+      - "dependabot[bot]"
+  path_filters:
+    - "!docs/openapi.json"
+  path_instructions:
+    - path: "**/*"
+      instructions: |
+        The project's rules are CLAUDE.md, the ADRs in docs/adr/ and GLOSSARY.md. A change that follows them is not a finding.
+        If you believe a rule or an ADR is wrong, say so once, in a comment titled "Question about ADR NNNN", instead of asking the code to break it.
+        Do not report what CI checks: code style, PHPStan, Deptrac, the container lint, the schema validation, the tests, composer audit.
+        Do not suggest new dependencies, renames for taste, or comments that restate the code.
+    - path: "migrations/**"
+      instructions: |
+        A migration already on main is never edited. A table holds no foreign key to another module's table (ADR 0018).
+    - path: ".claude/**"
+      instructions: |
+        These are instructions for a coding agent, run by one person, one session per ticket.
+        Report steps that cannot run, and contradictions with CLAUDE.md, the Makefile or bin/verify-fast.
+        Do not report races between sessions running in parallel.
+  tools:
+    phpstan:
+      enabled: false
+    phpcs:
+      enabled: false
+    phpmd:
+      enabled: false
+    languagetool:
+      enabled: false
+
+knowledge_base:
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - "GLOSSARY.md"
+      - files: "docs/adr/0*.md"
+        applyTo: "**/*"
+  learnings:
+    scope: local
