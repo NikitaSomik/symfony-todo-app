@@ -46,6 +46,7 @@ knowledge_base:
     enabled: true
     filePatterns:
       - "GLOSSARY.md"
-      - "docs/adr/0*.md"
+      - files: "docs/adr/0*.md"
+        applyTo: "**/*"
   learnings:
     scope: local

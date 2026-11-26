@@ -23,8 +23,9 @@ otherwise.
 ## 2. End each thread in one of three ways
 
 - **Fixed.** Tests first when the finding is about behaviour: a test that fails before the
-  fix and passes after. Then `make verify` and a local commit. Reply with the commit and
-  one sentence on what changed, then resolve the thread.
+  fix and passes after. Then `make verify` and a local commit. The thread stays open until
+  the commit is pushed, on Nikita's word; then reply with the commit and one sentence on
+  what changed, and resolve the thread.
 - **Declined.** The claim does not hold, or it holds for a case this project does not
   have. Reply with the reason: the rule or the ADR that settles it, or the case that does
   not occur and the signal that would make it occur. Leave the thread open; CodeRabbit
