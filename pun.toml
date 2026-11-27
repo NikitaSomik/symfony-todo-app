@@ -1,0 +1,207 @@
+# Written by `pun migrate` from .php-cs-fixer.php.
+[php]
+version = "8.5"
+
+[files]
+paths = ["src", "tests", "fixtures"]
+
+[extensions]
+phpunit = "on"
+
+[format]
+preset = "empty"
+
+[format.rules]
+"comments/align-multiline" = true
+"functions/backtick-to-shell-exec" = true
+"operators/binary-spacing" = true
+"statements/blank-line-before" = ["return"]
+"statements/braces-position" = { allow-single-line-anonymous-functions = true, allow-single-line-empty-anonymous-classes = true }
+"classes/member-separation" = { elements = { method = "one" } }
+"classes/definition" = { single-line = true }
+"casing/class-reference" = true
+"imports/clean-namespace" = true
+"operators/concat-spacing" = true
+"statements/declare-parentheses" = true
+"tags/echo-syntax" = true
+"control-flow/empty-loop-body" = "braces"
+"control-flow/empty-loop-condition" = true
+"imports/fully-qualified-strict-types" = true
+"functions/declaration" = { closure-fn-spacing = "one" }
+"imports/global-namespace" = { import-classes = false, import-constants = false, import-functions = false }
+"control-flow/include" = true
+"operators/increment-style" = true
+"casing/integer-literals" = true
+"tags/linebreak-after-opening" = true
+"casing/magic-constants" = true
+"casing/magic-methods" = true
+"functions/argument-spacing" = { after-heredoc = true, on-multiline = "ignore" }
+"casing/native-functions" = true
+"casing/native-types" = true
+"functions/no-alias-construct-call" = true
+"control-flow/no-alternative-syntax" = true
+"strings/no-binary" = true
+"phpdoc/no-blank-line-after" = true
+"comments/no-empty" = true
+"phpdoc/no-empty" = true
+"whitespace/no-extra-blank-lines" = ["attribute", "case", "continue", "curly-brace-block", "default", "extra", "parenthesis-brace-block", "square-brace-block", "switch", "throw", "use"]
+"imports/no-leading-namespace-whitespace" = true
+"statements/no-mixed-echo-print" = true
+"arrays/no-multiline-double-arrow" = true
+"casts/no-short-bool" = true
+"statements/no-space-before-semicolon" = true
+"arrays/no-space-around-offset" = true
+"arrays/no-trailing-comma-single-line" = true
+"control-flow/no-unneeded-braces" = { namespaces = true }
+"control-flow/no-unneeded-parentheses" = ["break", "clone", "continue", "echo-print", "negative-instanceof", "others", "return", "switch-case", "yield", "yield-from"]
+"imports/no-unneeded-alias" = true
+"casts/no-unset" = true
+"operators/no-useless-concat" = true
+"arrays/no-space-before-comma" = { after-heredoc = true }
+"arrays/index-brace" = true
+"types/nullable-for-null-default" = true
+"operators/no-space-around-arrow" = true
+"operators/linebreak" = { only-booleans = true }
+"imports/ordered" = { order = ["class", "function", "const"], sort = "alphabetical" }
+"phpunit/fqcn-annotation" = true
+"phpdoc/align" = true
+"phpdoc/annotation-without-dot" = true
+"phpdoc/indent" = true
+"phpdoc/inline-tag" = true
+"phpdoc/no-alias-tag" = { replacements = { const = "var", link = "see", property-read = "property", property-write = "property", type = "var" } }
+"phpdoc/order" = ["param", "return", "throws"]
+"phpdoc/return-self-reference" = true
+"phpdoc/scalar" = ["boolean", "callback", "double", "integer", "never-return", "never-returns", "no-return", "real", "str"]
+"phpdoc/separation" = { groups = [["Annotation", "NamedArgumentConstructor", "Target"], ["author", "copyright", "license"], ["category", "package", "subpackage"], ["property", "property-read", "property-write"], ["deprecated", "link", "see", "since"]], skip-unlisted-annotations = false }
+"phpdoc/single-line-var-spacing" = true
+"phpdoc/summary" = true
+"phpdoc/tag-type" = { tags = { inheritDoc = "inline" } }
+"phpdoc/trim" = true
+"phpdoc/trim-blank-lines" = true
+"phpdoc/types" = true
+"phpdoc/types-order" = { null-position = "last", sort = "none" }
+"phpdoc/var-order" = true
+"phpdoc/var-without-name" = true
+"statements/semicolon-after-instruction" = true
+"strings/complex-variable" = true
+"imports/single-per-statement" = true
+"comments/single-line-spacing" = true
+"comments/single-line-style" = ["hash"]
+"functions/single-line-throw" = true
+"strings/single-quote" = true
+"statements/space-around-construct" = true
+"statements/space-after-semicolon" = { remove-in-empty-for-expressions = true }
+"operators/standardize-increment" = true
+"operators/standardize-not-equals" = true
+"whitespace/statement-indentation" = { stick-comment-to-next-continuous-control-statement = true }
+"arrays/trailing-comma-multiline" = { after-heredoc = true, elements = ["array-destructuring", "arrays", "match", "parameters"] }
+"arrays/trim-spaces" = true
+"types/declaration-spacing" = ["function", "property"]
+"operators/unary-spacing" = true
+"arrays/space-after-comma" = true
+"control-flow/yoda" = true
+"types/nullable-syntax" = true
+"types/ordered" = { null-position = "last", sort = "none" }
+"classes/single-member-per-statement" = true
+"types/union-spacing" = true
+"arrays/indentation" = true
+"arrays/syntax" = true
+"attributes/no-block-spaces" = true
+"casts/spacing" = true
+"operators/new-parentheses" = { anonymous-class = false }
+"tags/blank-line-after-opening" = true
+"imports/blank-line-between-groups" = true
+"imports/blank-lines-before-namespace" = true
+"types/compact-nullable" = true
+"statements/declare-equal" = true
+"casts/lowercase" = true
+"casing/static-reference" = true
+"classes/modifier-keywords" = true
+"classes/no-blank-line-after-opening" = true
+"imports/no-leading-slash" = true
+"whitespace/no-blank-line-whitespace" = true
+"functions/return-type-spacing" = true
+"casts/short-scalar" = true
+"classes/single-trait-per-statement" = true
+"operators/ternary-spacing" = true
+"imports/blank-line-after-namespace" = true
+"casing/constants" = true
+"control-flow/braces" = true
+"control-flow/continuation-position" = true
+"control-flow/elseif" = true
+"whitespace/indentation-type" = true
+"whitespace/line-ending" = true
+"casing/keywords" = true
+"control-flow/no-break-comment" = true
+"tags/no-closing" = true
+"statements/one-per-line" = true
+"operators/no-space-around-double-colon" = true
+"functions/no-space-after-name" = true
+"whitespace/no-trailing" = true
+"comments/no-trailing-whitespace" = true
+"whitespace/final-newline" = true
+"imports/blank-line-after" = true
+"whitespace/inside-parentheses" = true
+"control-flow/switch-case-colon" = true
+"control-flow/switch-case-space" = true
+"whitespace/encoding" = true
+"tags/full-opening" = true
+
+[lint.rules]
+"refactor/rename-phpdoc-tag" = { replacements = { inheritDocs = "inheritDoc" } }
+"functions/no-unused-closure-use" = "error"
+"statements/no-empty" = "error"
+"classes/no-null-property-default" = "error"
+"phpdoc/no-superfluous-tags" = { allow-hidden-params = true, remove-inheritdoc = true }
+"imports/no-unused" = "error"
+"control-flow/no-useless-else" = "error"
+"operators/no-useless-nullsafe" = "error"
+"control-flow/no-useless-return" = "error"
+"phpunit/require-method-casing" = "error"
+"phpdoc/no-access" = "error"
+"phpdoc/no-package" = "error"
+"phpdoc/no-useless-inheritdoc" = "error"
+"phpdoc/no-misplaced" = { allow-before-return-statement = false }
+"classes/no-protected-in-final" = "error"
+"control-flow/no-switch-continue" = "error"
+"classes/require-member-order" = { order = ["use_trait"] }
+"statements/require-strict-types" = "error"
+"complexity/no-redundant-nullsafe" = "off"
+"dead-code/no-duplicate-array-key" = "off"
+"dead-code/no-unreachable-code" = "off"
+"dead-code/no-unused-constructor-param" = "off"
+"dead-code/no-unused-expression" = "off"
+"dead-code/no-unused-private-constant" = "off"
+"dead-code/no-unused-private-method" = "off"
+
+[[lint.overrides]]
+files = ["src", "fixtures"]
+rules = { "arrays/no-implicit-array-creation" = "error", "classes/no-explicit-constructor-call" = "error", "classes/no-static-constructor-call" = "error", "complexity/no-redundant-nullsafe" = "error", "control-flow/no-for-init-overwrite" = "error", "control-flow/no-loop-variable-overwrite" = "error", "dead-code/no-duplicate-array-key" = "error", "dead-code/no-unreachable-code" = "error", "dead-code/no-unused-constructor-param" = "error", "dead-code/no-unused-expression" = "error", "dead-code/no-unused-private-constant" = "error", "dead-code/no-unused-private-method" = "error", "dead-code/no-useless-cast" = "error", "functions/require-array-filter-callback" = "error", "functions/require-strict-function-call" = "error", "operators/no-loose-equality" = "error", "style/no-dynamic-method-call" = "error", "style/no-dynamic-method-callable" = "error", "style/no-dynamic-property" = "error", "style/no-dynamic-static-call" = "error", "style/no-dynamic-static-callable" = "error", "style/no-dynamic-static-property" = "error", "style/no-empty" = "error", "style/no-short-ternary" = "error", "style/no-variable-variable" = "error" }
+
+[analyse]
+preset = "phpstan/level_10"
+paths = ["src", "fixtures"]
+
+[analyse.rules]
+"casing/inherited-method-case" = "on"
+"classes/dynamic-static-call" = "on"
+"classes/dynamic-static-callable" = "on"
+"classes/missing-parent-constructor-call" = "on"
+"control-flow/non-boolean-condition" = "on"
+"control-flow/non-boolean-elseif" = "on"
+"control-flow/non-boolean-ternary" = "on"
+"control-flow/switch-type-mismatch" = "on"
+"functions/closure-uses-this" = "on"
+"operators/non-boolean-and-operand" = "on"
+"operators/non-boolean-not-operand" = "on"
+"operators/non-boolean-or-operand" = "on"
+"operators/non-numeric-addition" = "on"
+"operators/non-numeric-division" = "on"
+"operators/non-numeric-exponentiation" = "on"
+"operators/non-numeric-modulo" = "on"
+"operators/non-numeric-multiplication" = "on"
+"operators/non-numeric-post-decrement" = "on"
+"operators/non-numeric-post-increment" = "on"
+"operators/non-numeric-pre-decrement" = "on"
+"operators/non-numeric-pre-increment" = "on"
+"operators/non-numeric-subtraction" = "on"
